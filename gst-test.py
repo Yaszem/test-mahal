@@ -65,27 +65,53 @@ html, body, .stApp {
 }
 .auth-wrapper {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 3rem 2.5rem 2.5rem;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    border-radius: 24px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.55);
 }
-.auth-logo {
+.auth-header {
+    background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);
+    padding: 2.8rem 2.5rem 2rem 2.5rem;
     text-align: center;
-    margin-bottom: 0.3rem;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+}
+.auth-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(200,169,110,0.13) 0%, transparent 70%);
+    pointer-events: none;
 }
 .auth-logo-text {
     font-family: 'Playfair Display', serif;
-    font-size: 2.4rem;
+    font-size: 2.8rem;
     color: var(--accent);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
+    display: block;
+    line-height: 1;
+    margin-bottom: 0.5rem;
 }
-.auth-title {
+.auth-tagline {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.auth-body {
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+}
+.auth-form-title {
     font-family: 'Playfair Display', serif;
-    font-size: 2rem; color: var(--text);
-    margin-bottom: 0.2rem; text-align: center;
+    font-size: 1.05rem;
+    color: var(--text);
+    margin-bottom: 1.6rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
 }
 .auth-sub {
     font-size: 0.75rem; color: var(--muted); text-align: center;
@@ -95,6 +121,14 @@ html, body, .stApp {
 .auth-divider {
     height: 1px; background: var(--border);
     margin: 1.5rem 0;
+}
+.auth-footer-text {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
 }
 
 /* ─── Topbar ─── */
@@ -496,23 +530,27 @@ def ok_msg(msg):
 # PAGE : LOGIN
 # ═════════════════════════════════════════════════════════════════════════════
 def page_login():
+    # Carte header HTML
     st.markdown("""
-    <div style="display:flex;align-items:center;justify-content:center;min-height:10vh;">
+    <div style="display:flex;justify-content:center;padding-top:6vh;">
         <div class="auth-wrapper">
-            <div class="auth-logo"><span class="auth-logo-text">Mahal</span></div>
-            <div class="auth-sub">Connexion à votre espace</div>
-            <div class="auth-divider"></div>
+            <div class="auth-header">
+                <span class="auth-logo-text">Mahal</span>
+                <div class="auth-tagline">Gestion de stock &amp; transactions</div>
+            </div>
+            <div class="auth-body">
+                <div class="auth-form-title">Connexion</div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # On utilise un container centré
     col = st.columns([1, 2, 1])[1]
     with col:
-        username = st.text_input("Nom d'utilisateur", key="login_user")
-        password = st.text_input("Mot de passe", type="password", key="login_pass")
+        username = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
+        password = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
 
-        if st.button("Se connecter", key="btn_login"):
+        if st.button("Se connecter", key="btn_login", use_container_width=True):
             if not username or not password:
                 err("Remplis tous les champs.")
                 return
@@ -546,12 +584,10 @@ def page_login():
             st.rerun()
 
         st.markdown(
-            "<div class='auth-switch'>Pas encore de compte ? "
-            "<span style='color:#1C1C1C;font-weight:500;cursor:pointer' "
-            "onclick=\"\">Clique sur le bouton ci-dessous</span></div>",
+            "<div class='auth-footer-text'>Pas encore de compte ?</div>",
             unsafe_allow_html=True)
 
-        if st.button("Créer un compte", key="btn_go_register"):
+        if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
             st.session_state.auth_page = "register"
             st.rerun()
 
@@ -560,23 +596,28 @@ def page_login():
 # ═════════════════════════════════════════════════════════════════════════════
 def page_register():
     st.markdown("""
-    <div style="display:flex;align-items:center;justify-content:center;min-height:10vh;">
+    <div style="display:flex;justify-content:center;padding-top:6vh;">
         <div class="auth-wrapper">
-            <div class="auth-logo"><span class="auth-logo-text">Mahal</span></div>
-            <div class="auth-sub">Créer un compte</div>
-            <div class="auth-divider"></div>
+            <div class="auth-header">
+                <span class="auth-logo-text">Mahal</span>
+                <div class="auth-tagline">Gestion de stock &amp; transactions</div>
+            </div>
+            <div class="auth-body">
+                <div class="auth-form-title">Créer un compte</div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     col = st.columns([1, 2, 1])[1]
     with col:
-        username   = st.text_input("Nom d'utilisateur", key="reg_user")
+        username   = st.text_input("Nom d'utilisateur", key="reg_user", placeholder="Choisir un identifiant")
         password   = st.text_input("Mot de passe", type="password", key="reg_pass",
+                                    placeholder="8 caractères min. avec chiffres",
                                     help="8 caractères minimum, avec chiffres et lettres")
-        password2  = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2")
+        password2  = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2", placeholder="••••••••")
 
-        if st.button("S'inscrire", key="btn_register"):
+        if st.button("S'inscrire", key="btn_register", use_container_width=True):
             # Validations
             if not username or not password or not password2:
                 err("Remplis tous les champs.")
@@ -622,7 +663,7 @@ def page_register():
                 err(f"Erreur lors de l'inscription : {e}")
                 return
 
-        if st.button("Retour à la connexion", key="btn_go_login"):
+        if st.button("Retour à la connexion", key="btn_go_login", use_container_width=True):
             st.session_state.auth_page = "login"
             st.rerun()
 
