@@ -20,137 +20,357 @@ LOCKOUT_SECONDS = 300  # 5 minutes
 # ─── CSS ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
-*, *::before, *::after { box-sizing: border-box; }
-html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM Sans', sans-serif; }
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 3rem 4rem 4rem 4rem; max-width: 1300px; }
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500&display=swap');
 
-/* ── Auth pages ── */
+:root {
+    --bg:       #0F0F12;
+    --surface:  #18181D;
+    --surface2: #22222A;
+    --border:   #2E2E38;
+    --accent:   #C8A96E;
+    --accent2:  #E8C98A;
+    --text:     #F0EEE8;
+    --muted:    #6B6B7A;
+    --green:    #4CAF7D;
+    --red:      #E05555;
+    --radius:   12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, .stApp {
+    background-color: var(--bg) !important;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+}
+
+#MainMenu, footer, header { visibility: hidden; }
+
+.block-container {
+    padding: 2.5rem 3.5rem 4rem 3.5rem !important;
+    max-width: 1400px !important;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* ─── Auth ─── */
+.auth-outer {
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 .auth-wrapper {
-    max-width: 420px; margin: 5vh auto 0 auto;
-    background: #FFFFFF; border: 1px solid #E8E5DE;
-    border-radius: 14px; padding: 2.5rem 2.5rem 2rem 2.5rem;
+    width: 100%;
+    max-width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3rem 2.5rem 2.5rem;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.auth-logo {
+    text-align: center;
+    margin-bottom: 0.3rem;
+}
+.auth-logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    color: var(--accent);
+    letter-spacing: 0.04em;
 }
 .auth-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2rem; color: #1C1C1C;
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; color: var(--text);
     margin-bottom: 0.2rem; text-align: center;
 }
 .auth-sub {
-    font-size: 0.8rem; color: #AAA; text-align: center;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    margin-bottom: 2rem;
+    font-size: 0.75rem; color: var(--muted); text-align: center;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 2.2rem;
 }
-.auth-switch {
-    font-size: 0.82rem; color: #888; text-align: center; margin-top: 1.2rem;
+.auth-divider {
+    height: 1px; background: var(--border);
+    margin: 1.5rem 0;
 }
-.auth-switch a { color: #1C1C1C; font-weight: 500; cursor: pointer; }
 
-/* ── Top bar ── */
+/* ─── Topbar ─── */
 .topbar {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 0.5rem;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 0.3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.topbar-left {}
+.topbar-right {
+    display: flex; align-items: center; gap: 1rem;
+    padding-top: 0.6rem;
 }
 .topbar-user {
-    font-size: 0.8rem; color: #888; letter-spacing: 0.04em;
+    font-size: 0.8rem; color: var(--muted); letter-spacing: 0.04em;
 }
 .topbar-role {
-    display: inline-block;
-    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.07em;
-    text-transform: uppercase; padding: 0.2rem 0.6rem;
-    border-radius: 20px; margin-left: 0.5rem;
+    display: inline-flex; align-items: center;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; padding: 0.25rem 0.8rem;
+    border-radius: 20px;
 }
-.role-admin { background: #1C1C1C; color: #F7F6F2; }
-.role-visiteur { background: #E8E5DE; color: #555; }
+.role-admin { background: var(--accent); color: #0F0F12; }
+.role-visiteur { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
 
-/* ── Pending badge ── */
+/* ─── Badges ─── */
 .badge-pending {
-    display: inline-block; background: #FFF3CD; border: 1px solid #F0C040;
-    color: #7A5C00; font-size: 0.75rem; padding: 0.2rem 0.7rem;
+    display: inline-block; background: rgba(200,169,110,0.15); border: 1px solid rgba(200,169,110,0.4);
+    color: var(--accent); font-size: 0.72rem; padding: 0.2rem 0.7rem;
     border-radius: 20px; font-weight: 500;
 }
-.badge-approved { background: #EEF7EE; border: 1px solid #C3DEC3; color: #2D6A2D; }
-.badge-rejected { background: #FDECEA; border: 1px solid #E8B4B0; color: #7A1C1C; }
+.badge-approved { background: rgba(76,175,125,0.12); border: 1px solid rgba(76,175,125,0.3); color: var(--green); }
+.badge-rejected { background: rgba(224,85,85,0.12); border: 1px solid rgba(224,85,85,0.3); color: var(--red); }
 
-/* ── Page titles ── */
-.page-title { font-family: 'DM Serif Display', serif; font-size: 2.6rem; color: #1C1C1C; margin-bottom: 0.2rem; line-height: 1.1; }
-.page-subtitle { font-size: 0.85rem; color: #999; font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2.5rem; }
-.section-title { font-family: 'DM Serif Display', serif; font-size: 1.35rem; color: #1C1C1C; margin-top: 2rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid #E0DDD5; }
+/* ─── Page title ─── */
+.page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem; color: var(--text);
+    line-height: 1.1; letter-spacing: -0.01em;
+}
+.page-title span { color: var(--accent); }
+.page-subtitle {
+    font-size: 0.75rem; color: var(--muted); font-weight: 400;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-top: 0.3rem; margin-bottom: 2rem;
+}
 
-/* ── Metrics ── */
+/* ─── Section title ─── */
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; color: var(--text);
+    margin-top: 2rem; margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.6rem;
+}
+.section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 1.1rem;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ─── Metric cards ─── */
 .metric-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
-.metric-card { background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px; padding: 1.2rem 1.5rem; flex: 1; }
-.metric-label { font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: #AAA; margin-bottom: 0.5rem; }
-.metric-value { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: #1C1C1C; line-height: 1; }
-.metric-value.positive { color: #2D7A3A; }
-.metric-value.negative { color: #B03A2E; }
+.metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.3rem 1.6rem;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.metric-card:hover { border-color: var(--accent); }
+.metric-card::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+}
+.metric-label {
+    font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.6rem;
+}
+.metric-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem; color: var(--text); line-height: 1;
+}
+.metric-value.positive { color: var(--green); }
+.metric-value.negative { color: var(--red); }
 
-/* ── Inputs ── */
+/* ─── Inputs ─── */
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
 .stDateInput > div > div > input {
-    background: #F7F6F2 !important; border: 1px solid #DDDAD2 !important;
-    border-radius: 8px !important; color: #1C1C1C !important;
-    font-family: 'DM Sans', sans-serif !important; font-size: 0.9rem !important;
-    padding: 0.55rem 0.9rem !important; -webkit-text-fill-color: #1C1C1C !important;
+    background: var(--surface2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: var(--text) !important;
+    font-family: 'Sora', sans-serif !important;
+    font-size: 0.88rem !important;
+    padding: 0.6rem 1rem !important;
+    -webkit-text-fill-color: var(--text) !important;
+    transition: border-color 0.2s !important;
+}
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(200,169,110,0.12) !important;
 }
 .stTextInput > div > div > input::placeholder,
 .stNumberInput > div > div > input::placeholder {
-    color: #AAAAAA !important; -webkit-text-fill-color: #AAAAAA !important; opacity: 1 !important;
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+    opacity: 1 !important;
 }
-.stTextInput > div > div > input:focus,
-.stNumberInput > div > div > input:focus { border-color: #1C1C1C !important; box-shadow: none !important; }
-.stTextInput label, .stNumberInput label, .stSelectbox label, .stDateInput label, .stMultiSelect label {
-    font-size: 0.75rem !important; font-weight: 500 !important;
-    letter-spacing: 0.06em !important; text-transform: uppercase !important;
-    color: #999 !important; margin-bottom: 0.3rem !important;
+.stTextInput label, .stNumberInput label,
+.stSelectbox label, .stDateInput label, .stMultiSelect label {
+    font-size: 0.7rem !important; font-weight: 600 !important;
+    letter-spacing: 0.08em !important; text-transform: uppercase !important;
+    color: var(--muted) !important; margin-bottom: 0.35rem !important;
 }
+
+/* ─── Selectbox ─── */
 .stSelectbox > div > div > div {
-    background: #F7F6F2 !important; border: 1px solid #DDDAD2 !important;
-    border-radius: 8px !important; font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.9rem !important; color: #1C1C1C !important;
+    background: var(--surface2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    font-family: 'Sora', sans-serif !important;
+    font-size: 0.88rem !important;
+    color: var(--text) !important;
 }
 .stSelectbox [data-baseweb="select"] span,
-.stSelectbox [data-baseweb="select"] div { color: #1C1C1C !important; }
-.stSelectbox svg, .stTextInput svg, .stNumberInput svg, .stDateInput svg, .stMultiSelect svg {
-    display: block !important; color: #1C1C1C !important; fill: #1C1C1C !important;
+.stSelectbox [data-baseweb="select"] div { color: var(--text) !important; }
+.stSelectbox svg, .stTextInput svg, .stNumberInput svg,
+.stDateInput svg, .stMultiSelect svg {
+    display: block !important; color: var(--muted) !important; fill: var(--muted) !important;
 }
 .stSelectbox input, [data-baseweb="select"] input, [data-baseweb="combobox"] input {
-    color: #1C1C1C !important; -webkit-text-fill-color: #1C1C1C !important; caret-color: #1C1C1C !important;
+    color: var(--text) !important; -webkit-text-fill-color: var(--text) !important;
+    caret-color: var(--accent) !important;
 }
 [data-baseweb="popover"] li, [data-baseweb="menu"] li, [data-baseweb="option"] {
-    color: #1C1C1C !important; background: #FFFFFF !important;
-    font-family: 'DM Sans', sans-serif !important; font-size: 0.9rem !important;
+    color: var(--text) !important;
+    background: var(--surface2) !important;
+    font-family: 'Sora', sans-serif !important;
+    font-size: 0.88rem !important;
 }
-[data-baseweb="option"]:hover { background: #F0EDE5 !important; }
-.stCheckbox label, .stCheckbox label p, .stCheckbox span { color: #1C1C1C !important; font-size: 0.88rem !important; }
+[data-baseweb="option"]:hover { background: var(--surface) !important; color: var(--accent) !important; }
 
-/* ── Buttons ── */
+/* ─── Multiselect ─── */
+[data-baseweb="tag"] {
+    background: rgba(200,169,110,0.18) !important;
+    border: 1px solid rgba(200,169,110,0.35) !important;
+    border-radius: 6px !important;
+}
+[data-baseweb="tag"] span { color: var(--accent) !important; }
+
+/* ─── Checkbox ─── */
+.stCheckbox label, .stCheckbox label p, .stCheckbox span {
+    color: var(--text) !important; font-size: 0.85rem !important;
+    font-family: 'Sora', sans-serif !important;
+}
+
+/* ─── Buttons ─── */
 .stButton > button {
-    background: #1C1C1C !important; color: #F7F6F2 !important;
-    border: none !important; border-radius: 8px !important;
-    padding: 0.65rem 2.2rem !important; font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.88rem !important; font-weight: 500 !important;
-    letter-spacing: 0.03em !important; margin-top: 1rem;
-    transition: opacity 0.2s ease !important;
+    background: var(--accent) !important;
+    color: #0F0F12 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.65rem 2rem !important;
+    font-family: 'Sora', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em !important;
+    margin-top: 0.8rem !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 14px rgba(200,169,110,0.25) !important;
 }
-.stButton > button:hover { opacity: 0.75 !important; }
-.stSuccess > div { background: #F0F7F0 !important; border: 1px solid #C3DEC3 !important; border-radius: 8px !important; color: #2D6A2D !important; font-size: 0.88rem !important; }
+.stButton > button:hover {
+    background: var(--accent2) !important;
+    box-shadow: 0 6px 20px rgba(200,169,110,0.4) !important;
+    transform: translateY(-1px) !important;
+}
 
-/* ── Tables ── */
-.stDataFrame { border-radius: 10px !important; overflow: hidden !important; border: 1px solid #E8E5DE !important; }
-.stDataFrame table { font-size: 0.88rem !important; font-family: 'DM Sans', sans-serif !important; }
-.stDataFrame thead th { background: #F0EDE5 !important; color: #777 !important; font-weight: 500 !important; font-size: 0.75rem !important; letter-spacing: 0.05em !important; text-transform: uppercase !important; padding: 0.75rem 1rem !important; border-bottom: 1px solid #DDDAD2 !important; }
-.stDataFrame tbody tr:nth-child(even) td { background: #FAFAF8 !important; }
-.stDataFrame tbody td { padding: 0.65rem 1rem !important; border-bottom: 1px solid #F0EDE5 !important; color: #1C1C1C !important; }
+/* ─── Alerts ─── */
+.stSuccess > div {
+    background: rgba(76,175,125,0.1) !important;
+    border: 1px solid rgba(76,175,125,0.3) !important;
+    border-radius: 10px !important;
+    color: var(--green) !important;
+    font-size: 0.88rem !important;
+}
 
-/* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] { gap: 0; background: transparent; border-bottom: 1px solid #E0DDD5; }
-.stTabs [data-baseweb="tab"] { font-family: 'DM Sans', sans-serif !important; font-size: 0.88rem !important; font-weight: 400 !important; color: #AAA !important; background: transparent !important; border: none !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; padding: 0.65rem 1.4rem !important; }
-.stTabs [aria-selected="true"] { color: #1C1C1C !important; border-bottom: 2px solid #1C1C1C !important; font-weight: 500 !important; }
-.stTabs [data-baseweb="tab-panel"] { padding-top: 0 !important; }
-.info-count { font-size: 0.8rem; color: #999; margin-bottom: 0.8rem; }
+/* ─── Dataframe ─── */
+.stDataFrame {
+    border-radius: var(--radius) !important;
+    overflow: hidden !important;
+    border: 1px solid var(--border) !important;
+}
+.stDataFrame table {
+    font-size: 0.85rem !important;
+    font-family: 'Sora', sans-serif !important;
+    background: var(--surface) !important;
+}
+.stDataFrame thead th {
+    background: var(--surface2) !important;
+    color: var(--muted) !important;
+    font-weight: 600 !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    padding: 0.8rem 1.1rem !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+.stDataFrame tbody tr:hover td {
+    background: var(--surface2) !important;
+}
+.stDataFrame tbody td {
+    padding: 0.7rem 1.1rem !important;
+    border-bottom: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    background: var(--surface) !important;
+}
+
+/* ─── Tabs ─── */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Sora', sans-serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    color: var(--muted) !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0 !important;
+    padding: 0.7rem 1.4rem !important;
+    letter-spacing: 0.03em;
+    transition: color 0.2s !important;
+}
+.stTabs [data-baseweb="tab"]:hover { color: var(--text) !important; }
+.stTabs [aria-selected="true"] {
+    color: var(--accent) !important;
+    border-bottom: 2px solid var(--accent) !important;
+    font-weight: 600 !important;
+}
+.stTabs [data-baseweb="tab-panel"] { padding-top: 0.5rem !important; }
+
+/* ─── Info count ─── */
+.info-count {
+    font-size: 0.78rem; color: var(--muted);
+    margin-bottom: 0.8rem;
+    font-family: 'Sora', sans-serif;
+}
+
+/* ─── User card (gestion utilisateurs) ─── */
+.user-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.4rem;
+    margin-bottom: 0.8rem;
+    transition: border-color 0.2s;
+}
+.user-card:hover { border-color: var(--accent); }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -277,9 +497,12 @@ def ok_msg(msg):
 # ═════════════════════════════════════════════════════════════════════════════
 def page_login():
     st.markdown("""
-    <div class="auth-wrapper">
-        <div class="auth-title">Mahal</div>
-        <div class="auth-sub">Connexion</div>
+    <div style="display:flex;align-items:center;justify-content:center;min-height:10vh;">
+        <div class="auth-wrapper">
+            <div class="auth-logo"><span class="auth-logo-text">Mahal</span></div>
+            <div class="auth-sub">Connexion à votre espace</div>
+            <div class="auth-divider"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -337,9 +560,12 @@ def page_login():
 # ═════════════════════════════════════════════════════════════════════════════
 def page_register():
     st.markdown("""
-    <div class="auth-wrapper">
-        <div class="auth-title">Mahal</div>
-        <div class="auth-sub">Créer un compte</div>
+    <div style="display:flex;align-items:center;justify-content:center;min-height:10vh;">
+        <div class="auth-wrapper">
+            <div class="auth-logo"><span class="auth-logo-text">Mahal</span></div>
+            <div class="auth-sub">Créer un compte</div>
+            <div class="auth-divider"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -508,13 +734,15 @@ role_class = "role-admin" if is_admin else "role-visiteur"
 role_label = "Admin" if is_admin else "Visiteur"
 st.markdown(f"""
 <div class="topbar">
-    <div class="page-title">Mahal</div>
-    <div class="topbar-user">
-        {username}
+    <div class="topbar-left">
+        <div class="page-title">Ma<span>hal</span></div>
+        <div class="page-subtitle">Gestion de stock et transactions</div>
+    </div>
+    <div class="topbar-right">
+        <span class="topbar-user">{username}</span>
         <span class="topbar-role {role_class}">{role_label}</span>
     </div>
 </div>
-<div class="page-subtitle">Gestion de stock et transactions</div>
 """, unsafe_allow_html=True)
 
 # Bouton déconnexion
@@ -535,10 +763,22 @@ couleur_res    = "positive" if resultat_net >= 0 else "negative"
 
 st.markdown(f"""
 <div class="metric-row">
-    <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{total_achats:,.0f} MAD</div></div>
-    <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{total_ventes:,.0f} MAD</div></div>
-    <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{total_depenses:,.0f} MAD</div></div>
-    <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {couleur_res}">{resultat_net:+,.0f} MAD</div></div>
+    <div class="metric-card">
+        <div class="metric-label">Total Achats</div>
+        <div class="metric-value">{total_achats:,.0f} <small style="font-size:0.9rem;opacity:0.5">MAD</small></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Total Ventes</div>
+        <div class="metric-value">{total_ventes:,.0f} <small style="font-size:0.9rem;opacity:0.5">MAD</small></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Total Dépenses</div>
+        <div class="metric-value">{total_depenses:,.0f} <small style="font-size:0.9rem;opacity:0.5">MAD</small></div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Résultat net</div>
+        <div class="metric-value {couleur_res}">{resultat_net:+,.0f} <small style="font-size:0.9rem;opacity:0.5">MAD</small></div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
