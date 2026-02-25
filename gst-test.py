@@ -429,17 +429,32 @@ def to_numeric(df, cols):
     return df
 
 def compute_resume_personne(t):
+    EMPTY = pd.DataFrame(columns=['Personne','Total Achats','Total Ventes','Total Dépenses','Résultat'])
+    if t.empty or 'Personne' not in t.columns:
+        return EMPTY
     t = to_numeric(t.copy(), ['Montant (MAD)'])
+    t = t.dropna(subset=['Personne'])
+    if t.empty:
+        return EMPTY
     g = t.groupby('Personne').apply(lambda x: pd.Series({
         'Total Achats':   x.loc[x['Type (Achat/Vente/Dépense)'] == 'ACHAT',   'Montant (MAD)'].sum(),
         'Total Ventes':   x.loc[x['Type (Achat/Vente/Dépense)'] == 'VENTE',   'Montant (MAD)'].sum(),
         'Total Dépenses': x.loc[x['Type (Achat/Vente/Dépense)'] == 'DÉPENSE', 'Montant (MAD)'].sum(),
     }), include_groups=False).reset_index()
+    if g.empty or 'Total Ventes' not in g.columns:
+        return EMPTY
     g['Résultat'] = g['Total Ventes'] - (g['Total Achats'] + g['Total Dépenses'])
     return g
 
 def compute_suivi_lot(t):
+    EMPTY = pd.DataFrame(columns=['Lot','Total Achats','Total Ventes','Total Dépenses','Stock Restant (pièces)','Résultat'])
+    if t.empty or 'Lot' not in t.columns:
+        return EMPTY
     t = to_numeric(t.copy(), ['Montant (MAD)', 'Quantité (pièces)'])
+    t = t.dropna(subset=['Lot'])
+    t = t[t['Lot'].astype(str).str.strip() != '']
+    if t.empty:
+        return EMPTY
     g = t.groupby('Lot').apply(lambda x: pd.Series({
         'Total Achats':           x.loc[x['Type (Achat/Vente/Dépense)'] == 'ACHAT',   'Montant (MAD)'].sum(),
         'Total Ventes':           x.loc[x['Type (Achat/Vente/Dépense)'] == 'VENTE',   'Montant (MAD)'].sum(),
@@ -449,15 +464,25 @@ def compute_suivi_lot(t):
           - x.loc[x['Type (Achat/Vente/Dépense)'] == 'VENTE', 'Quantité (pièces)'].sum()
         ),
     }), include_groups=False).reset_index()
+    if g.empty or 'Total Ventes' not in g.columns:
+        return EMPTY
     g['Résultat'] = g['Total Ventes'] - (g['Total Achats'] + g['Total Dépenses'])
     return g
 
 def compute_suivi_avances(t):
+    EMPTY = pd.DataFrame(columns=['Lot','Personne','Total Avancé','Total Encaissé','Solde'])
+    if t.empty or 'Lot' not in t.columns:
+        return EMPTY
     t = to_numeric(t.copy(), ['Montant (MAD)'])
+    t = t.dropna(subset=['Lot','Personne'])
+    if t.empty:
+        return EMPTY
     g = t.groupby(['Lot', 'Personne']).apply(lambda x: pd.Series({
         'Total Avancé':   x.loc[x['Type (Achat/Vente/Dépense)'].isin(['ACHAT', 'DÉPENSE']), 'Montant (MAD)'].sum(),
         'Total Encaissé': x.loc[x['Type (Achat/Vente/Dépense)'] == 'VENTE', 'Montant (MAD)'].sum(),
     }), include_groups=False).reset_index()
+    if g.empty or 'Total Encaissé' not in g.columns:
+        return EMPTY
     g['Solde'] = g['Total Encaissé'] - g['Total Avancé']
     return g
 
