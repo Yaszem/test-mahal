@@ -271,19 +271,7 @@ def page_login():
         st.markdown("""
         <div class="auth-left">
             <div class="auth-features">
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                </div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                </div>
-            <div class="auth-brand">Mahal</div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                </div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                </div>
+                        <div class="auth-brand">Mahal</div>
             </div>
             <div class="auth-bottom-badge">Chiffrement bcrypt &nbsp;·&nbsp; Accès contrôlé</div>
         </div>
