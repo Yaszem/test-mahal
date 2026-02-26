@@ -76,6 +76,7 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
 .metric-value { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: #1C1C1C; line-height: 1; }
 .metric-value.positive { color: #2D7A3A; }
 .metric-value.negative { color: #B03A2E; }
+.stTabs{ box-shadow: none; }
 
 /* INPUTS */
 .stTextInput > div > div > input,
