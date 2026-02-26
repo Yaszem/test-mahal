@@ -68,7 +68,7 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
     position: absolute;
     width: 560px; height: 560px;
     border-radius: 50%;
-    border: 9px solid rgba(247,246,242,0.05);
+    border: 1px solid rgba(247,246,242,0.05);
     top: -140px; right: -200px;
     pointer-events: none;
 }
@@ -416,6 +416,17 @@ def get_users() -> pd.DataFrame:
         return pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
 
 def save_users(df): save_sheet(df, "Utilisateurs")
+
+def update_session_for_user(uname, new_role, new_lots_list):
+    """Met à jour le cache de session d'un utilisateur sans qu'il ait à se reconnecter."""
+    store = _session_store()
+    for token, entry in store.items():
+        u = entry.get("user", {})
+        if u.get("username", "").lower() == uname.lower():
+            u["role"] = new_role
+            u["lots_autorises"] = new_lots_list
+            entry["user"] = u
+            break
 
 # ─── Sécurité : échappement HTML et sanitisation ──────────────────────────────
 def h(val: str) -> str:
@@ -1086,14 +1097,22 @@ if is_admin:
                     pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
                     with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
                     with pc2:
-                        if st.button("✓ Approuver", key=f"approve_{uname}"):
-                            users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
-                            users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
-                            save_users(users_df); ok(f"{uname} approuvé."); st.rerun()
+                        if st.button("✓ Approuver", key=f"approve_{uname}", disabled=st.session_state.get(f"approving_{uname}", False)):
+                            st.session_state[f"approving_{uname}"] = True
+                            with st.spinner(""):
+                                users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
+                                users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
+                                save_users(users_df)
+                            st.session_state.pop(f"approving_{uname}", None)
+                            st.rerun()
                     with pc3:
-                        if st.button("✗ Refuser", key=f"reject_{uname}"):
-                            users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
-                            save_users(users_df); warn(f"{uname} refusé."); st.rerun()
+                        if st.button("✗ Refuser", key=f"reject_{uname}", disabled=st.session_state.get(f"rejecting_{uname}", False)):
+                            st.session_state[f"rejecting_{uname}"] = True
+                            with st.spinner(""):
+                                users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
+                                save_users(users_df)
+                            st.session_state.pop(f"rejecting_{uname}", None)
+                            st.rerun()
             st.markdown("---")
 
         # ── Tous les utilisateurs ───────────────────────────────────────────────
@@ -1134,13 +1153,23 @@ if is_admin:
                 with ac3:
                     new_role = st.selectbox("Rôle", ["visiteur","admin"], index=0 if row["role"]=="visiteur" else 1, key=f"role_{uname}")
                 with ac4:
-                    if st.button("Sauvegarder", key=f"save_{uname}"):
-                        users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(new_lots)
-                        users_df.loc[users_df["username"]==uname,"role"] = new_role
-                        save_users(users_df); ok(f"{uname} mis à jour."); st.rerun()
-                    if st.button("Supprimer", key=f"del_{uname}"):
-                        users_df = users_df[users_df["username"]!=uname]
-                        save_users(users_df); ok(f"{uname} supprimé."); st.rerun()
+                    if st.button("Sauvegarder", key=f"save_{uname}", disabled=st.session_state.get(f"saving_{uname}", False)):
+                        st.session_state[f"saving_{uname}"] = True
+                        with st.spinner(""):
+                            users_df.loc[users_df["username"]==uname, "lots_autorises"] = ",".join(new_lots)
+                            users_df.loc[users_df["username"]==uname, "role"] = new_role
+                            save_users(users_df)
+                            # Mettre à jour la session en temps réel (rôle effectif immédiatement)
+                            update_session_for_user(uname, new_role, new_lots)
+                        st.session_state.pop(f"saving_{uname}", None)
+                        st.rerun()
+                    if st.button("Supprimer", key=f"del_{uname}", disabled=st.session_state.get(f"deleting_{uname}", False)):
+                        st.session_state[f"deleting_{uname}"] = True
+                        with st.spinner(""):
+                            users_df = users_df[users_df["username"] != uname]
+                            save_users(users_df)
+                        st.session_state.pop(f"deleting_{uname}", None)
+                        st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR
