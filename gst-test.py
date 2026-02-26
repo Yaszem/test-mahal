@@ -68,7 +68,7 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
     position: absolute;
     width: 560px; height: 560px;
     border-radius: 50%;
-    border: 1px solid rgba(247,246,242,0.05);
+    border: 9px solid rgba(247,246,242,0.05);
     top: -140px; right: -200px;
     pointer-events: none;
 }
