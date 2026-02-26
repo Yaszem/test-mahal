@@ -23,9 +23,14 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM Sans', sans-serif; Caret-color: red !improtant;}
+html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM Sans', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 3rem 4rem 4rem 4rem; max-width: 1300px; }
+
+/* CARET / CURSOR NOIR */
+input, textarea, [contenteditable] {
+    caret-color: #1C1C1C !important;
+}
 
 /* AUTH SPLIT LAYOUT */
 .auth-split { display: flex; min-height: 92vh; margin: -3rem -4rem; overflow: hidden; }
@@ -75,6 +80,21 @@ html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM
 .role-admin { background: #1C1C1C; color: #F7F6F2; }
 .role-visiteur { background: #E8E5DE; color: #777; }
 
+/* NOTIFICATION BADGE */
+.notif-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #E53935; color: #FFF; font-size: 0.65rem; font-weight: 700;
+    width: 18px; height: 18px; border-radius: 50%; margin-left: 6px;
+    vertical-align: middle;
+}
+.notif-banner {
+    background: #FFF3E0; border: 1px solid #FFB74D; border-radius: 8px;
+    padding: 0.75rem 1.2rem; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.8rem;
+    font-size: 0.88rem; color: #7A4100;
+}
+.notif-banner-dot { width: 8px; height: 8px; border-radius: 50%; background: #FFB74D; flex-shrink: 0; }
+
 /* BADGES */
 .badge-pending { display: inline-block; background: #FFF8E1; border: 1px solid #F0C040; color: #7A5C00; font-size: 0.72rem; padding: 0.2rem 0.7rem; border-radius: 20px; font-weight: 500; }
 .badge-approved { background: #EEF7EE; border: 1px solid #C3DEC3; color: #2D6A2D; }
@@ -101,6 +121,7 @@ html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM
     border-radius: 8px !important; color: #1C1C1C !important;
     font-family: 'DM Sans', sans-serif !important; font-size: 0.9rem !important;
     padding: 0.55rem 0.9rem !important; -webkit-text-fill-color: #1C1C1C !important;
+    caret-color: #1C1C1C !important;
 }
 .stTextInput > div > div > input::placeholder,
 .stNumberInput > div > div > input::placeholder { color: #AAAAAA !important; -webkit-text-fill-color: #AAAAAA !important; opacity: 1 !important; }
@@ -140,6 +161,13 @@ html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM
 .stTabs [data-baseweb="tab-panel"] { padding-top: 0 !important; }
 .info-count { font-size: 0.8rem; color: #999; margin-bottom: 0.8rem; }
 
+/* USER CARD */
+.user-card {
+    background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px;
+    padding: 1rem 1.2rem; margin-bottom: 0.7rem;
+}
+.user-card-name { font-weight: 600; font-size: 0.95rem; color: #1C1C1C; }
+.user-card-meta { font-size: 0.75rem; color: #AAA; margin-top: 0.2rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -168,13 +196,14 @@ def append_row(row_dict, sheet_name):
     ws.append_row([str(row_dict.get(h, "")) for h in headers])
 
 def ensure_users_sheet():
-    """Crée l'onglet Utilisateurs s'il n'existe pas."""
+    """Crée l'onglet Utilisateurs s'il n'existe pas — avec colonnes nom/prénom."""
     sh = get_client().open_by_key(SPREADSHEET_ID)
     try:
         sh.worksheet("Utilisateurs")
     except gspread.WorksheetNotFound:
-        ws = sh.add_worksheet("Utilisateurs", rows=500, cols=10)
-        ws.update([["username", "password_hash", "role", "statut", "lots_autorises", "created_at"]])
+        ws = sh.add_worksheet("Utilisateurs", rows=500, cols=12)
+        ws.update([["username", "password_hash", "role", "statut", "lots_autorises",
+                    "created_at", "nom", "prenom"]])
 
 # ─── Auth helpers ─────────────────────────────────────────────────────────────
 def hash_password(password: str) -> str:
@@ -191,10 +220,14 @@ def get_users() -> pd.DataFrame:
     try:
         df = load_sheet("Utilisateurs")
         if df.empty:
-            df = pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at"])
+            df = pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
+        # S'assurer que les colonnes nom/prenom existent (migration ancienne feuille)
+        for col in ["nom", "prenom"]:
+            if col not in df.columns:
+                df[col] = ""
         return df
     except Exception:
-        return pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at"])
+        return pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
 
 def save_users(df: pd.DataFrame):
     save_sheet(df, "Utilisateurs")
@@ -233,6 +266,13 @@ def admin_exists() -> bool:
     if users.empty:
         return False
     return not users[users["role"] == "admin"].empty
+
+def count_pending_users() -> int:
+    try:
+        users = get_users()
+        return len(users[users["statut"] == "en_attente"])
+    except Exception:
+        return 0
 
 # ─── Session init ─────────────────────────────────────────────────────────────
 if "authenticated" not in st.session_state:
@@ -326,7 +366,7 @@ def page_login():
         st.markdown('<div class="auth-switch-text">Accès réservé aux membres autorisés.</div>', unsafe_allow_html=True)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PAGE : INSCRIPTION
+# PAGE : INSCRIPTION — avec Nom & Prénom
 # ═════════════════════════════════════════════════════════════════════════════
 def page_register():
     left, right = st.columns([1.1, 1])
@@ -354,13 +394,20 @@ def page_register():
         </div>
         """, unsafe_allow_html=True)
 
+        # Nom & Prénom
+        rc1, rc2 = st.columns(2, gap="small")
+        with rc1:
+            prenom = st.text_input("Prénom", key="reg_prenom", placeholder="Votre prénom")
+        with rc2:
+            nom = st.text_input("Nom", key="reg_nom", placeholder="Votre nom de famille")
+
         username  = st.text_input("Nom d'utilisateur", key="reg_user", placeholder="Choisir un identifiant")
         password  = st.text_input("Mot de passe", type="password", key="reg_pass",
                                    placeholder="8 caractères min. avec chiffres")
         password2 = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2", placeholder="••••••••")
 
         if st.button("S'inscrire", key="btn_register", use_container_width=True):
-            if not username or not password or not password2:
+            if not username or not password or not password2 or not prenom or not nom:
                 err("Remplis tous les champs.")
                 return
             if len(username) < 3:
@@ -388,6 +435,8 @@ def page_register():
                 "statut":         statut,
                 "lots_autorises": "",
                 "created_at":     datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "nom":            nom.upper(),
+                "prenom":         prenom.capitalize(),
             }
             try:
                 ensure_users_sheet()
@@ -422,7 +471,7 @@ if not st.session_state.authenticated:
 role     = st.session_state.role
 username = st.session_state.username
 is_admin = (role == "admin")
-lots_autorises = st.session_state.lots_autorises  # liste pour le visiteur
+lots_autorises = st.session_state.lots_autorises
 
 # ─── Data helpers ─────────────────────────────────────────────────────────────
 def add_quantity_column(df):
@@ -509,11 +558,23 @@ if not is_admin:
     if lots_autorises:
         transactions = transactions[transactions['Lot'].astype(str).isin(lots_autorises)]
     else:
-        transactions = transactions.iloc[0:0]  # aucune donnée si aucun lot autorisé
+        transactions = transactions.iloc[0:0]
+
+# Liste des lots existants pour l'autocomplétion
+lots_existants = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+lots_existants = [l for l in lots_existants if l.strip()]
+
+# ─── Notification badge : inscriptions en attente ─────────────────────────────
+pending_count = count_pending_users() if is_admin else 0
 
 # ─── Top bar ─────────────────────────────────────────────────────────────────
 role_class = "role-admin" if is_admin else "role-visiteur"
 role_label = "Admin" if is_admin else "Visiteur"
+
+notif_html = ""
+if is_admin and pending_count > 0:
+    notif_html = f'<span class="notif-badge">{pending_count}</span>'
+
 st.markdown(f"""
 <div class="topbar">
     <div class="topbar-left">
@@ -523,9 +584,22 @@ st.markdown(f"""
     <div class="topbar-right">
         <span class="topbar-user">{username}</span>
         <span class="topbar-role {role_class}">{role_label}</span>
+        {notif_html}
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Bannière notification inscription en attente
+if is_admin and pending_count > 0:
+    st.markdown(f"""
+    <div class="notif-banner">
+        <div class="notif-banner-dot"></div>
+        <span>
+            <strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente d'approbation
+            — rendez-vous dans l'onglet <strong>Utilisateurs</strong>.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Bouton déconnexion
 dcol = st.columns([6, 1])[1]
@@ -566,7 +640,9 @@ st.markdown(f"""
 
 # ─── Onglets selon rôle ───────────────────────────────────────────────────────
 if is_admin:
-    tabs = st.tabs(["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots","Résumé par personne","Gestion des lots","Suivi des avances","Utilisateurs"])
+    # Ajouter le badge de notif dans le label de l'onglet Utilisateurs
+    users_tab_label = f"Utilisateurs ({pending_count})" if pending_count > 0 else "Utilisateurs"
+    tabs = st.tabs(["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots","Résumé par personne","Gestion des lots","Suivi des avances", users_tab_label])
     tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8 = tabs
 else:
     tabs = st.tabs(["Mes lots","Recherche","Graphiques"])
@@ -586,7 +662,32 @@ if is_admin:
             personne      = st.text_input("Personne")
             type_trans    = st.selectbox("Type de transaction", ["ACHAT", "VENTE", "DÉPENSE"])
         with c2:
-            lot           = st.text_input("Lot")
+            # ── Champ Lot avec autocomplétion ──────────────
+            st.markdown(
+                "<div style='font-size:0.75rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;"
+                "color:#999;margin-bottom:0.3rem;margin-top:0.25rem'>Lot</div>",
+                unsafe_allow_html=True)
+
+            # Filtre dynamique : afficher les suggestions selon ce qu'on tape
+            lot_input = st.text_input("Lot", key="lot_input", placeholder="Ex: LOT-001",
+                                       label_visibility="collapsed")
+
+            if lot_input:
+                suggestions = [l for l in lots_existants if lot_input.upper() in l.upper()]
+                if suggestions and lot_input.upper() not in [l.upper() for l in suggestions]:
+                    st.markdown(
+                        "<div style='font-size:0.72rem;color:#AAA;margin-bottom:0.3rem'>Lots existants correspondants :</div>",
+                        unsafe_allow_html=True)
+                    # Boutons de suggestion cliquables
+                    sug_cols = st.columns(min(len(suggestions), 4))
+                    for i, sug in enumerate(suggestions[:4]):
+                        with sug_cols[i]:
+                            if st.button(sug, key=f"sug_{sug}_{i}"):
+                                st.session_state["lot_input"] = sug
+                                st.rerun()
+
+            lot = lot_input  # valeur finale utilisée pour l'enregistrement
+
             description   = st.text_input("Description")
             montant       = st.number_input("Montant (MAD)", min_value=0.0, step=0.01)
         with c3:
@@ -745,66 +846,103 @@ if is_admin:
         # ── Demandes en attente ────────────────────────────
         pending = users_df[users_df["statut"] == "en_attente"]
         if not pending.empty:
-            st.markdown("**Demandes en attente d'approbation**")
+            st.markdown(f"**🔔 Demandes en attente d'approbation ({len(pending)})**")
             for _, row in pending.iterrows():
-                uname = row["username"]
-                pcol1, pcol2, pcol3, pcol4 = st.columns([2, 2, 1, 1], gap="small")
-                with pcol1:
-                    st.markdown(f"**{uname}**")
-                    st.markdown(f"<small style='color:#999'>{row.get('created_at','')}</small>", unsafe_allow_html=True)
-                with pcol2:
-                    lots_sel = st.multiselect(
-                        "Lots autorisés",
-                        options=lots_all,
-                        key=f"lots_{uname}"
-                    )
-                with pcol3:
-                    if st.button("Approuver", key=f"approve_{uname}"):
-                        users_df.loc[users_df["username"]==uname, "statut"] = "approuvé"
-                        users_df.loc[users_df["username"]==uname, "lots_autorises"] = ",".join(lots_sel)
-                        save_users(users_df)
-                        ok_msg(f"{uname} approuvé.")
-                        st.rerun()
-                with pcol4:
-                    if st.button("Refuser", key=f"reject_{uname}"):
-                        users_df.loc[users_df["username"]==uname, "statut"] = "rejeté"
-                        save_users(users_df)
-                        warn(f"{uname} refusé.")
-                        st.rerun()
+                uname  = row["username"]
+                u_nom  = str(row.get("nom", "")).strip()
+                u_pre  = str(row.get("prenom", "")).strip()
+                full_name = f"{u_pre} {u_nom}".strip() if (u_pre or u_nom) else "—"
+
+                with st.container():
+                    st.markdown(f"""
+                    <div class="user-card">
+                        <div class="user-card-name">{full_name}</div>
+                        <div class="user-card-meta">@{uname} · Inscrit le {row.get('created_at', '')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    pcol1, pcol2, pcol3 = st.columns([3, 1, 1], gap="small")
+                    with pcol1:
+                        lots_sel = st.multiselect(
+                            "Lots autorisés",
+                            options=lots_all,
+                            key=f"lots_{uname}"
+                        )
+                    with pcol2:
+                        if st.button("✓ Approuver", key=f"approve_{uname}"):
+                            users_df.loc[users_df["username"]==uname, "statut"] = "approuvé"
+                            users_df.loc[users_df["username"]==uname, "lots_autorises"] = ",".join(lots_sel)
+                            save_users(users_df)
+                            ok_msg(f"{uname} approuvé.")
+                            st.rerun()
+                    with pcol3:
+                        if st.button("✗ Refuser", key=f"reject_{uname}"):
+                            users_df.loc[users_df["username"]==uname, "statut"] = "rejeté"
+                            save_users(users_df)
+                            warn(f"{uname} refusé.")
+                            st.rerun()
             st.markdown("---")
 
-        # ── Tous les utilisateurs ──────────────────────────
+        # ── Recherche utilisateurs ─────────────────────────
         st.markdown("**Tous les utilisateurs**")
+        search_user = st.text_input(
+            "🔍 Rechercher un utilisateur",
+            placeholder="Nom, prénom ou identifiant...",
+            key="search_users"
+        )
+
         approved = users_df[users_df["statut"] != "en_attente"].copy()
+
+        # Filtrage par recherche nom/prénom/username
+        if search_user:
+            mask_u = (
+                approved["username"].astype(str).str.contains(search_user, case=False, na=False) |
+                approved["nom"].astype(str).str.contains(search_user, case=False, na=False) |
+                approved["prenom"].astype(str).str.contains(search_user, case=False, na=False)
+            )
+            approved = approved[mask_u]
+
+        st.markdown(f'<div class="info-count">{len(approved)} utilisateur(s)</div>', unsafe_allow_html=True)
 
         for _, row in approved.iterrows():
             uname = row["username"]
             if uname == username:
                 continue  # ne pas modifier son propre compte
-            ac1, ac2, ac3, ac4 = st.columns([2, 2, 1, 1], gap="small")
-            with ac1:
-                statut_badge = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
-                role_txt = "Admin" if row["role"]=="admin" else "Visiteur"
-                st.markdown(f"**{uname}** — {role_txt}")
-                st.markdown(f"<span class='badge-pending {statut_badge}'>{row['statut']}</span>", unsafe_allow_html=True)
-            with ac2:
-                lots_actuels = [l.strip() for l in str(row.get("lots_autorises","")).split(",") if l.strip()]
-                new_lots = st.multiselect("Lots", options=lots_all, default=lots_actuels, key=f"edit_lots_{uname}")
-            with ac3:
-                new_role = st.selectbox("Rôle", ["visiteur","admin"],
-                    index=0 if row["role"]=="visiteur" else 1, key=f"role_{uname}")
-            with ac4:
-                if st.button("Sauvegarder", key=f"save_{uname}"):
-                    users_df.loc[users_df["username"]==uname, "lots_autorises"] = ",".join(new_lots)
-                    users_df.loc[users_df["username"]==uname, "role"] = new_role
-                    save_users(users_df)
-                    ok_msg(f"{uname} mis à jour.")
-                    st.rerun()
-                if st.button("Supprimer", key=f"del_{uname}"):
-                    users_df = users_df[users_df["username"] != uname]
-                    save_users(users_df)
-                    ok_msg(f"{uname} supprimé.")
-                    st.rerun()
+
+            u_nom = str(row.get("nom", "")).strip()
+            u_pre = str(row.get("prenom", "")).strip()
+            full_name = f"{u_pre} {u_nom}".strip() if (u_pre or u_nom) else "—"
+
+            with st.container():
+                st.markdown(f"""
+                <div class="user-card">
+                    <div class="user-card-name">{full_name}</div>
+                    <div class="user-card-meta">@{uname} · Inscrit le {row.get('created_at', '')}
+                    · {'Admin' if row['role'] == 'admin' else 'Visiteur'}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                ac1, ac2, ac3, ac4 = st.columns([1, 3, 1, 1], gap="small")
+                with ac1:
+                    statut_badge = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
+                    st.markdown(f"<span class='badge-pending {statut_badge}'>{row['statut']}</span>", unsafe_allow_html=True)
+                with ac2:
+                    lots_actuels = [l.strip() for l in str(row.get("lots_autorises","")).split(",") if l.strip()]
+                    new_lots = st.multiselect("Lots", options=lots_all, default=lots_actuels, key=f"edit_lots_{uname}")
+                with ac3:
+                    new_role = st.selectbox("Rôle", ["visiteur","admin"],
+                        index=0 if row["role"]=="visiteur" else 1, key=f"role_{uname}")
+                with ac4:
+                    if st.button("Sauvegarder", key=f"save_{uname}"):
+                        users_df.loc[users_df["username"]==uname, "lots_autorises"] = ",".join(new_lots)
+                        users_df.loc[users_df["username"]==uname, "role"] = new_role
+                        save_users(users_df)
+                        ok_msg(f"{uname} mis à jour.")
+                        st.rerun()
+                    if st.button("Supprimer", key=f"del_{uname}"):
+                        users_df = users_df[users_df["username"] != uname]
+                        save_users(users_df)
+                        ok_msg(f"{uname} supprimé.")
+                        st.rerun()
 
 # ═══════════════════════════════════════════════════════
 # VISITEUR TABS
