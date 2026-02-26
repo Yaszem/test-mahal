@@ -652,16 +652,28 @@ def page_register():
 
         if st.button("S'inscrire →", key="btn_register", use_container_width=True,
                      disabled=st.session_state.get("registering", False)):
-            if not all([uname, pwd1, pwd2, prenom, nom]): err("Remplis tous les champs."); return
-            if len(uname) < 3: err("Identifiant trop court (3 car. min.)."); return
-            if not re.match(r'^[a-zA-Z0-9_\-\.]+$', uname):
-                err("Identifiant invalide (lettres, chiffres, _ - . uniquement)."); return
-            if len(pwd1) < 8: err("Mot de passe trop court (8 car. min.)."); return
-            if not any(c.isdigit() for c in pwd1) or not any(c.isalpha() for c in pwd1):
-                err("Le mot de passe doit contenir lettres et chiffres."); return
-            if pwd1 != pwd2: err("Les mots de passe ne correspondent pas."); return
-            if find_user(uname): err("Nom d'utilisateur déjà pris."); return
+            # Guard immédiat : bloquer tout re-clic avant même les validations
+            if st.session_state.get("registering", False):
+                return
             st.session_state["registering"] = True
+
+            if not all([uname, pwd1, pwd2, prenom, nom]):
+                st.session_state.pop("registering", None); err("Remplis tous les champs."); return
+            if len(uname) < 3:
+                st.session_state.pop("registering", None); err("Identifiant trop court (3 car. min.)."); return
+            if not re.match(r'^[a-zA-Z0-9_\-\.]+$', uname):
+                st.session_state.pop("registering", None); err("Identifiant invalide (lettres, chiffres, _ - . uniquement)."); return
+            if len(pwd1) < 8:
+                st.session_state.pop("registering", None); err("Mot de passe trop court (8 car. min.)."); return
+            if not any(c.isdigit() for c in pwd1) or not any(c.isalpha() for c in pwd1):
+                st.session_state.pop("registering", None); err("Le mot de passe doit contenir lettres et chiffres."); return
+            if pwd1 != pwd2:
+                st.session_state.pop("registering", None); err("Les mots de passe ne correspondent pas."); return
+            # Vérification doublons en lisant directement Sheets (bypass cache)
+            _load_sheet_cached.clear()
+            if find_user(uname):
+                st.session_state.pop("registering", None); err("Nom d'utilisateur déjà pris."); return
+
             is_first = not admin_exists()
             new_u = {"username": sanitize_text(uname),
                      "password_hash": hash_password(pwd1),
@@ -674,11 +686,9 @@ def page_register():
             try:
                 with st.spinner("Enregistrement…"):
                     append_row(new_u, "Utilisateurs")
+                    _load_sheet_cached.clear()
                 msg = "Compte créé ! Tu peux te connecter." if is_first else "Inscription envoyée — en attente d'approbation."
                 ok(msg)
-                # Vider les champs et déverrouiller après succès
-                for k in ["reg_prenom","reg_nom","reg_user","reg_pass","reg_pass2"]:
-                    st.session_state.pop(k, None)
                 st.session_state.pop("registering", None)
             except Exception as e:
                 st.session_state.pop("registering", None)
@@ -1107,21 +1117,26 @@ if is_admin:
                     pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
                     with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
                     with pc2:
-                        if st.button("✓ Approuver", key=f"approve_{uname}", disabled=st.session_state.get(f"approving_{uname}", False)):
-                            st.session_state[f"approving_{uname}"] = True
-                            with st.spinner("Enregistrement…"):
-                                users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
-                                users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
-                                save_users(users_df)
-                            # NE PAS pop le flag avant rerun — il sera nettoyé naturellement
-                            st.rerun()
+                        if st.button("✓ Approuver", key=f"approve_{uname}",
+                                     disabled=st.session_state.get(f"approving_{uname}", False)):
+                            if not st.session_state.get(f"approving_{uname}", False):
+                                st.session_state[f"approving_{uname}"] = True
+                                with st.spinner(""):
+                                    users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
+                                    users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
+                                    save_users(users_df)
+                                    _load_sheet_cached.clear()
+                                st.rerun()
                     with pc3:
-                        if st.button("✗ Refuser", key=f"reject_{uname}", disabled=st.session_state.get(f"rejecting_{uname}", False)):
-                            st.session_state[f"rejecting_{uname}"] = True
-                            with st.spinner("Enregistrement…"):
-                                users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
-                                save_users(users_df)
-                            st.rerun()
+                        if st.button("✗ Refuser", key=f"reject_{uname}",
+                                     disabled=st.session_state.get(f"rejecting_{uname}", False)):
+                            if not st.session_state.get(f"rejecting_{uname}", False):
+                                st.session_state[f"rejecting_{uname}"] = True
+                                with st.spinner(""):
+                                    users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
+                                    save_users(users_df)
+                                    _load_sheet_cached.clear()
+                                st.rerun()
             st.markdown("---")
 
         # ── Tous les utilisateurs ───────────────────────────────────────────────
