@@ -998,59 +998,45 @@ if is_admin:
     with tab8:
         st.markdown("""
         <style>
-        /* ── Bouton Modifier : visible UNIQUEMENT sur mobile ── */
-        .btn-modifier-wrap { display: none; }
+        /* ── Modal Streamlit — large sur mobile ── */
         @media screen and (max-width: 768px) {
-            .btn-modifier-wrap { display: block; }
-            /* Masquer les colonnes desktop (lots/rôle/save) sur mobile */
-            .user-desktop-actions { display: none !important; }
+            [data-testid="stDialog"] > div {
+                width: 96vw !important;
+                max-width: 96vw !important;
+                border-radius: 16px !important;
+                padding: 1.4rem !important;
+            }
         }
-        @media screen and (min-width: 769px) {
-            /* Sur desktop, masquer le bouton Modifier */
-            .btn-modifier-wrap { display: none !important; }
+        /* Séparateur zone danger dans la modal */
+        .modal-danger-sep { border:none; border-top:1px solid #F0EDE5; margin:1.2rem 0 0.5rem 0; }
+        .modal-danger-label { font-size:0.7rem; font-weight:600; letter-spacing:0.1em;
+            text-transform:uppercase; color:#C0392B; margin-bottom:0.4rem; }
+
+        /* ── Bouton Modifier : affiché UNIQUEMENT sur mobile ── */
+        .mobile-only-edit { display: none !important; }
+        @media screen and (max-width: 768px) {
+            .mobile-only-edit { display: block !important; }
         }
 
-        /* Style du bouton Modifier (chip sobre) */
-        .stButton > button[data-testid*="mobile_edit_"] {
+        /* ── Colonnes desktop (lots/rôle/save) : masquées sur mobile ── */
+        .desktop-only-edit { display: block; }
+        @media screen and (max-width: 768px) {
+            .desktop-only-edit { display: none !important; }
+        }
+
+        /* Style chip sobre pour le bouton Modifier */
+        .mobile-only-edit button {
             background: #F0EDE5 !important;
             color: #555 !important;
             border: 1px solid #DDDAD2 !important;
             border-radius: 20px !important;
-            padding: 0.25rem 0.9rem !important;
-            font-size: 0.78rem !important;
+            padding: 0.22rem 0.85rem !important;
+            font-size: 0.76rem !important;
             font-weight: 500 !important;
-            margin-top: 0.3rem !important;
+            margin-top: 0.35rem !important;
             letter-spacing: 0.02em !important;
-        }
-
-        /* Modal Streamlit — plein écran sur mobile */
-        @media screen and (max-width: 768px) {
-            [data-testid="stDialog"] > div {
-                width: 95vw !important;
-                max-width: 95vw !important;
-                border-radius: 16px !important;
-                padding: 1.5rem !important;
-            }
-            [data-testid="stDialog"] h2 {
-                font-family: 'DM Serif Display', serif !important;
-                font-size: 1.3rem !important;
-                color: #1C1C1C !important;
-            }
-        }
-
-        /* Séparateur danger dans la modal */
-        .modal-danger-sep {
-            border: none;
-            border-top: 1px solid #F0EDE5;
-            margin: 1.2rem 0 0.8rem 0;
-        }
-        .modal-danger-label {
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: #C0392B;
-            margin-bottom: 0.5rem;
+            width: auto !important;
+            min-height: unset !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -1059,42 +1045,56 @@ if is_admin:
         users_df = get_users()
         lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
 
-        # ── Dialog modal pour édition mobile ───────────────────────────────────
+        # ── Initialisation session_state pour la modal ─────────────────────────
+        if "modal_user" not in st.session_state:
+            st.session_state.modal_user = None
+
+        # ── Dialog modal (s'ouvre quand modal_user est défini) ─────────────────
         @st.dialog("Modifier l'utilisateur")
-        def modal_edit_user(uname_edit, users_ref, lots_ref):
-            row_edit = users_ref[users_ref["username"] == uname_edit].iloc[0]
+        def modal_edit_user(uname_edit):
+            users_ref = get_users()
+            row_edit = users_ref[users_ref["username"] == uname_edit]
+            if row_edit.empty:
+                st.warning("Utilisateur introuvable."); return
+            row_edit = row_edit.iloc[0]
             fn_edit = f"{str(row_edit.get('prenom','')).strip()} {str(row_edit.get('nom','')).strip()}".strip() or uname_edit
 
             st.markdown(f"""
             <div style="margin-bottom:1.2rem">
-              <div style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:#1C1C1C;margin-bottom:0.2rem">{fn_edit}</div>
-              <div style="font-size:0.75rem;color:#AAA">@{uname_edit}</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;color:#1C1C1C;margin-bottom:0.15rem">{fn_edit}</div>
+              <div style="font-size:0.73rem;color:#AAA;letter-spacing:0.03em">@{uname_edit}</div>
             </div>
             """, unsafe_allow_html=True)
 
-            la_edit = [l.strip() for l in str(row_edit.get("lots_autorises","")).split(",") if l.strip()]
-            new_lots_m = st.multiselect("Lots autorisés", options=lots_ref, default=la_edit, key=f"m_lots_{uname_edit}")
+            la_edit = [x.strip() for x in str(row_edit.get("lots_autorises","")).split(",") if x.strip()]
+            new_lots_m = st.multiselect("Lots autorisés", options=lots_all, default=la_edit, key=f"m_lots_{uname_edit}")
             new_role_m = st.selectbox("Rôle", ["visiteur","admin"],
                                        index=0 if row_edit["role"]=="visiteur" else 1,
                                        key=f"m_role_{uname_edit}")
 
-            if st.button("💾 Sauvegarder", key=f"m_save_{uname_edit}", use_container_width=True):
-                users_ref.loc[users_ref["username"]==uname_edit,"lots_autorises"] = ",".join(new_lots_m)
-                users_ref.loc[users_ref["username"]==uname_edit,"role"] = new_role_m
+            if st.button("Sauvegarder", key=f"m_save_{uname_edit}", use_container_width=True):
+                users_ref.loc[users_ref["username"]==uname_edit, "lots_autorises"] = ",".join(new_lots_m)
+                users_ref.loc[users_ref["username"]==uname_edit, "role"] = new_role_m
                 save_users(users_ref)
+                st.session_state.modal_user = None
                 ok(f"{uname_edit} mis à jour.")
                 st.rerun()
 
             st.markdown('<hr class="modal-danger-sep"><div class="modal-danger-label">Zone dangereuse</div>', unsafe_allow_html=True)
-            confirm_del = st.checkbox("Je confirme la suppression définitive", key=f"m_confirm_{uname_edit}")
-            if st.button("🗑 Supprimer cet utilisateur", key=f"m_del_{uname_edit}", use_container_width=True):
-                if not confirm_del:
+            confirm_del_m = st.checkbox("Je confirme la suppression définitive", key=f"m_confirm_{uname_edit}")
+            if st.button("Supprimer cet utilisateur", key=f"m_del_{uname_edit}", use_container_width=True):
+                if not confirm_del_m:
                     st.warning("Coche la case de confirmation.")
                 else:
-                    users_ref = users_ref[users_ref["username"]!=uname_edit]
+                    users_ref = users_ref[users_ref["username"] != uname_edit]
                     save_users(users_ref)
+                    st.session_state.modal_user = None
                     ok(f"{uname_edit} supprimé.")
                     st.rerun()
+
+        # Ouvrir la modal si demandée
+        if st.session_state.modal_user:
+            modal_edit_user(st.session_state.modal_user)
 
         # ── Demandes en attente ─────────────────────────────────────────────────
         pending = users_df[users_df["statut"] == "en_attente"]
@@ -1138,7 +1138,7 @@ if is_admin:
             role_label_u = "Admin" if row["role"]=="admin" else "Visiteur"
 
             with st.container():
-                # Carte utilisateur avec badge statut
+                # Carte utilisateur
                 st.markdown(f"""
                 <div class="user-card">
                   <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1151,17 +1151,18 @@ if is_admin:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # ── MOBILE : bouton Modifier → modal ──
-                st.markdown('<div class="btn-modifier-wrap">', unsafe_allow_html=True)
+                # ── MOBILE uniquement : bouton Modifier → ouvre la modal ──
+                st.markdown('<div class="mobile-only-edit">', unsafe_allow_html=True)
                 if st.button("✏️ Modifier", key=f"mobile_edit_{uname}"):
-                    modal_edit_user(uname, users_df, lots_all)
+                    st.session_state.modal_user = uname
+                    st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
-                # ── DESKTOP : inline colonnes (comportement original) ──
-                st.markdown('<div class="user-desktop-actions">', unsafe_allow_html=True)
+                # ── DESKTOP uniquement : colonnes inline ──
+                st.markdown('<div class="desktop-only-edit">', unsafe_allow_html=True)
                 ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
                 with ac2:
-                    la = [l.strip() for l in str(row.get("lots_autorises","")).split(",") if l.strip()]
+                    la = [x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]
                     new_lots = st.multiselect("Lots", options=lots_all, default=la, key=f"edit_lots_{uname}")
                 with ac3:
                     new_role = st.selectbox("Rôle", ["visiteur","admin"], index=0 if row["role"]=="visiteur" else 1, key=f"role_{uname}")
