@@ -227,35 +227,45 @@ def count_pending():
 
 import hashlib as _hl
 
-# ─── Session — persistance après refresh via token URL ────────────────────────
-for k, v in [("authenticated", False), ("username", ""), ("role", ""), ("lots_autorises", []), ("auth_page", "login")]:
+SECRET_KEY = SPREADSHEET_ID[:16]
+
+# ─── Cache serveur : persiste tant que l'app tourne (survit au refresh) ────────
+@st.cache_resource
+def _session_store():
+    return {}
+
+def _make_token(username):
+    raw = f"{username}:{SECRET_KEY}"
+    return _hl.sha256(raw.encode()).hexdigest()[:40]
+
+def _store_session(user_dict):
+    token = _make_token(user_dict["username"])
+    _session_store()[token] = user_dict
+    return token
+
+def _load_session(token):
+    return _session_store().get(token, None)
+
+def _clear_session(token):
+    _session_store().pop(token, None)
+
+# ─── Session state init ────────────────────────────────────────────────────────
+for k, v in [("authenticated", False), ("username", ""), ("role", ""),
+              ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
     if k not in st.session_state:
         st.session_state[k] = v
 
-# Tentative de restauration depuis le token dans l'URL
+# Restauration depuis l'URL au refresh
 if not st.session_state.authenticated:
-    params = st.query_params
-    token = params.get("t", "")
-    if token:
-        # Chercher le user correspondant à ce token dans le cache
-        cached = st.session_state.get("_token_cache", {})
-        if token in cached:
-            u = cached[token]
+    token_url = st.query_params.get("t", "")
+    if token_url:
+        u = _load_session(token_url)
+        if u:
             st.session_state.authenticated = True
             st.session_state.username = u["username"]
             st.session_state.role = u["role"]
             st.session_state.lots_autorises = u["lots_autorises"]
-
-def _make_token(username, role):
-    raw = f"{username}:{role}:{SPREADSHEET_ID}"
-    return _hl.sha256(raw.encode()).hexdigest()[:32]
-
-def _store_token(user_dict):
-    token = _make_token(user_dict["username"], user_dict["role"])
-    if "_token_cache" not in st.session_state:
-        st.session_state["_token_cache"] = {}
-    st.session_state["_token_cache"][token] = user_dict
-    return token
+            st.session_state["_sess_token"] = token_url
 
 # ─── UI helpers ───────────────────────────────────────────────────────────────
 def warn(m): st.markdown(f"<div style='background:#FFF8E1;border:1px solid #F0C040;border-radius:8px;padding:0.65rem 1rem;color:#7A5C00;font-size:0.88rem;margin-bottom:0.5rem'>{m}</div>", unsafe_allow_html=True)
@@ -293,8 +303,9 @@ def page_login():
             st.session_state.username = str(user["username"])
             st.session_state.role = str(user["role"])
             st.session_state.lots_autorises = lots_list
-            # Stocker token pour survie au refresh
-            token = _store_token({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
+            # Stocker session côté serveur et token dans l'URL
+            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
+            st.session_state["_sess_token"] = token
             st.query_params["t"] = token
             st.rerun()
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
@@ -467,8 +478,9 @@ if is_admin and pending_count > 0:
 dcol = st.columns([6, 1])[1]
 with dcol:
     if st.button("Déconnexion", key="btn_logout"):
-        for k in ["authenticated","username","role","lots_autorises","_token_cache"]: st.session_state.pop(k, None)
+        _clear_session(st.session_state.get("_sess_token", ""))
         st.query_params.clear()
+        for k in ["authenticated","username","role","lots_autorises","_sess_token"]: st.session_state.pop(k, None)
         st.session_state.auth_page = "login"; st.rerun()
 
 # ─── Métriques ─────────────────────────────────────────────────────────────────
