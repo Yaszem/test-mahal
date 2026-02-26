@@ -47,7 +47,7 @@ html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM
     border: 1px solid rgba(247,246,242,0.04);
 }
 .auth-brand { font-family: 'DM Serif Display', serif; font-size: 4rem; color: #F7F6F2; line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
-.auth-brand-sub { font-size: 0.72rem; color: rgba(247,246,242,0.28); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4rem; }
+.auth-brand-sub { font-size: 0.72rem; color: #F7F6F2; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4rem; }
 .auth-features { display: flex; flex-direction: column; gap: 1.6rem; }
 .auth-feature-item { display: flex; align-items: flex-start; gap: 1.2rem; }
 .auth-feature-dot { width: 1px; height: 36px; background: rgba(247,246,242,0.18); flex-shrink: 0; margin-top: 2px; }
@@ -270,24 +270,19 @@ def page_login():
     with left:
         st.markdown("""
         <div class="auth-left">
-            <div class="auth-brand">Mahal</div>
-            <div class="auth-brand-sub">Gestion de stock &amp; transactions</div>
             <div class="auth-features">
                 <div class="auth-feature-item">
                     <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Suivi des achats, ventes et dépenses</span>
                 </div>
                 <div class="auth-feature-item">
                     <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Catalogue des lots en temps réel</span>
+                </div>
+            <div class="auth-brand">Mahal</div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
                 </div>
                 <div class="auth-feature-item">
                     <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Graphiques et analyses détaillées</span>
-                </div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Accès sécurisé par rôles</span>
                 </div>
             </div>
             <div class="auth-bottom-badge">Chiffrement bcrypt &nbsp;·&nbsp; Accès contrôlé</div>
