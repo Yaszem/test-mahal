@@ -271,9 +271,8 @@ def page_login():
         st.markdown("""
         <div class="auth-left">
             <div class="auth-features">
-                        <div class="auth-brand">Mahal</div>
+                <div class="auth-brand">Mahal</div>
             </div>
-            <div class="auth-bottom-badge">Chiffrement bcrypt &nbsp;·&nbsp; Accès contrôlé</div>
         </div>
         """, unsafe_allow_html=True)
 
