@@ -107,7 +107,7 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
 .stButton > button { background: #1C1C1C !important; color: #F7F6F2 !important; border: none !important; border-radius: 8px !important; padding: 0.65rem 2.2rem !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.88rem !important; font-weight: 500 !important; letter-spacing: 0.03em !important; margin-top: 1rem; transition: opacity 0.2s ease !important; }
 .stButton > button:hover { opacity: 0.72 !important; }
 
-/* ALERTS — position normale (pas de margin-top négatif) */
+/* ALERTS */
 .stSuccess > div { background: #F0F7F0 !important; border: 1px solid #C3DEC3 !important; border-radius: 8px !important; color: #2D6A2D !important; font-size: 0.88rem !important; }
 
 /* DATAFRAME */
@@ -150,8 +150,184 @@ div[data-testid="stStatusWidget"] { display: none !important; }
 [data-testid="stHorizontalBlock"] > div [data-testid="stButton"] > button:hover {
     background: #E8E5DE !important; opacity: 1 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — détection écran téléphone (≤ 768px)
+   Toutes les couleurs, polices et fonctionnalités restent
+   identiques. Seuls les espacements, tailles et layouts changent.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media screen and (max-width: 768px) {
+
+    /* Padding général réduit */
+    .block-container {
+        padding: 1rem 1rem 2rem 1rem !important;
+        max-width: 100% !important;
+    }
+
+    /* ── Auth : empiler les colonnes ── */
+    /* Cacher la colonne gauche sombre sur mobile (décoration uniquement) */
+    .auth-brand { font-size: 2.4rem !important; }
+    .auth-form-title { font-size: 1.6rem !important; }
+    .auth-form-desc { font-size: 0.8rem !important; margin-bottom: 1.2rem !important; }
+
+    /* ── Top bar ── */
+    .topbar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.4rem !important;
+        margin-bottom: 0.8rem !important;
+    }
+    .topbar-user { padding-top: 0 !important; font-size: 0.75rem !important; }
+    .page-title { font-size: 1.8rem !important; }
+    .page-subtitle {
+        font-size: 0.72rem !important;
+        margin-bottom: 1rem !important;
+        letter-spacing: 0.05em !important;
+    }
+
+    /* ── Bannière notification ── */
+    .notif-banner {
+        padding: 0.6rem 0.8rem !important;
+        font-size: 0.8rem !important;
+        flex-wrap: wrap !important;
+    }
+
+    /* ── Métriques : 2 colonnes en grille sur mobile ── */
+    .metric-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.6rem !important;
+        margin-bottom: 1.2rem !important;
+    }
+    .metric-card {
+        padding: 0.8rem 1rem !important;
+    }
+    .metric-label { font-size: 0.65rem !important; }
+    .metric-value { font-size: 1.2rem !important; }
+
+    /* ── Section titles ── */
+    .section-title {
+        font-size: 1.1rem !important;
+        margin-top: 1.2rem !important;
+        margin-bottom: 0.8rem !important;
+    }
+
+    /* ── Tabs : scrollable horizontalement ── */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none !important; }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 0.78rem !important;
+        padding: 0.5rem 0.85rem !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* ── Colonnes Streamlit → pleine largeur sur mobile ── */
+    /* Streamlit column wrappers */
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+        gap: 0 !important;
+    }
+
+    /* ── Inputs plus grands (touch-friendly) ── */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stDateInput > div > div > input {
+        font-size: 1rem !important;
+        padding: 0.65rem 0.9rem !important;
+        min-height: 44px !important;
+    }
+    .stSelectbox > div > div > div {
+        font-size: 1rem !important;
+        min-height: 44px !important;
+    }
+
+    /* ── Bouton principal plus grand (touch) ── */
+    .stButton > button {
+        width: 100% !important;
+        padding: 0.8rem 1rem !important;
+        font-size: 0.95rem !important;
+        min-height: 44px !important;
+    }
+
+    /* ── Dataframe : scroll horizontal ── */
+    .stDataFrame {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .stDataFrame table {
+        font-size: 0.78rem !important;
+        min-width: 500px !important;
+    }
+    .stDataFrame thead th,
+    .stDataFrame tbody td {
+        padding: 0.5rem 0.7rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* ── User card ── */
+    .user-card { padding: 0.8rem 0.9rem !important; }
+    .user-card-name { font-size: 0.88rem !important; }
+    .user-card-meta { font-size: 0.7rem !important; }
+
+    /* ── Auth panel gauche : masqué sur très petit écran (décoratif) ── */
+    /* On garde la colonne mais on réduit son contenu */
+    .auth-brand { margin-bottom: 0.3rem !important; }
+    .auth-brand-sub { margin-bottom: 1rem !important; }
+
+    /* ── Graphiques : pleine largeur ── */
+    .js-plotly-plot, .plotly { width: 100% !important; }
+
+    /* ── Checkbox touch-friendly ── */
+    .stCheckbox label { font-size: 0.85rem !important; }
+    .stCheckbox [data-testid="stCheckbox"] { min-height: 36px !important; }
+
+    /* ── Multiselect ── */
+    [data-baseweb="tag"] { font-size: 0.72rem !important; }
+
+    /* ── Info count ── */
+    .info-count { font-size: 0.75rem !important; }
+
+    /* ── Notif badge ── */
+    .notif-badge { width: 16px !important; height: 16px !important; font-size: 0.6rem !important; }
+
+    /* ── Boutons de déconnexion alignés ── */
+    [data-testid="stButton"] { width: 100% !important; }
+
+    /* ── Réduire les chips suggestion ── */
+    [data-testid="stHorizontalBlock"] > div [data-testid="stButton"] > button {
+        font-size: 0.72rem !important;
+        padding: 0.2rem 0.6rem !important;
+    }
+}
+
+/* Très petit écran (≤ 480px) : ajustements supplémentaires */
+@media screen and (max-width: 480px) {
+    .block-container { padding: 0.7rem 0.6rem 1.5rem 0.6rem !important; }
+    .page-title { font-size: 1.5rem !important; }
+    .metric-value { font-size: 1rem !important; }
+    .metric-label { font-size: 0.6rem !important; }
+    .metric-card { padding: 0.65rem 0.75rem !important; }
+    .auth-brand { font-size: 2rem !important; }
+    .auth-form-title { font-size: 1.35rem !important; }
+    .stTabs [data-baseweb="tab"] { font-size: 0.72rem !important; padding: 0.4rem 0.7rem !important; }
+    .section-title { font-size: 1rem !important; }
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 # ─── Google Sheets ─────────────────────────────────────────────────────────────
 @st.cache_resource
@@ -313,7 +489,6 @@ def page_login():
             st.session_state.username = str(user["username"])
             st.session_state.role = str(user["role"])
             st.session_state.lots_autorises = lots_list
-            # Stocker session côté serveur et token dans l'URL
             token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
             st.session_state["_sess_token"] = token
             st.query_params["t"] = token
@@ -531,7 +706,6 @@ if is_admin:
 
         with c1:
             date = st.date_input("Date", datetime.now())
-            # Personne : selectbox searchable — si pas trouvé, traité comme nouveau
             personne_val = st.selectbox(
                 "Personne",
                 options=personnes_existantes,
@@ -544,7 +718,6 @@ if is_admin:
             type_trans = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"])
 
         with c2:
-            # Lot : selectbox searchable — si pas trouvé, traité comme nouveau
             lot_val = st.selectbox(
                 "Lot",
                 options=lots_existants,
@@ -687,7 +860,6 @@ if is_admin:
 
         st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
 
-        # Filtres pour retrouver la transaction
         sf1, sf2, sf3 = st.columns(3, gap="large")
         with sf1:
             lots_f  = ["Tous"] + sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
@@ -705,7 +877,6 @@ if is_admin:
         if f_type != "Tous": df_del = df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
 
         if not df_del.empty:
-            # Créer des labels lisibles pour chaque ligne
             def make_label(r):
                 return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
             labels = [make_label(row) for _, row in df_del.iterrows()]
