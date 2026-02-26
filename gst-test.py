@@ -521,33 +521,23 @@ if is_admin:
 
         with c1:
             date = st.date_input("Date", datetime.now())
-            # Personne + autocomplétion
-            personne_input = st.text_input("Personne", key="personne_input", placeholder="Ex: DUPONT")
-            if personne_input:
-                sug_p = [p for p in personnes_existantes if personne_input.upper() in p.upper()
-                         and personne_input.upper() != p.upper()][:5]
-                if sug_p:
-                    st.markdown("<div style='font-size:0.68rem;color:#BBB;margin-bottom:0.2rem;letter-spacing:0.04em'>Suggestions :</div>", unsafe_allow_html=True)
-                    sp_cols = st.columns(len(sug_p))
-                    for i, sp in enumerate(sug_p):
-                        with sp_cols[i]:
-                            if st.button(sp, key=f"sp_{sp}_{i}", use_container_width=True):
-                                st.session_state["personne_input"] = sp; st.rerun()
+            # Personne : selectbox avec option nouvelle personne
+            NOUVELLE_PERS = "＋ Nouvelle personne..."
+            choix_pers = st.selectbox("Personne", [NOUVELLE_PERS] + personnes_existantes, key="sel_personne")
+            if choix_pers == NOUVELLE_PERS:
+                personne_val = st.text_input("Nom de la personne", key="new_personne_input", placeholder="Ex: DUPONT")
+            else:
+                personne_val = choix_pers
             type_trans = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"])
 
         with c2:
-            # Lot + autocomplétion
-            lot_input = st.text_input("Lot", key="lot_input", placeholder="Ex: LOT-001")
-            if lot_input:
-                sug_l = [l for l in lots_existants if lot_input.upper() in l.upper()
-                         and lot_input.upper() != l.upper()][:5]
-                if sug_l:
-                    st.markdown("<div style='font-size:0.68rem;color:#BBB;margin-bottom:0.2rem;letter-spacing:0.04em'>Suggestions :</div>", unsafe_allow_html=True)
-                    sl_cols = st.columns(len(sug_l))
-                    for i, sl_item in enumerate(sug_l):
-                        with sl_cols[i]:
-                            if st.button(sl_item, key=f"sl_{sl_item}_{i}", use_container_width=True):
-                                st.session_state["lot_input"] = sl_item; st.rerun()
+            # Lot : selectbox avec option nouveau lot
+            NOUVEAU_LOT = "＋ Nouveau lot..."
+            choix_lot = st.selectbox("Lot", [NOUVEAU_LOT] + lots_existants, key="sel_lot")
+            if choix_lot == NOUVEAU_LOT:
+                lot_val = st.text_input("Nom du lot", key="new_lot_input", placeholder="Ex: LOT-001")
+            else:
+                lot_val = choix_lot
             description = st.text_input("Description")
             montant     = st.number_input("Montant (MAD)", min_value=0.0, step=0.01)
 
@@ -559,9 +549,9 @@ if is_admin:
         remarque = st.text_input("Remarque")
 
         if st.button("Enregistrer"):
-            row = {'Date': str(date), 'Personne': personne_input.upper(),
+            row = {'Date': str(date), 'Personne': personne_val.upper(),
                    'Type (Achat/Vente/Dépense)': type_trans, 'Description': description,
-                   'Lot': lot_input.upper(), 'Montant (MAD)': montant,
+                   'Lot': lot_val.upper(), 'Montant (MAD)': montant,
                    'Quantité (pièces)': quantite, 'Mode de paiement': mode_paiement,
                    'Remarque': remarque, 'Statut du lot': statut_lot}
             try:
