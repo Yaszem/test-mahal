@@ -1008,7 +1008,7 @@ if is_admin:
             labels = [make_label(row) for _, row in df_del.iterrows()]
             idx_to_orig = df_del.index.tolist()
 
-            st.markdown(f'<div class="info-count">{len(df_del)} transaction(s) filtrée(s)</div>', unsafe_allow_html=True)
+            st.caption(f"{len(df_del)} transaction(s) filtrée(s)")
             choix_label = st.selectbox("Choisir la transaction à supprimer", ["— sélectionner —"] + labels, key="del_single_sel")
 
             if choix_label != "— sélectionner —":
@@ -1016,16 +1016,9 @@ if is_admin:
                 orig_idx  = idx_to_orig[ligne_idx]
                 row_sel   = transactions.loc[orig_idx]
 
-                st.markdown(f"""
-                <div class="user-card" style="margin-top:0.5rem">
-                    <div class="user-card-name">{h(str(row_sel.get('Lot','')))} — {h(str(row_sel.get('Type (Achat/Vente/Dépense)','')))} </div>
-                    <div class="user-card-meta">
-                        {h(str(row_sel.get('Date','')))} · {h(str(row_sel.get('Personne','')))} · 
-                        {float(row_sel.get('Montant (MAD)',0)):,.0f} MAD · 
-                        {h(str(row_sel.get('Description','')))}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                with st.container(border=True):
+                    st.markdown(f"**{h(str(row_sel.get('Lot','')))} — {h(str(row_sel.get('Type (Achat/Vente/Dépense)','')))}**", unsafe_allow_html=True)
+                    st.caption(f"{row_sel.get('Date','')} · {row_sel.get('Personne','')} · {float(row_sel.get('Montant (MAD)',0)):,.0f} MAD · {row_sel.get('Description','')}")
 
                 c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
                 if st.button("Supprimer cette transaction", key="btn_del_single"):
@@ -1047,7 +1040,7 @@ if is_admin:
             lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
             lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
             if lot_sup != "— sélectionner —":
-                st.markdown(f'<div class="info-count">{len(transactions[transactions["Lot"]==lot_sup])} transaction(s)</div>', unsafe_allow_html=True)
+                st.caption(f"{len(transactions[transactions['Lot']==lot_sup])} transaction(s)")
             c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
             if st.button("Supprimer le lot", key="btn_del_lot"):
                 if lot_sup == "— sélectionner —": st.warning("Sélectionne un lot.")
@@ -1060,7 +1053,7 @@ if is_admin:
             pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
             pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
             if pers_sup != "— sélectionner —":
-                st.markdown(f'<div class="info-count">{len(transactions[transactions["Personne"]==pers_sup])} transaction(s)</div>', unsafe_allow_html=True)
+                st.caption(f"{len(transactions[transactions['Personne']==pers_sup])} transaction(s)")
             c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
             if st.button("Supprimer la personne", key="btn_del_pers"):
                 if pers_sup == "— sélectionner —": st.warning("Sélectionne une personne.")
