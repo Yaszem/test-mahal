@@ -1066,182 +1066,12 @@ if is_admin:
         st.markdown("""
         <style>
 
-        /* ═══ DIALOG MODAL ═══ */
-        /* Fond de la modal en blanc pur, texte lisible */
-        [data-testid="stDialog"] {
-            background: #FFFFFF !important;
-        }
-        [data-testid="stDialog"] * {
-            color: #1C1C1C !important;
-        }
-        /* Titre de la modal */
-        [data-testid="stDialog"] h2 {
-            font-family: 'DM Serif Display', serif !important;
-            font-size: 1.25rem !important;
-            color: #1C1C1C !important;
-            letter-spacing: -0.01em !important;
-        }
-        /* Nom de l'utilisateur dans la modal — bien visible */
-        .modal-user-name {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.35rem;
-            color: #1C1C1C !important;
-            margin-bottom: 0.15rem;
-            line-height: 1.1;
-        }
-        .modal-user-handle {
-            font-size: 0.75rem;
-            color: #999 !important;
-            letter-spacing: 0.04em;
-            margin-bottom: 1.4rem;
-        }
-        /* Labels inputs dans la modal */
-        [data-testid="stDialog"] label,
-        [data-testid="stDialog"] .stSelectbox label,
-        [data-testid="stDialog"] .stMultiSelect label {
-            color: #888 !important;
-            font-size: 0.72rem !important;
-            font-weight: 600 !important;
-            letter-spacing: 0.08em !important;
-            text-transform: uppercase !important;
-        }
-        /* Checkbox "Je confirme" — texte claire et lisible */
-        [data-testid="stDialog"] .stCheckbox label,
-        [data-testid="stDialog"] .stCheckbox label p,
-        [data-testid="stDialog"] .stCheckbox span {
-            color: #666 !important;
-            font-size: 0.83rem !important;
-            font-weight: 400 !important;
-            letter-spacing: 0 !important;
-            text-transform: none !important;
-        }
-        /* Bouton Supprimer dans la modal — rouge discret */
-        [data-testid="stDialog"] button[data-testid*="m_del_"] {
-            background: #FDF1F0 !important;
-            color: #C0392B !important;
-            border: 1px solid #E8B4B0 !important;
-        }
-        [data-testid="stDialog"] button[data-testid*="m_del_"]:hover {
-            background: #FDECEA !important;
-            opacity: 1 !important;
-        }
-        /* Séparateur zone danger */
-        .modal-danger-sep {
-            border: none;
-            border-top: 1px solid #F0EDE5;
-            margin: 1.4rem 0 0.7rem 0;
-        }
-        .modal-danger-label {
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: #C0392B !important;
-            margin-bottom: 0.5rem;
-        }
-        /* Taille mobile */
-        @media screen and (max-width: 768px) {
-            [data-testid="stDialog"] > div {
-                width: 96vw !important;
-                max-width: 96vw !important;
-                border-radius: 18px !important;
-                padding: 1.5rem !important;
-            }
-        }
-
-        /* ═══ BOUTON MODIFIER : mobile seulement ═══ */
-        /* Par défaut (desktop) : caché */
-        .mobile-edit-btn { display: none !important; }
-        /* Mobile : visible */
-        @media screen and (max-width: 768px) {
-            .mobile-edit-btn { display: block !important; }
-        }
-        /* Style chip sobre */
-        .mobile-edit-btn > div > button,
-        .mobile-edit-btn button {
-            background: #F0EDE5 !important;
-            color: #555 !important;
-            border: 1px solid #DDDAD2 !important;
-            border-radius: 20px !important;
-            padding: 0.22rem 1rem !important;
-            font-size: 0.76rem !important;
-            font-weight: 500 !important;
-            margin-top: 0.4rem !important;
-            letter-spacing: 0.02em !important;
-            width: auto !important;
-            min-height: unset !important;
-        }
-        .mobile-edit-btn > div > button:hover,
-        .mobile-edit-btn button:hover {
-            background: #E8E5DE !important;
-            opacity: 1 !important;
-        }
-
-        /* ═══ CHAMPS DESKTOP (lots/rôle/save/supprimer) ═══ */
-        /* Par défaut (desktop) : visible */
-        .desktop-edit-fields { display: block; }
-        /* Mobile : caché */
-        @media screen and (max-width: 768px) {
-            .desktop-edit-fields { display: none !important; }
-        }
-
         </style>
         """, unsafe_allow_html=True)
 
         st.markdown('<div class="section-title">Gestion des utilisateurs</div>', unsafe_allow_html=True)
         users_df = get_users()
         lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-
-        # ── Session state pour la modal ────────────────────────────────────────
-        if "modal_user" not in st.session_state:
-            st.session_state.modal_user = None
-
-        # ── Dialog modal ───────────────────────────────────────────────────────
-        @st.dialog("Modifier l'utilisateur")
-        def modal_edit_user(uname_edit):
-            users_ref = get_users()
-            row_edit = users_ref[users_ref["username"] == uname_edit]
-            if row_edit.empty:
-                st.warning("Utilisateur introuvable."); return
-            row_edit = row_edit.iloc[0]
-            fn_edit = f"{str(row_edit.get('prenom','')).strip()} {str(row_edit.get('nom','')).strip()}".strip() or uname_edit
-
-            # En-tête : nom bien lisible sur fond blanc
-            st.markdown(f"""
-            <div class="modal-user-name">{h(fn_edit)}</div>
-            <div class="modal-user-handle">@{h(uname_edit)}</div>
-            """, unsafe_allow_html=True)
-
-            la_edit = [x.strip() for x in str(row_edit.get("lots_autorises","")).split(",") if x.strip()]
-            new_lots_m = st.multiselect("Lots autorisés", options=lots_all, default=la_edit, key=f"m_lots_{uname_edit}")
-            new_role_m = st.selectbox("Rôle", ["visiteur","admin"],
-                                       index=0 if row_edit["role"]=="visiteur" else 1,
-                                       key=f"m_role_{uname_edit}")
-
-            if st.button("Sauvegarder", key=f"m_save_{uname_edit}", use_container_width=True):
-                users_ref.loc[users_ref["username"]==uname_edit, "lots_autorises"] = ",".join(new_lots_m)
-                users_ref.loc[users_ref["username"]==uname_edit, "role"] = new_role_m
-                save_users(users_ref)
-                st.session_state.modal_user = None
-                ok(f"{uname_edit} mis à jour.")
-                st.rerun()
-
-            # Zone danger
-            st.markdown('<hr class="modal-danger-sep"><div class="modal-danger-label">Zone dangereuse</div>', unsafe_allow_html=True)
-            confirm_del_m = st.checkbox("Je confirme la suppression définitive", key=f"m_confirm_{uname_edit}")
-            if st.button("Supprimer cet utilisateur", key=f"m_del_{uname_edit}", use_container_width=True):
-                if not confirm_del_m:
-                    st.warning("Coche la case de confirmation.")
-                else:
-                    users_ref = users_ref[users_ref["username"] != uname_edit]
-                    save_users(users_ref)
-                    st.session_state.modal_user = None
-                    ok(f"{uname_edit} supprimé.")
-                    st.rerun()
-
-        # Déclencher la modal
-        if st.session_state.modal_user:
-            modal_edit_user(st.session_state.modal_user)
 
         # ── Demandes en attente ─────────────────────────────────────────────────
         pending = users_df[users_df["statut"] == "en_attente"]
@@ -1285,7 +1115,6 @@ if is_admin:
             role_label_u = "Admin" if row["role"]=="admin" else "Visiteur"
 
             with st.container():
-                # Carte utilisateur (identique desktop + mobile)
                 st.markdown(f"""
                 <div class="user-card">
                   <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1298,15 +1127,6 @@ if is_admin:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # ── MOBILE UNIQUEMENT : bouton ✏️ Modifier (caché sur desktop via CSS) ──
-                st.markdown('<div class="mobile-edit-btn">', unsafe_allow_html=True)
-                if st.button("✏️ Modifier", key=f"mobile_edit_{uname}"):
-                    st.session_state.modal_user = uname
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-
-                # ── DESKTOP UNIQUEMENT : champs inline (cachés sur mobile via CSS) ──
-                st.markdown('<div class="desktop-edit-fields">', unsafe_allow_html=True)
                 ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
                 with ac2:
                     la = [x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]
@@ -1321,7 +1141,6 @@ if is_admin:
                     if st.button("Supprimer", key=f"del_{uname}"):
                         users_df = users_df[users_df["username"]!=uname]
                         save_users(users_df); ok(f"{uname} supprimé."); st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR
