@@ -527,10 +527,10 @@ if not st.session_state.authenticated:
         else:
             st.query_params.clear()
 
-# ─── UI helpers ───────────────────────────────────────────────────────────────
-def warn(m): st.markdown(f"<div style='background:#FFF8E1;border:1px solid #F0C040;border-radius:8px;padding:0.65rem 1rem;color:#7A5C00;font-size:0.88rem;margin-bottom:0.5rem'>{m}</div>", unsafe_allow_html=True)
-def err(m):  st.markdown(f"<div style='background:#FDECEA;border:1px solid #E8B4B0;border-radius:8px;padding:0.65rem 1rem;color:#7A1C1C;font-size:0.88rem;margin-bottom:0.5rem'>{m}</div>", unsafe_allow_html=True)
-def ok(m):   st.markdown(f"<div style='background:#EEF7EE;border:1px solid #C3DEC3;border-radius:8px;padding:0.65rem 1rem;color:#2D6A2D;font-size:0.88rem;margin-bottom:0.5rem'>{m}</div>", unsafe_allow_html=True)
+# ─── UI helpers — natifs Streamlit (pas de HTML brut = pas de </div> orphelin) ─
+def warn(m): st.warning(m)
+def err(m):  st.error(m)
+def ok(m):   st.success(m)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGIN — REDESIGN PREMIUM
