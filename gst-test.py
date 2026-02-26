@@ -58,59 +58,73 @@ html, body, .stApp {
 
 /* ─── Auth ─── */
 .auth-outer {
-    min-height: 90vh;
+    min-height: 92vh;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .auth-wrapper {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 0;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+    box-shadow:
+        0 2px 4px rgba(0,0,0,0.3),
+        0 16px 48px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.03) inset;
 }
 .auth-header {
-    background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);
-    padding: 2.8rem 2.5rem 2rem 2.5rem;
+    background: linear-gradient(160deg, #1e1e1e 0%, #181818 100%);
+    padding: 2.4rem 2.4rem 1.8rem;
     text-align: center;
     position: relative;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(200,169,110,0.15);
 }
-.auth-header::before {
+.auth-header::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 50% 0%, rgba(200,169,110,0.13) 0%, transparent 70%);
-    pointer-events: none;
+    bottom: 0; left: 15%; right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent);
+}
+.auth-logo-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    margin-bottom: 0.55rem;
+}
+.auth-logo-bar {
+    width: 24px; height: 1px;
+    background: rgba(200,169,110,0.45);
+    flex-shrink: 0;
 }
 .auth-logo-text {
     font-family: 'Playfair Display', serif;
-    font-size: 2.8rem;
+    font-size: 2.1rem;
     color: var(--accent);
-    letter-spacing: 0.06em;
-    display: block;
+    letter-spacing: 0.12em;
     line-height: 1;
-    margin-bottom: 0.5rem;
 }
 .auth-tagline {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.14em;
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.2em;
     text-transform: uppercase;
 }
 .auth-body {
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    padding: 1.8rem 2.4rem 2.2rem;
 }
 .auth-form-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.05rem;
-    color: var(--text);
-    margin-bottom: 1.6rem;
-    padding-bottom: 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.4rem;
+    padding-bottom: 0.7rem;
     border-bottom: 1px solid var(--border);
 }
 .auth-sub {
@@ -119,16 +133,29 @@ html, body, .stApp {
     margin-bottom: 2.2rem;
 }
 .auth-divider {
+    display: flex; align-items: center; gap: 0.8rem;
+    margin: 1.2rem 0 0.3rem;
+    color: var(--muted);
+    font-size: 0.68rem; letter-spacing: 0.07em;
+}
+.auth-divider::before,
+.auth-divider::after {
+    content: ''; flex: 1;
     height: 1px; background: var(--border);
-    margin: 1.5rem 0;
 }
 .auth-footer-text {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: var(--muted);
     text-align: center;
-    margin-top: 1.2rem;
-    padding-top: 1.2rem;
+    margin-top: 0.8rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--border);
+    letter-spacing: 0.02em;
+}
+.auth-security {
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    font-size: 0.6rem; color: rgba(255,255,255,0.15);
+    letter-spacing: 0.06em; margin-top: 1rem;
 }
 
 /* ─── Topbar ─── */
@@ -531,22 +558,25 @@ def ok_msg(msg):
 # ═════════════════════════════════════════════════════════════════════════════
 def page_login():
     # Carte header HTML
-    st.markdown("""
-    <div style="display:flex;justify-content:center;padding-top:6vh;">
+    # Centrage sur 3 colonnes
+    _, mid, _ = st.columns([1, 1.6, 1])
+    with mid:
+        st.markdown("""
         <div class="auth-wrapper">
             <div class="auth-header">
-                <span class="auth-logo-text">Mahal</span>
+                <div class="auth-logo-line">
+                    <span class="auth-logo-bar"></span>
+                    <span class="auth-logo-text">Mahal</span>
+                    <span class="auth-logo-bar"></span>
+                </div>
                 <div class="auth-tagline">Gestion de stock &amp; transactions</div>
             </div>
             <div class="auth-body">
                 <div class="auth-form-title">Connexion</div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    col = st.columns([1, 2, 1])[1]
-    with col:
         username = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
         password = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
 
@@ -583,34 +613,41 @@ def page_login():
             st.session_state.lots_autorises = [l.strip() for l in lots_raw.split(",") if l.strip()] if lots_raw else []
             st.rerun()
 
-        st.markdown(
-            "<div class='auth-footer-text'>Pas encore de compte ?</div>",
-            unsafe_allow_html=True)
+        st.markdown("""
+        <div class="auth-divider">ou</div>
+        <div class="auth-footer-text">Pas encore de compte ?</div>
+        """, unsafe_allow_html=True)
 
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
             st.session_state.auth_page = "register"
             st.rerun()
 
+        st.markdown("""
+        <div class="auth-security">Connexion sécurisée &nbsp;&#8231;&nbsp; Chiffrement bcrypt</div>
+        """, unsafe_allow_html=True)
+
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE : INSCRIPTION
 # ═════════════════════════════════════════════════════════════════════════════
 def page_register():
-    st.markdown("""
-    <div style="display:flex;justify-content:center;padding-top:6vh;">
+    _, mid, _ = st.columns([1, 1.6, 1])
+    with mid:
+        st.markdown("""
         <div class="auth-wrapper">
             <div class="auth-header">
-                <span class="auth-logo-text">Mahal</span>
+                <div class="auth-logo-line">
+                    <span class="auth-logo-bar"></span>
+                    <span class="auth-logo-text">Mahal</span>
+                    <span class="auth-logo-bar"></span>
+                </div>
                 <div class="auth-tagline">Gestion de stock &amp; transactions</div>
             </div>
             <div class="auth-body">
                 <div class="auth-form-title">Créer un compte</div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    col = st.columns([1, 2, 1])[1]
-    with col:
         username   = st.text_input("Nom d'utilisateur", key="reg_user", placeholder="Choisir un identifiant")
         password   = st.text_input("Mot de passe", type="password", key="reg_pass",
                                     placeholder="8 caractères min. avec chiffres",
@@ -663,9 +700,13 @@ def page_register():
                 err(f"Erreur lors de l'inscription : {e}")
                 return
 
+        st.markdown('<div class="auth-footer-text">Déjà un compte ?</div>', unsafe_allow_html=True)
         if st.button("Retour à la connexion", key="btn_go_login", use_container_width=True):
             st.session_state.auth_page = "login"
             st.rerun()
+        st.markdown("""
+        <div class="auth-security">Connexion sécurisée &nbsp;&#8231;&nbsp; Chiffrement bcrypt</div>
+        """, unsafe_allow_html=True)
 
 # ─── Routing auth ─────────────────────────────────────────────────────────────
 if not st.session_state.authenticated:
