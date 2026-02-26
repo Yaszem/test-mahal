@@ -216,7 +216,6 @@ def check_password(password: str, hashed: str) -> bool:
         return False
 
 def get_users() -> pd.DataFrame:
-    ensure_users_sheet()
     try:
         df = load_sheet("Utilisateurs")
         if df.empty:
@@ -226,6 +225,10 @@ def get_users() -> pd.DataFrame:
             if col not in df.columns:
                 df[col] = ""
         return df
+    except gspread.exceptions.WorksheetNotFound:
+        # L'onglet n'existe pas encore → le créer puis retourner un DataFrame vide
+        ensure_users_sheet()
+        return pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
     except Exception:
         return pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
 
@@ -439,7 +442,6 @@ def page_register():
                 "prenom":         prenom.capitalize(),
             }
             try:
-                ensure_users_sheet()
                 append_row(new_user, "Utilisateurs")
                 if is_first:
                     ok_msg("Compte administrateur créé. Tu peux te connecter.")
