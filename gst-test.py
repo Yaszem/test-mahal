@@ -34,7 +34,7 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
 .stTextInput button svg path { stroke: #C8C4BC !important; fill: none !important; }
 .stTextInput button:hover svg { color: #999 !important; fill: #999 !important; }
 .stTextInput button:hover svg path { stroke: #999 !important; }
-._terminalButton_rix23_138 { display:none;}
+._terminalButton_rix23_138 { display: none !important;}
 /* AUTH */
 .auth-brand { font-family: 'DM Serif Display', serif; font-size: 4rem; color: #F7F6F2; line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
 .auth-brand-sub { font-size: 0.72rem; color: #F7F6F2; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4rem; }
