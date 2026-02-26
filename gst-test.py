@@ -124,6 +124,16 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
 .stTabs [data-baseweb="tab-panel"] { padding-top: 0 !important; }
 .info-count { font-size: 0.8rem; color: #999; margin-bottom: 0.8rem; }
 
+/* Cacher le bouton "Manage app" en bas à droite */
+[data-testid="manage-app-button"],
+.st-emotion-cache-ztfqz8,
+footer .st-emotion-cache-ztfqz8,
+[class*="viewerBadge"],
+#MainMenu { visibility: hidden !important; display: none !important; }
+.stDeployButton { display: none !important; }
+iframe[title="streamlit_component"] + div [data-testid="manage-app-button"] { display: none !important; }
+div[data-testid="stStatusWidget"] { display: none !important; }
+
 /* USER CARD */
 .user-card { background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.7rem; }
 .user-card-name { font-weight: 600; font-size: 0.95rem; color: #1C1C1C; }
@@ -674,10 +684,69 @@ if is_admin:
     with tab7:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
         st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
-        st.markdown('<div class="section-title">Supprimer des transactions</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
+
+        # Filtres pour retrouver la transaction
+        sf1, sf2, sf3 = st.columns(3, gap="large")
+        with sf1:
+            lots_f  = ["Tous"] + sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+            f_lot   = st.selectbox("Filtrer par lot", lots_f, key="sf_lot")
+        with sf2:
+            pers_f  = ["Tous"] + sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
+            f_pers  = st.selectbox("Filtrer par personne", pers_f, key="sf_pers")
+        with sf3:
+            f_type  = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sf_type")
+
+        df_del = transactions.copy()
+        df_del = df_del.reset_index(drop=True)
+        if f_lot  != "Tous": df_del = df_del[df_del['Lot']==f_lot]
+        if f_pers != "Tous": df_del = df_del[df_del['Personne']==f_pers]
+        if f_type != "Tous": df_del = df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
+
+        if not df_del.empty:
+            # Créer des labels lisibles pour chaque ligne
+            def make_label(r):
+                return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
+            labels = [make_label(row) for _, row in df_del.iterrows()]
+            idx_to_orig = df_del.index.tolist()
+
+            st.markdown(f'<div class="info-count">{len(df_del)} transaction(s) filtrée(s)</div>', unsafe_allow_html=True)
+            choix_label = st.selectbox("Choisir la transaction à supprimer", ["— sélectionner —"] + labels, key="del_single_sel")
+
+            if choix_label != "— sélectionner —":
+                ligne_idx = labels.index(choix_label)
+                orig_idx  = idx_to_orig[ligne_idx]
+                row_sel   = transactions.loc[orig_idx]
+
+                st.markdown(f"""
+                <div class="user-card" style="margin-top:0.5rem">
+                    <div class="user-card-name">{row_sel.get('Lot','')} — {row_sel.get('Type (Achat/Vente/Dépense)','')}</div>
+                    <div class="user-card-meta">
+                        {row_sel.get('Date','')} · {row_sel.get('Personne','')} · 
+                        {float(row_sel.get('Montant (MAD)',0)):,.0f} MAD · 
+                        {row_sel.get('Description','')}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
+                if st.button("Supprimer cette transaction", key="btn_del_single"):
+                    if not c_single:
+                        warn("Coche la case de confirmation.")
+                    else:
+                        transactions = transactions.drop(index=orig_idx).reset_index(drop=True)
+                        save_sheet(transactions, "Gestion globale")
+                        st.success("Transaction supprimée.")
+                        st.cache_resource.clear()
+                        st.rerun()
+        else:
+            warn("Aucune transaction ne correspond aux filtres.")
+
+        st.markdown('<div class="section-title">Supprimer en masse</div>', unsafe_allow_html=True)
         dc1, dc2 = st.columns(2, gap="large")
         with dc1:
-            st.markdown("**Supprimer toutes les transactions d'un lot**")
+            st.markdown("**Toutes les transactions d'un lot**")
             lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
             lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
             if lot_sup != "— sélectionner —":
@@ -690,7 +759,7 @@ if is_admin:
                     transactions = transactions[transactions['Lot']!=lot_sup]
                     save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); st.cache_resource.clear()
         with dc2:
-            st.markdown("**Supprimer toutes les transactions d'une personne**")
+            st.markdown("**Toutes les transactions d'une personne**")
             pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
             pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
             if pers_sup != "— sélectionner —":
