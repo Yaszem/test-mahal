@@ -61,7 +61,7 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
     position: absolute;
     width: 560px; height: 560px;
     border-radius: 50%;
-    border: 9px solid rgba(247,246,242,0.05);
+    border: 1px solid rgba(247,246,242,0.05);
     top: -140px; right: -200px;
     pointer-events: none;
 }
@@ -996,10 +996,107 @@ if is_admin:
                     save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); st.cache_resource.clear()
 
     with tab8:
+        st.markdown("""
+        <style>
+        /* ── Bouton Modifier : visible UNIQUEMENT sur mobile ── */
+        .btn-modifier-wrap { display: none; }
+        @media screen and (max-width: 768px) {
+            .btn-modifier-wrap { display: block; }
+            /* Masquer les colonnes desktop (lots/rôle/save) sur mobile */
+            .user-desktop-actions { display: none !important; }
+        }
+        @media screen and (min-width: 769px) {
+            /* Sur desktop, masquer le bouton Modifier */
+            .btn-modifier-wrap { display: none !important; }
+        }
+
+        /* Style du bouton Modifier (chip sobre) */
+        .stButton > button[data-testid*="mobile_edit_"] {
+            background: #F0EDE5 !important;
+            color: #555 !important;
+            border: 1px solid #DDDAD2 !important;
+            border-radius: 20px !important;
+            padding: 0.25rem 0.9rem !important;
+            font-size: 0.78rem !important;
+            font-weight: 500 !important;
+            margin-top: 0.3rem !important;
+            letter-spacing: 0.02em !important;
+        }
+
+        /* Modal Streamlit — plein écran sur mobile */
+        @media screen and (max-width: 768px) {
+            [data-testid="stDialog"] > div {
+                width: 95vw !important;
+                max-width: 95vw !important;
+                border-radius: 16px !important;
+                padding: 1.5rem !important;
+            }
+            [data-testid="stDialog"] h2 {
+                font-family: 'DM Serif Display', serif !important;
+                font-size: 1.3rem !important;
+                color: #1C1C1C !important;
+            }
+        }
+
+        /* Séparateur danger dans la modal */
+        .modal-danger-sep {
+            border: none;
+            border-top: 1px solid #F0EDE5;
+            margin: 1.2rem 0 0.8rem 0;
+        }
+        .modal-danger-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #C0392B;
+            margin-bottom: 0.5rem;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
         st.markdown('<div class="section-title">Gestion des utilisateurs</div>', unsafe_allow_html=True)
         users_df = get_users()
         lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
 
+        # ── Dialog modal pour édition mobile ───────────────────────────────────
+        @st.dialog("Modifier l'utilisateur")
+        def modal_edit_user(uname_edit, users_ref, lots_ref):
+            row_edit = users_ref[users_ref["username"] == uname_edit].iloc[0]
+            fn_edit = f"{str(row_edit.get('prenom','')).strip()} {str(row_edit.get('nom','')).strip()}".strip() or uname_edit
+
+            st.markdown(f"""
+            <div style="margin-bottom:1.2rem">
+              <div style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:#1C1C1C;margin-bottom:0.2rem">{fn_edit}</div>
+              <div style="font-size:0.75rem;color:#AAA">@{uname_edit}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            la_edit = [l.strip() for l in str(row_edit.get("lots_autorises","")).split(",") if l.strip()]
+            new_lots_m = st.multiselect("Lots autorisés", options=lots_ref, default=la_edit, key=f"m_lots_{uname_edit}")
+            new_role_m = st.selectbox("Rôle", ["visiteur","admin"],
+                                       index=0 if row_edit["role"]=="visiteur" else 1,
+                                       key=f"m_role_{uname_edit}")
+
+            if st.button("💾 Sauvegarder", key=f"m_save_{uname_edit}", use_container_width=True):
+                users_ref.loc[users_ref["username"]==uname_edit,"lots_autorises"] = ",".join(new_lots_m)
+                users_ref.loc[users_ref["username"]==uname_edit,"role"] = new_role_m
+                save_users(users_ref)
+                ok(f"{uname_edit} mis à jour.")
+                st.rerun()
+
+            st.markdown('<hr class="modal-danger-sep"><div class="modal-danger-label">Zone dangereuse</div>', unsafe_allow_html=True)
+            confirm_del = st.checkbox("Je confirme la suppression définitive", key=f"m_confirm_{uname_edit}")
+            if st.button("🗑 Supprimer cet utilisateur", key=f"m_del_{uname_edit}", use_container_width=True):
+                if not confirm_del:
+                    st.warning("Coche la case de confirmation.")
+                else:
+                    users_ref = users_ref[users_ref["username"]!=uname_edit]
+                    save_users(users_ref)
+                    ok(f"{uname_edit} supprimé.")
+                    st.rerun()
+
+        # ── Demandes en attente ─────────────────────────────────────────────────
         pending = users_df[users_df["statut"] == "en_attente"]
         if not pending.empty:
             st.markdown(f"**🔔 Demandes en attente ({len(pending)})**")
@@ -1022,6 +1119,7 @@ if is_admin:
                             save_users(users_df); warn(f"{uname} refusé."); st.rerun()
             st.markdown("---")
 
+        # ── Tous les utilisateurs ───────────────────────────────────────────────
         st.markdown("**Tous les utilisateurs**")
         search_user = st.text_input("Rechercher un utilisateur", placeholder="Nom, prénom ou identifiant...", key="search_users")
         approved = users_df[users_df["statut"] != "en_attente"].copy()
@@ -1036,14 +1134,32 @@ if is_admin:
             uname = row["username"]
             if uname == username: continue
             fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
+            sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
+            role_label_u = "Admin" if row["role"]=="admin" else "Visiteur"
+
             with st.container():
-                st.markdown(f"""<div class="user-card"><div class="user-card-name">{fn}</div>
-                <div class="user-card-meta">@{uname} · {row.get('created_at','')} · {'Admin' if row['role']=='admin' else 'Visiteur'}</div>
-                </div>""", unsafe_allow_html=True)
-                ac1, ac2, ac3, ac4 = st.columns([1,3,1,1], gap="small")
-                with ac1:
-                    sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
-                    st.markdown(f"<span class='badge-pending {sb}'>{row['statut']}</span>", unsafe_allow_html=True)
+                # Carte utilisateur avec badge statut
+                st.markdown(f"""
+                <div class="user-card">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                    <div>
+                      <div class="user-card-name">{fn}</div>
+                      <div class="user-card-meta">@{uname} · {row.get('created_at','')} · {role_label_u}</div>
+                    </div>
+                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{row['statut']}</span>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # ── MOBILE : bouton Modifier → modal ──
+                st.markdown('<div class="btn-modifier-wrap">', unsafe_allow_html=True)
+                if st.button("✏️ Modifier", key=f"mobile_edit_{uname}"):
+                    modal_edit_user(uname, users_df, lots_all)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # ── DESKTOP : inline colonnes (comportement original) ──
+                st.markdown('<div class="user-desktop-actions">', unsafe_allow_html=True)
+                ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
                 with ac2:
                     la = [l.strip() for l in str(row.get("lots_autorises","")).split(",") if l.strip()]
                     new_lots = st.multiselect("Lots", options=lots_all, default=la, key=f"edit_lots_{uname}")
@@ -1057,6 +1173,7 @@ if is_admin:
                     if st.button("Supprimer", key=f"del_{uname}"):
                         users_df = users_df[users_df["username"]!=uname]
                         save_users(users_df); ok(f"{uname} supprimé."); st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR
