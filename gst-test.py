@@ -57,105 +57,134 @@ html, body, .stApp {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
 /* ─── Auth ─── */
-.auth-outer {
-    min-height: 92vh;
+.auth-split {
     display: flex;
-    align-items: center;
+    min-height: 100vh;
+    margin: -3rem -4rem;
+}
+.auth-left {
+    flex: 1;
+    background: #1C1C1C;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-}
-.auth-wrapper {
-    width: 100%;
-    max-width: 400px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow:
-        0 2px 4px rgba(0,0,0,0.3),
-        0 16px 48px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(255,255,255,0.03) inset;
-}
-.auth-header {
-    background: linear-gradient(160deg, #1e1e1e 0%, #181818 100%);
-    padding: 2.4rem 2.4rem 1.8rem;
-    text-align: center;
+    align-items: flex-start;
+    padding: 4rem 4rem;
     position: relative;
-    border-bottom: 1px solid rgba(200,169,110,0.15);
+    overflow: hidden;
 }
-.auth-header::after {
+.auth-left::before {
     content: '';
     position: absolute;
-    bottom: 0; left: 15%; right: 15%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent);
+    top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
 }
-.auth-logo-line {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.9rem;
-    margin-bottom: 0.55rem;
+.auth-left::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.02);
 }
-.auth-logo-bar {
-    width: 24px; height: 1px;
-    background: rgba(200,169,110,0.45);
-    flex-shrink: 0;
-}
-.auth-logo-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.1rem;
-    color: var(--accent);
-    letter-spacing: 0.12em;
+.auth-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3.5rem;
+    color: #F7F6F2;
     line-height: 1;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.02em;
 }
-.auth-tagline {
-    font-size: 0.62rem;
-    color: rgba(255,255,255,0.2);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-}
-.auth-body {
-    padding: 1.8rem 2.4rem 2.2rem;
-}
-.auth-form-title {
-    font-size: 0.65rem;
-    font-weight: 700;
+.auth-brand-sub {
+    font-size: 0.75rem;
+    color: rgba(247,246,242,0.35);
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 1.4rem;
-    padding-bottom: 0.7rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 3rem;
 }
-.auth-sub {
-    font-size: 0.75rem; color: var(--muted); text-align: center;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    margin-bottom: 2.2rem;
+.auth-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 1rem;
+}
+.auth-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+.auth-feature-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(247,246,242,0.4);
+    flex-shrink: 0;
+}
+.auth-feature-text {
+    font-size: 0.82rem;
+    color: rgba(247,246,242,0.45);
+    letter-spacing: 0.01em;
+}
+.auth-bottom-badge {
+    position: absolute;
+    bottom: 2.5rem; left: 4rem;
+    font-size: 0.6rem;
+    color: rgba(247,246,242,0.15);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.auth-right {
+    width: 480px;
+    background: #F7F6F2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 3.5rem;
+    border-left: 1px solid #E0DDD5;
+}
+.auth-form-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #AAA;
+    margin-bottom: 0.5rem;
+}
+.auth-form-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: #1C1C1C;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+.auth-form-desc {
+    font-size: 0.82rem;
+    color: #999;
+    margin-bottom: 2rem;
+    line-height: 1.5;
 }
 .auth-divider {
     display: flex; align-items: center; gap: 0.8rem;
-    margin: 1.2rem 0 0.3rem;
-    color: var(--muted);
-    font-size: 0.68rem; letter-spacing: 0.07em;
+    margin: 1rem 0;
+    color: #CCC;
+    font-size: 0.72rem;
 }
-.auth-divider::before,
-.auth-divider::after {
-    content: ''; flex: 1;
-    height: 1px; background: var(--border);
+.auth-divider::before, .auth-divider::after {
+    content: ''; flex: 1; height: 1px; background: #E0DDD5;
 }
-.auth-footer-text {
-    font-size: 0.75rem;
-    color: var(--muted);
+.auth-switch-text {
+    font-size: 0.78rem;
+    color: #AAA;
     text-align: center;
-    margin-top: 0.8rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-    letter-spacing: 0.02em;
+    margin-top: 1.5rem;
 }
 .auth-security {
-    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-    font-size: 0.6rem; color: rgba(255,255,255,0.15);
-    letter-spacing: 0.06em; margin-top: 1rem;
+    font-size: 0.62rem;
+    color: #CCC;
+    text-align: center;
+    margin-top: 2rem;
+    letter-spacing: 0.06em;
 }
 
 /* ─── Topbar ─── */
@@ -557,23 +586,41 @@ def ok_msg(msg):
 # PAGE : LOGIN
 # ═════════════════════════════════════════════════════════════════════════════
 def page_login():
-    # Carte header HTML
-    # Centrage sur 3 colonnes
-    _, mid, _ = st.columns([1, 1.6, 1])
-    with mid:
+    left, right = st.columns([1.1, 1])
+
+    with left:
         st.markdown("""
-        <div class="auth-wrapper">
-            <div class="auth-header">
-                <div class="auth-logo-line">
-                    <span class="auth-logo-bar"></span>
-                    <span class="auth-logo-text">Mahal</span>
-                    <span class="auth-logo-bar"></span>
+        <div class="auth-left">
+            <div class="auth-brand">Mahal</div>
+            <div class="auth-brand-sub">Gestion de stock &amp; transactions</div>
+            <div class="auth-features">
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Suivi des achats, ventes et dépenses</span>
                 </div>
-                <div class="auth-tagline">Gestion de stock &amp; transactions</div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Catalogue des lots en temps réel</span>
+                </div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Graphiques et analyses détaillées</span>
+                </div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Accès sécurisé par rôles</span>
+                </div>
             </div>
-            <div class="auth-body">
-                <div class="auth-form-title">Connexion</div>
-            </div>
+            <div class="auth-bottom-badge">Chiffrement bcrypt &nbsp;·&nbsp; Accès contrôlé</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with right:
+        st.markdown("""
+        <div class="auth-right">
+            <div class="auth-form-label">Bienvenue</div>
+            <div class="auth-form-title">Connexion</div>
+            <div class="auth-form-desc">Entrez vos identifiants pour accéder à votre espace.</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -584,12 +631,10 @@ def page_login():
             if not username or not password:
                 err("Remplis tous les champs.")
                 return
-
             if is_locked_out(username):
                 remaining = int(LOCKOUT_SECONDS - (time.time() - st.session_state.get(f"lockout_{username}", 0)))
                 err(f"Compte temporairement bloqué. Réessaie dans {remaining//60}m{remaining%60}s.")
                 return
-
             user = find_user(username)
             if not user or not check_password(password, str(user["password_hash"])):
                 record_failed_attempt(username)
@@ -597,14 +642,12 @@ def page_login():
                 remaining_att = MAX_ATTEMPTS - attempts
                 err(f"Identifiants incorrects. {remaining_att} tentative(s) restante(s).")
                 return
-
             if str(user["statut"]) == "en_attente":
                 warn("Ton compte est en attente d'approbation par l'administrateur.")
                 return
             if str(user["statut"]) == "rejeté":
                 err("Ton compte a été refusé. Contacte l'administrateur.")
                 return
-
             reset_attempts(username)
             st.session_state.authenticated = True
             st.session_state.username = str(user["username"])
@@ -613,49 +656,62 @@ def page_login():
             st.session_state.lots_autorises = [l.strip() for l in lots_raw.split(",") if l.strip()] if lots_raw else []
             st.rerun()
 
-        st.markdown("""
-        <div class="auth-divider">ou</div>
-        <div class="auth-footer-text">Pas encore de compte ?</div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
 
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
             st.session_state.auth_page = "register"
             st.rerun()
 
-        st.markdown("""
-        <div class="auth-security">Connexion sécurisée &nbsp;&#8231;&nbsp; Chiffrement bcrypt</div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="auth-switch-text">Accès réservé aux membres autorisés.</div>', unsafe_allow_html=True)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE : INSCRIPTION
 # ═════════════════════════════════════════════════════════════════════════════
 def page_register():
-    _, mid, _ = st.columns([1, 1.6, 1])
-    with mid:
+    left, right = st.columns([1.1, 1])
+
+    with left:
         st.markdown("""
-        <div class="auth-wrapper">
-            <div class="auth-header">
-                <div class="auth-logo-line">
-                    <span class="auth-logo-bar"></span>
-                    <span class="auth-logo-text">Mahal</span>
-                    <span class="auth-logo-bar"></span>
+        <div class="auth-left">
+            <div class="auth-brand">Mahal</div>
+            <div class="auth-brand-sub">Créer un compte</div>
+            <div class="auth-features">
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Ton compte sera examiné par l'administrateur</span>
                 </div>
-                <div class="auth-tagline">Gestion de stock &amp; transactions</div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Accès accordé selon les lots autorisés</span>
+                </div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Mot de passe chiffré et sécurisé</span>
+                </div>
+                <div class="auth-feature-item">
+                    <span class="auth-feature-dot"></span>
+                    <span class="auth-feature-text">Premier compte = Administrateur automatique</span>
+                </div>
             </div>
-            <div class="auth-body">
-                <div class="auth-form-title">Créer un compte</div>
-            </div>
+            <div class="auth-bottom-badge">Inscription contrôlée &nbsp;·&nbsp; Approbation requise</div>
         </div>
         """, unsafe_allow_html=True)
 
-        username   = st.text_input("Nom d'utilisateur", key="reg_user", placeholder="Choisir un identifiant")
-        password   = st.text_input("Mot de passe", type="password", key="reg_pass",
-                                    placeholder="8 caractères min. avec chiffres",
-                                    help="8 caractères minimum, avec chiffres et lettres")
-        password2  = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2", placeholder="••••••••")
+    with right:
+        st.markdown("""
+        <div class="auth-right">
+            <div class="auth-form-label">Nouveau membre</div>
+            <div class="auth-form-title">Créer un compte</div>
+            <div class="auth-form-desc">Votre demande sera soumise à l'approbation de l'administrateur.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        username  = st.text_input("Nom d'utilisateur", key="reg_user", placeholder="Choisir un identifiant")
+        password  = st.text_input("Mot de passe", type="password", key="reg_pass",
+                                   placeholder="8 caractères min. avec chiffres")
+        password2 = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2", placeholder="••••••••")
 
         if st.button("S'inscrire", key="btn_register", use_container_width=True):
-            # Validations
             if not username or not password or not password2:
                 err("Remplis tous les champs.")
                 return
@@ -674,21 +730,17 @@ def page_register():
             if find_user(username):
                 err("Ce nom d'utilisateur est déjà pris.")
                 return
-
-            # Premier compte = admin automatiquement approuvé
             is_first = not admin_exists()
-            role   = "admin"     if is_first else "visiteur"
-            statut = "approuvé"  if is_first else "en_attente"
-
+            role   = "admin"    if is_first else "visiteur"
+            statut = "approuvé" if is_first else "en_attente"
             new_user = {
-                "username":      username,
-                "password_hash": hash_password(password),
-                "role":          role,
-                "statut":        statut,
+                "username":       username,
+                "password_hash":  hash_password(password),
+                "role":           role,
+                "statut":         statut,
                 "lots_autorises": "",
-                "created_at":    datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "created_at":     datetime.now().strftime("%Y-%m-%d %H:%M"),
             }
-
             try:
                 ensure_users_sheet()
                 append_row(new_user, "Utilisateurs")
@@ -700,13 +752,13 @@ def page_register():
                 err(f"Erreur lors de l'inscription : {e}")
                 return
 
-        st.markdown('<div class="auth-footer-text">Déjà un compte ?</div>', unsafe_allow_html=True)
+        st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
+
         if st.button("Retour à la connexion", key="btn_go_login", use_container_width=True):
             st.session_state.auth_page = "login"
             st.rerun()
-        st.markdown("""
-        <div class="auth-security">Connexion sécurisée &nbsp;&#8231;&nbsp; Chiffrement bcrypt</div>
-        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="auth-switch-text">Déjà membre ? Connectez-vous ci-dessus.</div>', unsafe_allow_html=True)
 
 # ─── Routing auth ─────────────────────────────────────────────────────────────
 if not st.session_state.authenticated:
