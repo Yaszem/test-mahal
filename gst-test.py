@@ -361,10 +361,18 @@ def get_client():
     creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPES)
     return gspread.authorize(creds)
 
-def load_sheet(sheet_name):
+@st.cache_data(ttl=30)
+def _load_sheet_cached(sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
     data = sh.worksheet(sheet_name).get_all_records()
     return pd.DataFrame(data) if data else pd.DataFrame()
+
+def load_sheet(sheet_name):
+    return _load_sheet_cached(sheet_name)
+
+def clear_data_cache():
+    """Vide uniquement le cache des données Sheets — ne touche pas les sessions."""
+    _load_sheet_cached.clear()
 
 def save_sheet(df, sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
@@ -870,7 +878,7 @@ if is_admin:
             try:
                 append_row(row, "Gestion globale")
                 st.success("Transaction enregistrée.")
-                st.cache_resource.clear()
+                clear_data_cache()
             except Exception as e:
                 st.error(f"Erreur : {e}")
 
@@ -1027,7 +1035,7 @@ if is_admin:
                         transactions = transactions.drop(index=orig_idx).reset_index(drop=True)
                         save_sheet(transactions, "Gestion globale")
                         st.success("Transaction supprimée.")
-                        st.cache_resource.clear()
+                        clear_data_cache()
                         st.rerun()
         else:
             st.warning("Aucune transaction ne correspond aux filtres.")
@@ -1046,7 +1054,7 @@ if is_admin:
                 elif not c_lot: st.warning("Coche la case de confirmation.")
                 else:
                     transactions = transactions[transactions['Lot']!=lot_sup]
-                    save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); st.cache_resource.clear()
+                    save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
         with dc2:
             st.markdown("**Toutes les transactions d'une personne**")
             pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
@@ -1059,7 +1067,7 @@ if is_admin:
                 elif not c_pers: st.warning("Coche la case de confirmation.")
                 else:
                     transactions = transactions[transactions['Personne']!=pers_sup]
-                    save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); st.cache_resource.clear()
+                    save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
 
     with tab8:
         st.markdown("""
