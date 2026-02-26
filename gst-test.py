@@ -516,8 +516,6 @@ if not st.session_state.authenticated:
             st.session_state.role = u["role"]
             st.session_state.lots_autorises = u["lots_autorises"]
             st.session_state["_sess_token"] = token_url
-            # Supprimer le token de l'URL immédiatement après restauration
-            st.query_params.clear()
         else:
             st.query_params.clear()
 
@@ -585,7 +583,8 @@ def page_login():
             st.session_state.lots_autorises = lots_list
             token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
             st.session_state["_sess_token"] = token
-            # Ne pas mettre le token dans l'URL (fuite via historique / logs)
+            # Token dans l'URL pour survivre au refresh navigateur
+            st.query_params["t"] = token
             st.rerun()
 
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
@@ -971,7 +970,7 @@ if is_admin:
             st.markdown(f'<div class="info-count">{len(hist_df)} transaction(s)</div>', unsafe_allow_html=True)
             st.dataframe(hist_df, width='stretch', hide_index=True)
         else:
-            warn("Aucune transaction pour ce lot.")
+            st.warning("Aucune transaction pour ce lot.")
 
     with tab7:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
@@ -1023,7 +1022,7 @@ if is_admin:
                 c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
                 if st.button("Supprimer cette transaction", key="btn_del_single"):
                     if not c_single:
-                        warn("Coche la case de confirmation.")
+                        st.warning("Coche la case de confirmation.")
                     else:
                         transactions = transactions.drop(index=orig_idx).reset_index(drop=True)
                         save_sheet(transactions, "Gestion globale")
@@ -1031,7 +1030,7 @@ if is_admin:
                         st.cache_resource.clear()
                         st.rerun()
         else:
-            warn("Aucune transaction ne correspond aux filtres.")
+            st.warning("Aucune transaction ne correspond aux filtres.")
 
         st.markdown('<div class="section-title">Supprimer en masse</div>', unsafe_allow_html=True)
         dc1, dc2 = st.columns(2, gap="large")
@@ -1043,8 +1042,8 @@ if is_admin:
                 st.markdown(f'<div class="info-count">{len(transactions[transactions["Lot"]==lot_sup])} transaction(s)</div>', unsafe_allow_html=True)
             c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
             if st.button("Supprimer le lot", key="btn_del_lot"):
-                if lot_sup == "— sélectionner —": warn("Sélectionne un lot.")
-                elif not c_lot: warn("Coche la case de confirmation.")
+                if lot_sup == "— sélectionner —": st.warning("Sélectionne un lot.")
+                elif not c_lot: st.warning("Coche la case de confirmation.")
                 else:
                     transactions = transactions[transactions['Lot']!=lot_sup]
                     save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); st.cache_resource.clear()
@@ -1056,8 +1055,8 @@ if is_admin:
                 st.markdown(f'<div class="info-count">{len(transactions[transactions["Personne"]==pers_sup])} transaction(s)</div>', unsafe_allow_html=True)
             c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
             if st.button("Supprimer la personne", key="btn_del_pers"):
-                if pers_sup == "— sélectionner —": warn("Sélectionne une personne.")
-                elif not c_pers: warn("Coche la case de confirmation.")
+                if pers_sup == "— sélectionner —": st.warning("Sélectionne une personne.")
+                elif not c_pers: st.warning("Coche la case de confirmation.")
                 else:
                     transactions = transactions[transactions['Personne']!=pers_sup]
                     save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); st.cache_resource.clear()
