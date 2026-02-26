@@ -6,14 +6,21 @@ import gspread
 from google.oauth2.service_account import Credentials
 import bcrypt
 import time
+import secrets
+import html as _html
+import re
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="MAHAL — Gestion", layout="wide", initial_sidebar_state="collapsed")
 
-SPREADSHEET_ID = "1iiBU5dxAymvo6Sxl3lXpyWLvniLMdNHHSnNDw7I7avA"
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-MAX_ATTEMPTS = 5
+# SPREADSHEET_ID lu depuis st.secrets (jamais en dur dans le code)
+SPREADSHEET_ID = st.secrets.get("spreadsheet_id", "1iiBU5dxAymvo6Sxl3lXpyWLvniLMdNHHSnNDw7I7avA")
+# Scope Drive réduit à drive.file (accès uniquement au fichier créé par le service account)
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
+          "https://www.googleapis.com/auth/drive.file"]
+MAX_ATTEMPTS   = 5
 LOCKOUT_SECONDS = 300
+SESSION_TTL     = 8 * 3600   # session expire après 8h
 
 # ─── CSS ──────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -402,26 +409,54 @@ def get_users() -> pd.DataFrame:
 
 def save_users(df): save_sheet(df, "Utilisateurs")
 
+# ─── Sécurité : échappement HTML et sanitisation ──────────────────────────────
+def h(val: str) -> str:
+    """Échappe les caractères HTML pour prévenir le XSS."""
+    return _html.escape(str(val))
+
+def sanitize_text(val: str) -> str:
+    """Neutralise les injections de formules CSV/Excel et nettoie les entrées."""
+    val = str(val).strip()
+    # Préfixe avec apostrophe les valeurs commençant par =, +, -, @, |, %
+    if val and val[0] in ('=', '+', '-', '@', '|', '%', '\t', '\r', '\n'):
+        val = "'" + val
+    # Supprime les caractères de contrôle
+    val = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', val)
+    return val
+
 def find_user(uname):
     users = get_users()
     row = users[users["username"].str.lower() == uname.lower()]
     return None if row.empty else row.iloc[0].to_dict()
 
+@st.cache_resource
+def _lockout_store():
+    """Stockage partagé des tentatives échouées — survit aux rechargements de session."""
+    return {}
+
 def is_locked_out(uname):
-    k = f"lockout_{uname}"
-    if k in st.session_state:
-        elapsed = time.time() - st.session_state[k]
+    store = _lockout_store()
+    key_lock = f"lockout_{uname.lower()}"
+    key_att  = f"attempts_{uname.lower()}"
+    if key_lock in store:
+        elapsed = time.time() - store[key_lock]
         if elapsed < LOCKOUT_SECONDS: return True
-        del st.session_state[k]; st.session_state[f"attempts_{uname}"] = 0
+        del store[key_lock]
+        store[key_att] = 0
     return False
 
 def record_failed(uname):
-    k = f"attempts_{uname}"
-    st.session_state[k] = st.session_state.get(k, 0) + 1
-    if st.session_state[k] >= MAX_ATTEMPTS: st.session_state[f"lockout_{uname}"] = time.time()
+    store = _lockout_store()
+    key_att  = f"attempts_{uname.lower()}"
+    key_lock = f"lockout_{uname.lower()}"
+    store[key_att] = store.get(key_att, 0) + 1
+    if store[key_att] >= MAX_ATTEMPTS:
+        store[key_lock] = time.time()
 
 def reset_attempts(uname):
-    st.session_state.pop(f"attempts_{uname}", None); st.session_state.pop(f"lockout_{uname}", None)
+    store = _lockout_store()
+    store.pop(f"attempts_{uname.lower()}", None)
+    store.pop(f"lockout_{uname.lower()}", None)
 
 def admin_exists():
     u = get_users(); return not u.empty and not u[u["role"]=="admin"].empty
@@ -432,23 +467,35 @@ def count_pending():
 
 import hashlib as _hl
 
-SECRET_KEY = SPREADSHEET_ID[:16]
+# SECRET_KEY lu depuis st.secrets, jamais dérivé du SPREADSHEET_ID
+SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
 
 @st.cache_resource
 def _session_store():
+    """Dict partagé : token → {user_dict, expires_at}"""
     return {}
 
-def _make_token(username):
-    raw = f"{username}:{SECRET_KEY}"
-    return _hl.sha256(raw.encode()).hexdigest()[:40]
+def _make_token(_unused=None):
+    """Génère un token aléatoire non prévisible."""
+    return secrets.token_urlsafe(40)
 
 def _store_session(user_dict):
-    token = _make_token(user_dict["username"])
-    _session_store()[token] = user_dict
+    token = _make_token()
+    _session_store()[token] = {
+        "user": user_dict,
+        "expires_at": time.time() + SESSION_TTL
+    }
     return token
 
 def _load_session(token):
-    return _session_store().get(token, None)
+    if not token: return None
+    entry = _session_store().get(token)
+    if not entry: return None
+    # Vérifier expiration
+    if time.time() > entry["expires_at"]:
+        _session_store().pop(token, None)
+        return None
+    return entry["user"]
 
 def _clear_session(token):
     _session_store().pop(token, None)
@@ -469,6 +516,10 @@ if not st.session_state.authenticated:
             st.session_state.role = u["role"]
             st.session_state.lots_autorises = u["lots_autorises"]
             st.session_state["_sess_token"] = token_url
+            # Supprimer le token de l'URL immédiatement après restauration
+            st.query_params.clear()
+        else:
+            st.query_params.clear()
 
 # ─── UI helpers ───────────────────────────────────────────────────────────────
 def warn(m): st.markdown(f"<div style='background:#FFF8E1;border:1px solid #F0C040;border-radius:8px;padding:0.65rem 1rem;color:#7A5C00;font-size:0.88rem;margin-bottom:0.5rem'>{m}</div>", unsafe_allow_html=True)
@@ -512,15 +563,19 @@ def page_login():
         if st.button("Se connecter →", key="btn_login", use_container_width=True):
             if not uname or not pwd: err("Remplis tous les champs."); return
             if is_locked_out(uname):
-                rem = int(LOCKOUT_SECONDS - (time.time() - st.session_state.get(f"lockout_{uname}", 0)))
-                err(f"Compte bloqué. Réessaie dans {rem//60}m{rem%60}s."); return
+                rem = int(LOCKOUT_SECONDS - (time.time() - _lockout_store().get(f"lockout_{uname.lower()}", time.time())))
+                err(f"Trop de tentatives. Réessaie dans {rem//60}m{rem%60}s."); return
             user = find_user(uname)
+            # Message intentionnellement neutre (ne révèle pas si le compte existe)
             if not user or not check_password(pwd, str(user["password_hash"])):
                 record_failed(uname)
-                att = st.session_state.get(f"attempts_{uname}", 0)
+                att = _lockout_store().get(f"attempts_{uname.lower()}", 0)
                 err(f"Identifiants incorrects. {MAX_ATTEMPTS - att} tentative(s) restante(s)."); return
-            if str(user["statut"]) == "en_attente": warn("Compte en attente d'approbation."); return
-            if str(user["statut"]) == "rejeté": err("Compte refusé."); return
+            # Vérifier statut APRÈS avoir validé le mot de passe (évite l'énumération)
+            if str(user["statut"]) == "en_attente":
+                warn("Connexion impossible pour le moment. Contacte l'administrateur."); return
+            if str(user["statut"]) == "rejeté":
+                err("Connexion impossible pour le moment. Contacte l'administrateur."); return
             reset_attempts(uname)
             lots_raw = str(user.get("lots_autorises",""))
             lots_list = [l.strip() for l in lots_raw.split(",") if l.strip()]
@@ -530,7 +585,7 @@ def page_login():
             st.session_state.lots_autorises = lots_list
             token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
             st.session_state["_sess_token"] = token
-            st.query_params["t"] = token
+            # Ne pas mettre le token dans l'URL (fuite via historique / logs)
             st.rerun()
 
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
@@ -580,17 +635,22 @@ def page_register():
         if st.button("S'inscrire →", key="btn_register", use_container_width=True):
             if not all([uname, pwd1, pwd2, prenom, nom]): err("Remplis tous les champs."); return
             if len(uname) < 3: err("Identifiant trop court (3 car. min.)."); return
+            if not re.match(r'^[a-zA-Z0-9_\-\.]+$', uname):
+                err("Identifiant invalide (lettres, chiffres, _ - . uniquement)."); return
             if len(pwd1) < 8: err("Mot de passe trop court (8 car. min.)."); return
             if not any(c.isdigit() for c in pwd1) or not any(c.isalpha() for c in pwd1):
                 err("Le mot de passe doit contenir lettres et chiffres."); return
             if pwd1 != pwd2: err("Les mots de passe ne correspondent pas."); return
             if find_user(uname): err("Nom d'utilisateur déjà pris."); return
             is_first = not admin_exists()
-            new_u = {"username": uname, "password_hash": hash_password(pwd1),
+            new_u = {"username": sanitize_text(uname),
+                     "password_hash": hash_password(pwd1),
                      "role": "admin" if is_first else "visiteur",
                      "statut": "approuvé" if is_first else "en_attente",
-                     "lots_autorises": "", "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                     "nom": nom.upper(), "prenom": prenom.capitalize()}
+                     "lots_autorises": "",
+                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                     "nom":    sanitize_text(nom.upper()),
+                     "prenom": sanitize_text(prenom.capitalize())}
             try:
                 append_row(new_u, "Utilisateurs")
                 ok("Compte créé ! Tu peux te connecter." if is_first else "Inscription envoyée — en attente d'approbation.")
@@ -704,7 +764,7 @@ st.markdown(f"""
     <div class="page-subtitle">Gestion de stock et transactions</div>
   </div>
   <div style="display:flex;align-items:center;padding-top:0.8rem">
-    <span class="topbar-user">{username}</span>
+    <span class="topbar-user">{h(username)}</span>
     <span class="topbar-role {role_class}">{role_label}</span>{notif_html}
   </div>
 </div>
@@ -724,8 +784,10 @@ with dcol:
     if st.button("Déconnexion", key="btn_logout"):
         _clear_session(st.session_state.get("_sess_token", ""))
         st.query_params.clear()
-        for k in ["authenticated","username","role","lots_autorises","_sess_token"]: st.session_state.pop(k, None)
-        st.session_state.auth_page = "login"; st.rerun()
+        for k in ["authenticated","username","role","lots_autorises","_sess_token"]:
+            st.session_state.pop(k, None)
+        st.session_state.auth_page = "login"
+        st.rerun()
 
 # ─── Métriques ─────────────────────────────────────────────────────────────────
 ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
@@ -796,11 +858,16 @@ if is_admin:
         remarque = st.text_input("Remarque")
 
         if st.button("Enregistrer"):
-            row = {'Date': str(date), 'Personne': personne_val.upper(),
-                   'Type (Achat/Vente/Dépense)': type_trans, 'Description': description,
-                   'Lot': lot_val.upper(), 'Montant (MAD)': montant,
-                   'Quantité (pièces)': quantite, 'Mode de paiement': mode_paiement,
-                   'Remarque': remarque, 'Statut du lot': statut_lot}
+            row = {'Date': str(date),
+                   'Personne':                    sanitize_text(personne_val.upper()),
+                   'Type (Achat/Vente/Dépense)':  type_trans,
+                   'Description':                 sanitize_text(description),
+                   'Lot':                         sanitize_text(lot_val.upper()),
+                   'Montant (MAD)':               montant,
+                   'Quantité (pièces)':           quantite,
+                   'Mode de paiement':            sanitize_text(mode_paiement),
+                   'Remarque':                    sanitize_text(remarque),
+                   'Statut du lot':               statut_lot}
             try:
                 append_row(row, "Gestion globale")
                 st.success("Transaction enregistrée.")
@@ -944,11 +1011,11 @@ if is_admin:
 
                 st.markdown(f"""
                 <div class="user-card" style="margin-top:0.5rem">
-                    <div class="user-card-name">{row_sel.get('Lot','')} — {row_sel.get('Type (Achat/Vente/Dépense)','')}</div>
+                    <div class="user-card-name">{h(str(row_sel.get('Lot','')))} — {h(str(row_sel.get('Type (Achat/Vente/Dépense)','')))} </div>
                     <div class="user-card-meta">
-                        {row_sel.get('Date','')} · {row_sel.get('Personne','')} · 
+                        {h(str(row_sel.get('Date','')))} · {h(str(row_sel.get('Personne','')))} · 
                         {float(row_sel.get('Montant (MAD)',0)):,.0f} MAD · 
-                        {row_sel.get('Description','')}
+                        {h(str(row_sel.get('Description','')))}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1141,8 +1208,8 @@ if is_admin:
 
             # En-tête : nom bien lisible sur fond blanc
             st.markdown(f"""
-            <div class="modal-user-name">{fn_edit}</div>
-            <div class="modal-user-handle">@{uname_edit}</div>
+            <div class="modal-user-name">{h(fn_edit)}</div>
+            <div class="modal-user-handle">@{h(uname_edit)}</div>
             """, unsafe_allow_html=True)
 
             la_edit = [x.strip() for x in str(row_edit.get("lots_autorises","")).split(",") if x.strip()]
@@ -1184,8 +1251,8 @@ if is_admin:
                 uname = row["username"]
                 fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
                 with st.container():
-                    st.markdown(f"""<div class="user-card"><div class="user-card-name">{fn}</div>
-                    <div class="user-card-meta">@{uname} · {row.get('created_at','')}</div></div>""", unsafe_allow_html=True)
+                    st.markdown(f"""<div class="user-card"><div class="user-card-name">{h(fn)}</div>
+                    <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))}</div></div>""", unsafe_allow_html=True)
                     pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
                     with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
                     with pc2:
@@ -1223,10 +1290,10 @@ if is_admin:
                 <div class="user-card">
                   <div style="display:flex;justify-content:space-between;align-items:flex-start">
                     <div>
-                      <div class="user-card-name">{fn}</div>
-                      <div class="user-card-meta">@{uname} · {row.get('created_at','')} · {role_label_u}</div>
+                      <div class="user-card-name">{h(fn)}</div>
+                      <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {role_label_u}</div>
                     </div>
-                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{row['statut']}</span>
+                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span>
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
