@@ -650,7 +650,8 @@ def page_register():
         pwd1  = st.text_input("Mot de passe", type="password", key="reg_pass", placeholder="8 car. min. avec chiffres")
         pwd2  = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2", placeholder="••••••••")
 
-        if st.button("S'inscrire →", key="btn_register", use_container_width=True):
+        if st.button("S'inscrire →", key="btn_register", use_container_width=True,
+                     disabled=st.session_state.get("registering", False)):
             if not all([uname, pwd1, pwd2, prenom, nom]): err("Remplis tous les champs."); return
             if len(uname) < 3: err("Identifiant trop court (3 car. min.)."); return
             if not re.match(r'^[a-zA-Z0-9_\-\.]+$', uname):
@@ -660,6 +661,7 @@ def page_register():
                 err("Le mot de passe doit contenir lettres et chiffres."); return
             if pwd1 != pwd2: err("Les mots de passe ne correspondent pas."); return
             if find_user(uname): err("Nom d'utilisateur déjà pris."); return
+            st.session_state["registering"] = True
             is_first = not admin_exists()
             new_u = {"username": sanitize_text(uname),
                      "password_hash": hash_password(pwd1),
@@ -670,9 +672,17 @@ def page_register():
                      "nom":    sanitize_text(nom.upper()),
                      "prenom": sanitize_text(prenom.capitalize())}
             try:
-                append_row(new_u, "Utilisateurs")
-                ok("Compte créé ! Tu peux te connecter." if is_first else "Inscription envoyée — en attente d'approbation.")
-            except Exception as e: err(f"Erreur : {e}")
+                with st.spinner("Enregistrement…"):
+                    append_row(new_u, "Utilisateurs")
+                msg = "Compte créé ! Tu peux te connecter." if is_first else "Inscription envoyée — en attente d'approbation."
+                ok(msg)
+                # Vider les champs et déverrouiller après succès
+                for k in ["reg_prenom","reg_nom","reg_user","reg_pass","reg_pass2"]:
+                    st.session_state.pop(k, None)
+                st.session_state.pop("registering", None)
+            except Exception as e:
+                st.session_state.pop("registering", None)
+                err(f"Erreur : {e}")
 
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
         if st.button("Retour à la connexion", key="btn_go_login", use_container_width=True):
@@ -1099,19 +1109,18 @@ if is_admin:
                     with pc2:
                         if st.button("✓ Approuver", key=f"approve_{uname}", disabled=st.session_state.get(f"approving_{uname}", False)):
                             st.session_state[f"approving_{uname}"] = True
-                            with st.spinner(""):
+                            with st.spinner("Enregistrement…"):
                                 users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
                                 users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
                                 save_users(users_df)
-                            st.session_state.pop(f"approving_{uname}", None)
+                            # NE PAS pop le flag avant rerun — il sera nettoyé naturellement
                             st.rerun()
                     with pc3:
                         if st.button("✗ Refuser", key=f"reject_{uname}", disabled=st.session_state.get(f"rejecting_{uname}", False)):
                             st.session_state[f"rejecting_{uname}"] = True
-                            with st.spinner(""):
+                            with st.spinner("Enregistrement…"):
                                 users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
                                 save_users(users_df)
-                            st.session_state.pop(f"rejecting_{uname}", None)
                             st.rerun()
             st.markdown("---")
 
@@ -1155,20 +1164,17 @@ if is_admin:
                 with ac4:
                     if st.button("Sauvegarder", key=f"save_{uname}", disabled=st.session_state.get(f"saving_{uname}", False)):
                         st.session_state[f"saving_{uname}"] = True
-                        with st.spinner(""):
+                        with st.spinner("Enregistrement…"):
                             users_df.loc[users_df["username"]==uname, "lots_autorises"] = ",".join(new_lots)
                             users_df.loc[users_df["username"]==uname, "role"] = new_role
                             save_users(users_df)
-                            # Mettre à jour la session en temps réel (rôle effectif immédiatement)
                             update_session_for_user(uname, new_role, new_lots)
-                        st.session_state.pop(f"saving_{uname}", None)
                         st.rerun()
                     if st.button("Supprimer", key=f"del_{uname}", disabled=st.session_state.get(f"deleting_{uname}", False)):
                         st.session_state[f"deleting_{uname}"] = True
-                        with st.spinner(""):
+                        with st.spinner("Suppression…"):
                             users_df = users_df[users_df["username"] != uname]
                             save_users(users_df)
-                        st.session_state.pop(f"deleting_{uname}", None)
                         st.rerun()
 
 # ═══════════════════════════════════════════════════════════════════════════════
