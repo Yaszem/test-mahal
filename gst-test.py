@@ -23,7 +23,7 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM Sans', sans-serif; Caret-color:'#1C1C1C';}
+html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM Sans', sans-serif; Caret-color: red !improtant;}
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 3rem 4rem 4rem 4rem; max-width: 1300px; }
 
