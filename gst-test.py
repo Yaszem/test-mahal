@@ -51,7 +51,7 @@ html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM
 .auth-features { display: flex; flex-direction: column; gap: 1.6rem; }
 .auth-feature-item { display: flex; align-items: flex-start; gap: 1.2rem; }
 .auth-feature-dot { width: 1px; height: 36px; background: rgba(247,246,242,0.18); flex-shrink: 0; margin-top: 2px; }
-.auth-feature-text { font-size: 0.82rem; color: rgba(247,246,242,0.38); line-height: 1.5; }
+.auth-feature-text { font-size: 0.82rem; color: #F7F6F2; line-height: 1.5; }
 .auth-bottom-badge { font-size: 0.58rem; color: rgba(247,246,242,0.15); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4rem; }
 
 /* Panneau droit crème */
@@ -341,21 +341,8 @@ def page_register():
                     <span class="auth-feature-dot"></span>
                     <span class="auth-feature-text">Ton compte sera examiné par l'administrateur</span>
                 </div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Accès accordé selon les lots autorisés</span>
-                </div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Mot de passe chiffré et sécurisé</span>
-                </div>
-                <div class="auth-feature-item">
-                    <span class="auth-feature-dot"></span>
-                    <span class="auth-feature-text">Premier compte = Administrateur automatique</span>
-                </div>
             </div>
-            <div class="auth-bottom-badge">Inscription contrôlée &nbsp;·&nbsp; Approbation requise</div>
-        </div>
+            </div>
         """, unsafe_allow_html=True)
 
     with right:
