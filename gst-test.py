@@ -23,15 +23,7 @@ st.markdown("""
 *, *::before, *::after { box-sizing: border-box; }
 html, body, .stApp { background-color: #F7F6F2; color: #1C1C1C; font-family: 'DM Sans', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
-
-/* BLOCK CONTAINER — responsive padding */
-.block-container {
-    padding: 1.5rem 1rem 2rem 1rem !important;
-    max-width: 1300px;
-}
-@media (min-width: 768px) {
-    .block-container { padding: 3rem 4rem 4rem 4rem !important; }
-}
+.block-container { padding: 3rem 4rem 4rem 4rem; max-width: 1300px; }
 
 /* CURSEUR NOIR */
 input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
@@ -43,55 +35,45 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
 .stTextInput button:hover svg { color: #999 !important; fill: #999 !important; }
 .stTextInput button:hover svg path { stroke: #999 !important; }
 ._terminalButton_rix23_138 { display: none !important;}
-
-/* ── AUTH ── */
-.auth-brand { font-family: 'DM Serif Display', serif; font-size: 3rem; color: #F7F6F2; line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+/* AUTH */
+.auth-brand { font-family: 'DM Serif Display', serif; font-size: 4rem; color: #F7F6F2; line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
 .auth-brand-sub { font-size: 0.72rem; color: #F7F6F2; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4rem; }
 .auth-features { display: flex; flex-direction: column; gap: 1.6rem; }
 .auth-feature-dot { width: 1px; height: 36px; background: rgba(247,246,242,0.18); flex-shrink: 0; margin-top: 2px; }
 .auth-feature-text { font-size: 0.82rem; color: #F7F6F2; line-height: 1.5; }
-.auth-form-title { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: #1C1C1C; line-height: 1.1; margin-bottom: 0.5rem; }
-.auth-form-desc { font-size: 0.82rem; color: #999; line-height: 1.6; margin-bottom: 1.5rem; }
+.auth-form-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; color: #1C1C1C; line-height: 1.1; margin-bottom: 0.5rem; }
+.auth-form-desc { font-size: 0.82rem; color: #999; line-height: 1.6; margin-bottom: 2.2rem; }
 .auth-divider { display: flex; align-items: center; gap: 0.8rem; margin: 0.8rem 0; color: #CCC; font-size: 0.72rem; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #E0DDD5; }
 .auth-switch-text { font-size: 0.76rem; color: #BBB; text-align: center; margin-top: 1.5rem; }
 
-/* Auth panel gauche — masqué sur mobile, visible tablette+ */
-.auth-left-panel { display: none; }
-@media (min-width: 640px) { .auth-left-panel { display: block; } }
-
-/* ── TOP BAR ── */
-.topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.3rem; flex-wrap: wrap; gap: 0.5rem; }
-.topbar-user { font-size: 0.75rem; color: #999; letter-spacing: 0.04em; padding-top: 0.4rem; }
-.topbar-role { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.2rem 0.65rem; border-radius: 20px; margin-left: 0.4rem; }
+/* TOP BAR */
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.3rem; }
+.topbar-user { font-size: 0.8rem; color: #999; letter-spacing: 0.04em; padding-top: 0.8rem; }
+.topbar-role { display: inline-block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.25rem 0.8rem; border-radius: 20px; margin-left: 0.5rem; }
 .role-admin { background: #1C1C1C; color: #F7F6F2; }
 .role-visiteur { background: #E8E5DE; color: #777; }
 
-/* PAGE TITLES — responsive sizes */
-.page-title { font-family: 'DM Serif Display', serif; font-size: 2rem; color: #1C1C1C; margin-bottom: 0.2rem; line-height: 1.1; }
-@media (min-width: 768px) { .page-title { font-size: 2.6rem; } }
-.page-subtitle { font-size: 0.78rem; color: #999; font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.5rem; }
-@media (min-width: 768px) { .page-subtitle { margin-bottom: 2.5rem; } }
-.section-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: #1C1C1C; margin-top: 1.5rem; margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid #E0DDD5; }
-
 /* NOTIFICATION */
 .notif-badge { display: inline-flex; align-items: center; justify-content: center; background: #E53935; color: #FFF; font-size: 0.65rem; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
-.notif-banner { background: #FFF3E0; border: 1px solid #FFB74D; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 0.8rem; font-size: 0.82rem; color: #7A4100; }
-.notif-banner-dot { width: 8px; height: 8px; border-radius: 50%; background: #FFB74D; flex-shrink: 0; margin-top: 4px; }
+.notif-banner { background: #FFF3E0; border: 1px solid #FFB74D; border-radius: 8px; padding: 0.75rem 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.8rem; font-size: 0.88rem; color: #7A4100; }
+.notif-banner-dot { width: 8px; height: 8px; border-radius: 50%; background: #FFB74D; flex-shrink: 0; }
 
 /* BADGES */
 .badge-pending { display: inline-block; background: #FFF8E1; border: 1px solid #F0C040; color: #7A5C00; font-size: 0.72rem; padding: 0.2rem 0.7rem; border-radius: 20px; font-weight: 500; }
 .badge-approved { background: #EEF7EE; border: 1px solid #C3DEC3; color: #2D6A2D; }
 .badge-rejected { background: #FDECEA; border: 1px solid #E8B4B0; color: #7A1C1C; }
 
-/* METRICS — stack on mobile, row on larger */
-.metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1.5rem; }
-@media (min-width: 640px) { .metric-row { grid-template-columns: repeat(4, 1fr); gap: 1rem; } }
-.metric-card { background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px; padding: 0.9rem 1rem; }
-@media (min-width: 768px) { .metric-card { padding: 1.2rem 1.5rem; } }
-.metric-label { font-size: 0.68rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: #AAA; margin-bottom: 0.4rem; }
-.metric-value { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: #1C1C1C; line-height: 1; }
-@media (min-width: 768px) { .metric-value { font-size: 1.55rem; } }
+/* PAGE TITLES */
+.page-title { font-family: 'DM Serif Display', serif; font-size: 2.6rem; color: #1C1C1C; margin-bottom: 0.2rem; line-height: 1.1; }
+.page-subtitle { font-size: 0.85rem; color: #999; font-weight: 300; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2.5rem; }
+.section-title { font-family: 'DM Serif Display', serif; font-size: 1.35rem; color: #1C1C1C; margin-top: 2rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid #E0DDD5; }
+
+/* METRICS */
+.metric-row { display: flex; gap: 1rem; margin-bottom: 2rem; }
+.metric-card { background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px; padding: 1.2rem 1.5rem; flex: 1; }
+.metric-label { font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: #AAA; margin-bottom: 0.5rem; }
+.metric-value { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: #1C1C1C; line-height: 1; }
 .metric-value.positive { color: #2D7A3A; }
 .metric-value.negative { color: #B03A2E; }
 
@@ -122,67 +104,40 @@ input, textarea, [contenteditable] { caret-color: #1C1C1C !important; }
 .stCheckbox label, .stCheckbox label p, .stCheckbox span { color: #1C1C1C !important; font-size: 0.88rem !important; }
 
 /* BUTTONS */
-.stButton > button {
-    background: #1C1C1C !important; color: #F7F6F2 !important; border: none !important;
-    border-radius: 8px !important; padding: 0.65rem 1.4rem !important;
-    font-family: 'DM Sans', sans-serif !important; font-size: 0.88rem !important;
-    font-weight: 500 !important; letter-spacing: 0.03em !important;
-    margin-top: 0.75rem; transition: opacity 0.2s ease !important;
-    width: 100%;
-}
-@media (min-width: 640px) {
-    .stButton > button { padding: 0.65rem 2.2rem !important; width: auto; }
-}
+.stButton > button { background: #1C1C1C !important; color: #F7F6F2 !important; border: none !important; border-radius: 8px !important; padding: 0.65rem 2.2rem !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.88rem !important; font-weight: 500 !important; letter-spacing: 0.03em !important; margin-top: 1rem; transition: opacity 0.2s ease !important; }
 .stButton > button:hover { opacity: 0.72 !important; }
 
-/* ALERTS */
+/* ALERTS — position normale (pas de margin-top négatif) */
 .stSuccess > div { background: #F0F7F0 !important; border: 1px solid #C3DEC3 !important; border-radius: 8px !important; color: #2D6A2D !important; font-size: 0.88rem !important; }
 
 /* DATAFRAME */
 .stDataFrame { border-radius: 10px !important; overflow: hidden !important; border: 1px solid #E8E5DE !important; }
-.stDataFrame table { font-size: 0.8rem !important; font-family: 'DM Sans', sans-serif !important; }
-@media (min-width: 768px) { .stDataFrame table { font-size: 0.88rem !important; } }
-.stDataFrame thead th { background: #F0EDE5 !important; color: #777 !important; font-weight: 500 !important; font-size: 0.72rem !important; letter-spacing: 0.05em !important; text-transform: uppercase !important; padding: 0.6rem 0.7rem !important; border-bottom: 1px solid #DDDAD2 !important; }
-@media (min-width: 768px) { .stDataFrame thead th { padding: 0.75rem 1rem !important; } }
+.stDataFrame table { font-size: 0.88rem !important; font-family: 'DM Sans', sans-serif !important; }
+.stDataFrame thead th { background: #F0EDE5 !important; color: #777 !important; font-weight: 500 !important; font-size: 0.75rem !important; letter-spacing: 0.05em !important; text-transform: uppercase !important; padding: 0.75rem 1rem !important; border-bottom: 1px solid #DDDAD2 !important; }
 .stDataFrame tbody tr:nth-child(even) td { background: #FAFAF8 !important; }
-.stDataFrame tbody td { padding: 0.5rem 0.7rem !important; border-bottom: 1px solid #F0EDE5 !important; color: #1C1C1C !important; }
-@media (min-width: 768px) { .stDataFrame tbody td { padding: 0.65rem 1rem !important; } }
+.stDataFrame tbody td { padding: 0.65rem 1rem !important; border-bottom: 1px solid #F0EDE5 !important; color: #1C1C1C !important; }
 
-/* TABS — scrollable on mobile */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 0; background: transparent; border-bottom: 1px solid #E0DDD5;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; -ms-overflow-style: none;
-    flex-wrap: nowrap;
-}
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
-.stTabs [data-baseweb="tab"] {
-    font-family: 'DM Sans', sans-serif !important; font-size: 0.82rem !important;
-    font-weight: 400 !important; color: #AAA !important; background: transparent !important;
-    border: none !important; border-bottom: 2px solid transparent !important;
-    border-radius: 0 !important; padding: 0.55rem 0.9rem !important;
-    white-space: nowrap; flex-shrink: 0;
-}
-@media (min-width: 640px) {
-    .stTabs [data-baseweb="tab"] { font-size: 0.88rem !important; padding: 0.65rem 1.4rem !important; }
-}
+/* TABS */
+.stTabs [data-baseweb="tab-list"] { gap: 0; background: transparent; border-bottom: 1px solid #E0DDD5; }
+.stTabs [data-baseweb="tab"] { font-family: 'DM Sans', sans-serif !important; font-size: 0.88rem !important; font-weight: 400 !important; color: #AAA !important; background: transparent !important; border: none !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; padding: 0.65rem 1.4rem !important; }
 .stTabs [aria-selected="true"] { color: #1C1C1C !important; border-bottom: 2px solid #1C1C1C !important; font-weight: 500 !important; }
 .stTabs [data-baseweb="tab-panel"] { padding-top: 0 !important; }
 .info-count { font-size: 0.8rem; color: #999; margin-bottom: 0.8rem; }
 
-/* Hide manage-app button */
+/* Cacher le bouton "Manage app" en bas à droite */
 [data-testid="manage-app-button"],
 .st-emotion-cache-ztfqz8,
 footer .st-emotion-cache-ztfqz8,
 [class*="viewerBadge"],
 #MainMenu { visibility: hidden !important; display: none !important; }
 .stDeployButton { display: none !important; }
+iframe[title="streamlit_component"] + div [data-testid="manage-app-button"] { display: none !important; }
 div[data-testid="stStatusWidget"] { display: none !important; }
 
 /* USER CARD */
-.user-card { background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
-.user-card-name { font-weight: 600; font-size: 0.9rem; color: #1C1C1C; }
-.user-card-meta { font-size: 0.72rem; color: #AAA; margin-top: 0.2rem; }
+.user-card { background: #FFFFFF; border: 1px solid #E8E5DE; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.7rem; }
+.user-card-name { font-weight: 600; font-size: 0.95rem; color: #1C1C1C; }
+.user-card-meta { font-size: 0.75rem; color: #AAA; margin-top: 0.2rem; }
 
 /* BOUTONS SUGGESTION — style chip compact */
 [data-testid="stHorizontalBlock"] > div [data-testid="stButton"] > button {
@@ -190,18 +145,11 @@ div[data-testid="stStatusWidget"] { display: none !important; }
     border: 1px solid #DDDAD2 !important; border-radius: 20px !important;
     padding: 0.2rem 0.75rem !important; font-size: 0.78rem !important;
     font-weight: 400 !important; margin-top: 0 !important;
-    letter-spacing: 0 !important; width: auto !important;
+    letter-spacing: 0 !important;
 }
 [data-testid="stHorizontalBlock"] > div [data-testid="stButton"] > button:hover {
     background: #E8E5DE !important; opacity: 1 !important;
 }
-
-/* COLUMNS — stack on small screens via Streamlit's own responsive behavior */
-/* Force full width dataframe wrapper on mobile */
-[data-testid="stDataFrameResizable"] { width: 100% !important; }
-
-/* Horizontal scroll for tables on mobile */
-[data-testid="stDataFrame"] { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -291,7 +239,7 @@ import hashlib as _hl
 
 SECRET_KEY = SPREADSHEET_ID[:16]
 
-# ─── Cache serveur ─────────────────────────────────────────────────────────────
+# ─── Cache serveur : persiste tant que l'app tourne (survit au refresh) ────────
 @st.cache_resource
 def _session_store():
     return {}
@@ -338,23 +286,11 @@ def ok(m):   st.markdown(f"<div style='background:#EEF7EE;border:1px solid #C3DE
 # LOGIN
 # ═══════════════════════════════════════════════════════════════════════════════
 def page_login():
-    # Sur mobile : une seule colonne. Sur desktop : deux colonnes
-    is_mobile_hint = True  # Streamlit ne peut pas détecter côté serveur, on utilise une colonne conditionnelle
     l, r = st.columns([1.1, 1])
     with l:
-        st.markdown("""
-        <div style='background:#1C1C1C;padding:2.5rem 2rem;min-height:60vh;border-radius:0 12px 12px 0;display:flex;flex-direction:column;justify-content:center'>
-            <div class='auth-brand'>Mahal</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div style='background:#1C1C1C;padding:4rem;min-height:80vh;border-radius:0 12px 12px 0'>
+        <div class='auth-brand'>Mahal</div></div>""", unsafe_allow_html=True)
     with r:
-        st.markdown("""
-        <style>
-        /* Sur très petit écran, cache la colonne gauche auth */
-        @media (max-width: 480px) {
-            [data-testid="column"]:first-child { display: none !important; }
-        }
-        </style>
-        """, unsafe_allow_html=True)
         st.markdown("<div class='auth-form-title'>Connexion</div><div class='auth-form-desc'>Entrez vos identifiants pour accéder à votre espace.</div>", unsafe_allow_html=True)
         uname = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
         pwd   = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
@@ -377,6 +313,7 @@ def page_login():
             st.session_state.username = str(user["username"])
             st.session_state.role = str(user["role"])
             st.session_state.lots_autorises = lots_list
+            # Stocker session côté serveur et token dans l'URL
             token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
             st.session_state["_sess_token"] = token
             st.query_params["t"] = token
@@ -392,12 +329,11 @@ def page_login():
 def page_register():
     l, r = st.columns([1.1, 1])
     with l:
-        st.markdown("""
-        <div style='background:#1C1C1C;padding:2.5rem 2rem;min-height:60vh;border-radius:0 12px 12px 0;display:flex;flex-direction:column;justify-content:center'>
-            <div class='auth-brand'>Mahal</div>
-            <div class='auth-brand-sub'>Créer un compte</div>
-            <div class='auth-features'><div class='auth-feature-item'>
-            <span class='auth-feature-text'>Ton compte sera examiné par l'administrateur</span></div></div>
+        st.markdown("""<div style='background:#1C1C1C;padding:4rem;min-height:80vh;border-radius:0 12px 12px 0'>
+        <div class='auth-brand'>Mahal</div>
+        <div class='auth-brand-sub'>Créer un compte</div>
+        <div class='auth-features'><div class='auth-feature-item'><span class='auth-feature-dot'></span>
+        <span class='auth-feature-text'>Ton compte sera examiné par l'administrateur</span></div></div>
         </div>""", unsafe_allow_html=True)
     with r:
         st.markdown("<div class='auth-form-title'>Créer un compte</div><div class='auth-form-desc'>Votre demande sera soumise à l'approbation de l'administrateur.</div>", unsafe_allow_html=True)
@@ -482,6 +418,7 @@ def compute_suivi_lot(t):
     g['Résultat'] = g['Total Ventes'] - (g['Total Achats'] + g['Total Dépenses']); return g
 
 def compute_historique_lot(t):
+    """Toutes les transactions triées par lot et date."""
     if t.empty or 'Lot' not in t.columns:
         return pd.DataFrame()
     cols = [c for c in ['Lot','Date','Type (Achat/Vente/Dépense)','Personne','Description',
@@ -531,14 +468,14 @@ st.markdown(f"""
     <div class="page-title">Mahal</div>
     <div class="page-subtitle">Gestion de stock et transactions</div>
   </div>
-  <div style="display:flex;align-items:center;padding-top:0.4rem;flex-wrap:wrap;gap:0.3rem">
+  <div style="display:flex;align-items:center;padding-top:0.8rem">
     <span class="topbar-user">{username}</span>
     <span class="topbar-role {role_class}">{role_label}</span>{notif_html}
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Bannière notification
+# Bannière notification EN HAUT
 if is_admin and pending_count > 0:
     st.markdown(f"""
     <div class="notif-banner">
@@ -565,9 +502,9 @@ cr = "positive" if rn >= 0 else "negative"
 
 st.markdown(f"""
 <div class="metric-row">
-  <div class="metric-card"><div class="metric-label">Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div>
+  <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div>
+  <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div>
+  <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div>
   <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
 </div>
 """, unsafe_allow_html=True)
@@ -590,37 +527,44 @@ if is_admin:
     # ── Tab 1 : Nouvelle transaction ────────────────────────────────────────────
     with tab1:
         st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
-        # Sur mobile : 1 colonne. Sur desktop : 3 colonnes via use_container_width
-        c1, c2, c3 = st.columns(1), st.columns(1)[0], st.columns(1)[0]
-        # Réorganisation responsive : on empile tout verticalement sur mobile
-        date = st.date_input("Date", datetime.now())
-        personne_val = st.selectbox(
-            "Personne",
-            options=personnes_existantes,
-            index=None,
-            placeholder="Sélectionner ou taper un nom...",
-            key="sel_personne"
-        )
-        if personne_val is None:
-            personne_val = st.text_input("Nouveau nom", key="new_personne_input", placeholder="Ex: DUPONT")
-        type_trans = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"])
-        lot_val = st.selectbox(
-            "Lot",
-            options=lots_existants,
-            index=None,
-            placeholder="Sélectionner ou taper un lot...",
-            key="sel_lot"
-        )
-        if lot_val is None:
-            lot_val = st.text_input("Nouveau lot", key="new_lot_input", placeholder="Ex: LOT-001")
-        description = st.text_input("Description")
-        montant     = st.number_input("Montant (MAD)", min_value=0.0, step=0.01)
-        quantite      = st.number_input("Quantité (pièces)", min_value=1, step=1)
-        mode_paiement = st.text_input("Mode de paiement")
-        statut_lot    = st.selectbox("Statut du lot", ["Actif","Fermé"])
+        c1, c2, c3 = st.columns(3, gap="large")
+
+        with c1:
+            date = st.date_input("Date", datetime.now())
+            # Personne : selectbox searchable — si pas trouvé, traité comme nouveau
+            personne_val = st.selectbox(
+                "Personne",
+                options=personnes_existantes,
+                index=None,
+                placeholder="Sélectionner ou taper un nom...",
+                key="sel_personne"
+            )
+            if personne_val is None:
+                personne_val = st.text_input("Nouveau nom", key="new_personne_input", placeholder="Ex: DUPONT")
+            type_trans = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"])
+
+        with c2:
+            # Lot : selectbox searchable — si pas trouvé, traité comme nouveau
+            lot_val = st.selectbox(
+                "Lot",
+                options=lots_existants,
+                index=None,
+                placeholder="Sélectionner ou taper un lot...",
+                key="sel_lot"
+            )
+            if lot_val is None:
+                lot_val = st.text_input("Nouveau lot", key="new_lot_input", placeholder="Ex: LOT-001")
+            description = st.text_input("Description")
+            montant     = st.number_input("Montant (MAD)", min_value=0.0, step=0.01)
+
+        with c3:
+            quantite      = st.number_input("Quantité (pièces)", min_value=1, step=1)
+            mode_paiement = st.text_input("Mode de paiement")
+            statut_lot    = st.selectbox("Statut du lot", ["Actif","Fermé"])
+
         remarque = st.text_input("Remarque")
 
-        if st.button("Enregistrer", use_container_width=True):
+        if st.button("Enregistrer"):
             row = {'Date': str(date), 'Personne': personne_val.upper(),
                    'Type (Achat/Vente/Dépense)': type_trans, 'Description': description,
                    'Lot': lot_val.upper(), 'Montant (MAD)': montant,
@@ -636,10 +580,12 @@ if is_admin:
     # ── Tab 2 : Recherche ───────────────────────────────────────────────────────
     with tab2:
         st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        query = st.text_input("Rechercher", placeholder="Nom, lot, description...")
-        filtre_type = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"])
-        lots_dispo = ["Tous"] + sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-        filtre_lot = st.selectbox("Lot", lots_dispo)
+        cs1, cs2, cs3 = st.columns([2,1,1], gap="large")
+        with cs1: query = st.text_input("Rechercher", placeholder="Nom, lot, description...")
+        with cs2: filtre_type = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"])
+        with cs3:
+            lots_dispo = ["Tous"] + sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+            filtre_lot = st.selectbox("Lot", lots_dispo)
         df_f = transactions.copy()
         if query:
             mask = (df_f['Personne'].astype(str).str.contains(query,case=False,na=False) |
@@ -650,30 +596,30 @@ if is_admin:
         if filtre_type != "Tous": df_f = df_f[df_f['Type (Achat/Vente/Dépense)']==filtre_type]
         if filtre_lot != "Tous":  df_f = df_f[df_f['Lot']==filtre_lot]
         st.markdown(f'<div class="info-count">{len(df_f)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_f, use_container_width=True, hide_index=True)
+        st.dataframe(df_f, width='stretch', hide_index=True)
 
     # ── Tab 3 : Graphiques ──────────────────────────────────────────────────────
     with tab3:
         st.markdown('<div class="section-title">Graphiques</div>', unsafe_allow_html=True)
         COLORS = {'ACHAT':'#5C85D6','VENTE':'#2D7A3A','DÉPENSE':'#C0864A'}
         PL = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=11),margin=dict(l=10,r=10,t=30,b=10))
-
-        st.markdown('<div class="section-title" style="font-size:1rem;">Répartition globale</div>', unsafe_allow_html=True)
-        fig = go.Figure(go.Pie(labels=['Achats','Ventes','Dépenses'], values=[ta,tv,td], hole=0.55,
-            marker=dict(colors=['#5C85D6','#2D7A3A','#C0864A'],line=dict(color='#F7F6F2',width=3)),
-            hovertemplate='%{label}<br>%{value:,.0f} MAD<extra></extra>'))
-        fig.update_layout(**PL,showlegend=True,legend=dict(orientation='h',y=-0.15,x=0.5,xanchor='center'))
-        st.plotly_chart(fig,use_container_width=True)
-
-        st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par lot</div>', unsafe_allow_html=True)
-        sl = compute_suivi_lot(transactions)
-        fig2 = go.Figure(go.Bar(x=sl['Lot'],y=sl['Résultat'],
-            marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl['Résultat']],
-            hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-        fig2.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-        st.plotly_chart(fig2,use_container_width=True)
-
+                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
+        gc1,gc2 = st.columns(2,gap="large")
+        with gc1:
+            st.markdown('<div class="section-title" style="font-size:1rem;">Répartition globale</div>', unsafe_allow_html=True)
+            fig = go.Figure(go.Pie(labels=['Achats','Ventes','Dépenses'], values=[ta,tv,td], hole=0.55,
+                marker=dict(colors=['#5C85D6','#2D7A3A','#C0864A'],line=dict(color='#F7F6F2',width=3)),
+                hovertemplate='%{label}<br>%{value:,.0f} MAD<extra></extra>'))
+            fig.update_layout(**PL,showlegend=True,legend=dict(orientation='h',y=-0.15,x=0.5,xanchor='center'))
+            st.plotly_chart(fig,use_container_width=True)
+        with gc2:
+            st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par lot</div>', unsafe_allow_html=True)
+            sl = compute_suivi_lot(transactions)
+            fig2 = go.Figure(go.Bar(x=sl['Lot'],y=sl['Résultat'],
+                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl['Résultat']],
+                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
+            fig2.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
+            st.plotly_chart(fig2,use_container_width=True)
         st.markdown('<div class="section-title" style="font-size:1rem;">Évolution dans le temps</div>', unsafe_allow_html=True)
         df_t = transactions.copy()
         df_t['Date'] = pd.to_datetime(df_t['Date'],errors='coerce')
@@ -685,11 +631,10 @@ if is_admin:
             d = dp[dp['Type (Achat/Vente/Dépense)']==tv2]
             if not d.empty:
                 fig3.add_trace(go.Scatter(x=d['Mois'],y=d['Montant (MAD)'],mode='lines+markers',name=tv2,
-                    line=dict(color=col,width=2),marker=dict(size=5)))
+                    line=dict(color=col,width=2),marker=dict(size=6)))
         fig3.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'),
             legend=dict(orientation='h',y=-0.2,x=0.5,xanchor='center'))
         st.plotly_chart(fig3,use_container_width=True)
-
         st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par personne</div>', unsafe_allow_html=True)
         rp = compute_resume_personne(transactions)
         fig4 = go.Figure(go.Bar(x=rp['Personne'],y=rp['Résultat'],
@@ -701,12 +646,12 @@ if is_admin:
     # ── Tab 4 : Catalogue ───────────────────────────────────────────────────────
     with tab4:
         st.markdown('<div class="section-title">Catalogue des lots</div>', unsafe_allow_html=True)
-        st.dataframe(compute_suivi_lot(transactions), use_container_width=True, hide_index=True)
+        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
 
     # ── Tab 5 : Résumé personne ─────────────────────────────────────────────────
     with tab5:
         st.markdown('<div class="section-title">Résumé par personne</div>', unsafe_allow_html=True)
-        st.dataframe(compute_resume_personne(transactions), use_container_width=True, hide_index=True)
+        st.dataframe(compute_resume_personne(transactions), width='stretch', hide_index=True)
 
     # ── Tab 6 : Historique des lots ─────────────────────────────────────────────
     with tab6:
@@ -731,20 +676,27 @@ if is_admin:
             """, unsafe_allow_html=True)
         if not hist_df.empty:
             st.markdown(f'<div class="info-count">{len(hist_df)} transaction(s)</div>', unsafe_allow_html=True)
-            st.dataframe(hist_df, use_container_width=True, hide_index=True)
+            st.dataframe(hist_df, width='stretch', hide_index=True)
         else:
             warn("Aucune transaction pour ce lot.")
 
     # ── Tab 7 : Avances + Suppressions ─────────────────────────────────────────
     with tab7:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
-        st.dataframe(compute_suivi_avances(transactions), use_container_width=True, hide_index=True)
+        st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
 
         st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
 
-        f_lot   = st.selectbox("Filtrer par lot", ["Tous"] + sorted(transactions['Lot'].dropna().astype(str).unique().tolist()), key="sf_lot")
-        f_pers  = st.selectbox("Filtrer par personne", ["Tous"] + sorted(transactions['Personne'].dropna().astype(str).unique().tolist()), key="sf_pers")
-        f_type  = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sf_type")
+        # Filtres pour retrouver la transaction
+        sf1, sf2, sf3 = st.columns(3, gap="large")
+        with sf1:
+            lots_f  = ["Tous"] + sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+            f_lot   = st.selectbox("Filtrer par lot", lots_f, key="sf_lot")
+        with sf2:
+            pers_f  = ["Tous"] + sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
+            f_pers  = st.selectbox("Filtrer par personne", pers_f, key="sf_pers")
+        with sf3:
+            f_type  = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sf_type")
 
         df_del = transactions.copy()
         df_del = df_del.reset_index(drop=True)
@@ -753,6 +705,7 @@ if is_admin:
         if f_type != "Tous": df_del = df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
 
         if not df_del.empty:
+            # Créer des labels lisibles pour chaque ligne
             def make_label(r):
                 return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
             labels = [make_label(row) for _, row in df_del.iterrows()]
@@ -778,7 +731,7 @@ if is_admin:
                 """, unsafe_allow_html=True)
 
                 c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
-                if st.button("Supprimer cette transaction", key="btn_del_single", use_container_width=True):
+                if st.button("Supprimer cette transaction", key="btn_del_single"):
                     if not c_single:
                         warn("Coche la case de confirmation.")
                     else:
@@ -791,32 +744,33 @@ if is_admin:
             warn("Aucune transaction ne correspond aux filtres.")
 
         st.markdown('<div class="section-title">Supprimer en masse</div>', unsafe_allow_html=True)
-
-        st.markdown("**Toutes les transactions d'un lot**")
-        lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-        lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
-        if lot_sup != "— sélectionner —":
-            st.markdown(f'<div class="info-count">{len(transactions[transactions["Lot"]==lot_sup])} transaction(s)</div>', unsafe_allow_html=True)
-        c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
-        if st.button("Supprimer le lot", key="btn_del_lot", use_container_width=True):
-            if lot_sup == "— sélectionner —": warn("Sélectionne un lot.")
-            elif not c_lot: warn("Coche la case de confirmation.")
-            else:
-                transactions = transactions[transactions['Lot']!=lot_sup]
-                save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); st.cache_resource.clear()
-
-        st.markdown("**Toutes les transactions d'une personne**")
-        pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
-        pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
-        if pers_sup != "— sélectionner —":
-            st.markdown(f'<div class="info-count">{len(transactions[transactions["Personne"]==pers_sup])} transaction(s)</div>', unsafe_allow_html=True)
-        c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
-        if st.button("Supprimer la personne", key="btn_del_pers", use_container_width=True):
-            if pers_sup == "— sélectionner —": warn("Sélectionne une personne.")
-            elif not c_pers: warn("Coche la case de confirmation.")
-            else:
-                transactions = transactions[transactions['Personne']!=pers_sup]
-                save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); st.cache_resource.clear()
+        dc1, dc2 = st.columns(2, gap="large")
+        with dc1:
+            st.markdown("**Toutes les transactions d'un lot**")
+            lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+            lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
+            if lot_sup != "— sélectionner —":
+                st.markdown(f'<div class="info-count">{len(transactions[transactions["Lot"]==lot_sup])} transaction(s)</div>', unsafe_allow_html=True)
+            c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
+            if st.button("Supprimer le lot", key="btn_del_lot"):
+                if lot_sup == "— sélectionner —": warn("Sélectionne un lot.")
+                elif not c_lot: warn("Coche la case de confirmation.")
+                else:
+                    transactions = transactions[transactions['Lot']!=lot_sup]
+                    save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); st.cache_resource.clear()
+        with dc2:
+            st.markdown("**Toutes les transactions d'une personne**")
+            pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
+            pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
+            if pers_sup != "— sélectionner —":
+                st.markdown(f'<div class="info-count">{len(transactions[transactions["Personne"]==pers_sup])} transaction(s)</div>', unsafe_allow_html=True)
+            c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
+            if st.button("Supprimer la personne", key="btn_del_pers"):
+                if pers_sup == "— sélectionner —": warn("Sélectionne une personne.")
+                elif not c_pers: warn("Coche la case de confirmation.")
+                else:
+                    transactions = transactions[transactions['Personne']!=pers_sup]
+                    save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); st.cache_resource.clear()
 
     # ── Tab 8 : Utilisateurs ────────────────────────────────────────────────────
     with tab8:
@@ -833,15 +787,15 @@ if is_admin:
                 with st.container():
                     st.markdown(f"""<div class="user-card"><div class="user-card-name">{fn}</div>
                     <div class="user-card-meta">@{uname} · {row.get('created_at','')}</div></div>""", unsafe_allow_html=True)
-                    lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
-                    pc2, pc3 = st.columns(2, gap="small")
+                    pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
+                    with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
                     with pc2:
-                        if st.button("✓ Approuver", key=f"approve_{uname}", use_container_width=True):
+                        if st.button("✓ Approuver", key=f"approve_{uname}"):
                             users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
                             users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
                             save_users(users_df); ok(f"{uname} approuvé."); st.rerun()
                     with pc3:
-                        if st.button("✗ Refuser", key=f"reject_{uname}", use_container_width=True):
+                        if st.button("✗ Refuser", key=f"reject_{uname}"):
                             users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
                             save_users(users_df); warn(f"{uname} refusé."); st.rerun()
             st.markdown("---")
@@ -864,19 +818,21 @@ if is_admin:
                 st.markdown(f"""<div class="user-card"><div class="user-card-name">{fn}</div>
                 <div class="user-card-meta">@{uname} · {row.get('created_at','')} · {'Admin' if row['role']=='admin' else 'Visiteur'}</div>
                 </div>""", unsafe_allow_html=True)
-                sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
-                st.markdown(f"<span class='badge-pending {sb}'>{row['statut']}</span>", unsafe_allow_html=True)
-                la = [l.strip() for l in str(row.get("lots_autorises","")).split(",") if l.strip()]
-                new_lots = st.multiselect("Lots", options=lots_all, default=la, key=f"edit_lots_{uname}")
-                new_role = st.selectbox("Rôle", ["visiteur","admin"], index=0 if row["role"]=="visiteur" else 1, key=f"role_{uname}")
-                ac3, ac4 = st.columns(2, gap="small")
+                ac1, ac2, ac3, ac4 = st.columns([1,3,1,1], gap="small")
+                with ac1:
+                    sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
+                    st.markdown(f"<span class='badge-pending {sb}'>{row['statut']}</span>", unsafe_allow_html=True)
+                with ac2:
+                    la = [l.strip() for l in str(row.get("lots_autorises","")).split(",") if l.strip()]
+                    new_lots = st.multiselect("Lots", options=lots_all, default=la, key=f"edit_lots_{uname}")
                 with ac3:
-                    if st.button("Sauvegarder", key=f"save_{uname}", use_container_width=True):
+                    new_role = st.selectbox("Rôle", ["visiteur","admin"], index=0 if row["role"]=="visiteur" else 1, key=f"role_{uname}")
+                with ac4:
+                    if st.button("Sauvegarder", key=f"save_{uname}"):
                         users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(new_lots)
                         users_df.loc[users_df["username"]==uname,"role"] = new_role
                         save_users(users_df); ok(f"{uname} mis à jour."); st.rerun()
-                with ac4:
-                    if st.button("Supprimer", key=f"del_{uname}", use_container_width=True):
+                    if st.button("Supprimer", key=f"del_{uname}"):
                         users_df = users_df[users_df["username"]!=uname]
                         save_users(users_df); ok(f"{uname} supprimé."); st.rerun()
 
@@ -888,7 +844,7 @@ else:
         st.markdown('<div class="section-title">Mes lots autorisés</div>', unsafe_allow_html=True)
         if lots_autorises: st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
         else: warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
-        st.dataframe(compute_suivi_lot(transactions), use_container_width=True, hide_index=True)
+        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
 
     with tab2:
         st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
@@ -899,12 +855,12 @@ else:
                     df_v['Remarque'].astype(str).str.contains(query_v,case=False,na=False))
             df_v = df_v[mask]
         st.markdown(f'<div class="info-count">{len(df_v)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_v, use_container_width=True, hide_index=True)
+        st.dataframe(df_v, width='stretch', hide_index=True)
 
     with tab3:
         st.markdown('<div class="section-title">Graphiques de mes lots</div>', unsafe_allow_html=True)
         PL = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=11),margin=dict(l=10,r=10,t=30,b=10))
+                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
         sl_v = compute_suivi_lot(transactions)
         if not sl_v.empty:
             fig_v = go.Figure(go.Bar(x=sl_v['Lot'],y=sl_v['Résultat'],
