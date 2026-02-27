@@ -1090,7 +1090,6 @@ if is_admin:
 
     with tab7:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
-        st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
 
         # ── ÉDITION DIRECTE DANS LE TABLEUR ──────────────────────────────────
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
