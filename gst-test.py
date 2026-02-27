@@ -1092,16 +1092,90 @@ if is_admin:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
         st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
 
-        # ── MODIFIER UNE TRANSACTION ──────────────────────────────────────────
-        st.markdown('<div class="section-title">Modifier une transaction</div>', unsafe_allow_html=True)
-        st.caption("Sélectionnez une transaction ci-dessous pour la modifier directement.")
-        transactions_all = render_edit_transaction_form(
-            transactions_all,
-            lots_filter=None,
-            personne_filter=None,
-            key_prefix="admin_edit"
+        # ── ÉDITION DIRECTE DANS LE TABLEUR ──────────────────────────────────
+        st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
+        st.caption("Cliquez sur une cellule pour la modifier directement. Appuyez sur **Sauvegarder** pour enregistrer toutes les modifications.")
+
+        # Filtres pour réduire le tableau affiché
+        ef1, ef2, ef3 = st.columns(3, gap="large")
+        with ef1:
+            lots_edit_opts = ["Tous"] + sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
+            e_lot = st.selectbox("Filtrer par lot", lots_edit_opts, key="edit_inline_lot")
+        with ef2:
+            pers_edit_opts = ["Tous"] + sorted(transactions_all['Personne'].dropna().astype(str).unique().tolist())
+            e_pers = st.selectbox("Filtrer par personne", pers_edit_opts, key="edit_inline_pers")
+        with ef3:
+            e_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="edit_inline_type")
+
+        # Construire le df à afficher (avec index original conservé)
+        df_editable = transactions_all.copy()
+        df_editable.index = range(len(df_editable))   # index propre 0..N
+        df_editable["_orig_idx"] = df_editable.index  # colonne cachée = position dans transactions_all
+
+        mask_edit = pd.Series([True] * len(df_editable))
+        if e_lot  != "Tous": mask_edit &= df_editable['Lot'].astype(str) == e_lot
+        if e_pers != "Tous": mask_edit &= df_editable['Personne'].astype(str) == e_pers
+        if e_type != "Tous": mask_edit &= df_editable['Type (Achat/Vente/Dépense)'].astype(str) == e_type
+
+        df_view = df_editable[mask_edit].copy()
+
+        # Colonnes éditables et leurs types
+        cols_show = [c for c in ['Date','Personne','Type (Achat/Vente/Dépense)','Lot',
+                                  'Description','Montant (MAD)','Quantité (pièces)',
+                                  'Mode de paiement','Remarque','Statut du lot'] if c in df_view.columns]
+
+        column_config = {
+            "Date": st.column_config.TextColumn("Date", help="Format YYYY-MM-DD"),
+            "Personne": st.column_config.TextColumn("Personne"),
+            "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn(
+                "Type",
+                options=["ACHAT","VENTE","DÉPENSE"],
+                required=True
+            ),
+            "Lot": st.column_config.TextColumn("Lot"),
+            "Description": st.column_config.TextColumn("Description"),
+            "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
+            "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
+            "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
+            "Remarque": st.column_config.TextColumn("Remarque"),
+            "Statut du lot": st.column_config.SelectboxColumn(
+                "Statut",
+                options=["Actif","Fermé"],
+                required=True
+            ),
+        }
+
+        st.markdown(f'<div class="info-count">{len(df_view)} transaction(s) affichée(s)</div>', unsafe_allow_html=True)
+
+        edited_df = st.data_editor(
+            df_view[cols_show + ["_orig_idx"]],
+            column_config=column_config,
+            hide_index=True,
+            use_container_width=True,
+            num_rows="fixed",
+            column_order=cols_show,   # cache la colonne _orig_idx visuellement
+            key="inline_editor"
         )
-        transactions = transactions_all.copy() if is_admin else transactions
+
+        if st.button("💾 Sauvegarder toutes les modifications", key="btn_save_inline"):
+            try:
+                # Réinjecter les lignes modifiées dans transactions_all
+                for _, row_edit in edited_df.iterrows():
+                    oi = int(row_edit["_orig_idx"])
+                    for col in cols_show:
+                        if col in transactions_all.columns:
+                            val = row_edit[col]
+                            if col in ['Personne','Lot','Description','Remarque','Mode de paiement']:
+                                val = sanitize_text(str(val))
+                                if col in ['Personne','Lot']:
+                                    val = val.upper()
+                            transactions_all.at[oi, col] = val
+                save_sheet(transactions_all, "Gestion globale")
+                st.success("✅ Modifications enregistrées dans Google Sheets.")
+                clear_data_cache()
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erreur lors de la sauvegarde : {e}")
 
         st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
 
