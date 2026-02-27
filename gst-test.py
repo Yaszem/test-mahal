@@ -271,6 +271,27 @@ div[data-testid="stStatusWidget"] { display: none !important; }
     margin-top: 1rem;
 }
 
+/* ── ALERTES LISIBLES EN NOIR ── */
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] span,
+div[data-testid="stAlert"] { color: #1C1C1C !important; }
+div[data-testid="stAlert"][data-alert-type="warning"],
+div[data-testid="stAlert"][data-alert-type="info"] {
+    background: #F5F3EE !important;
+    border: 1px solid #DDDAD2 !important;
+    border-radius: 8px !important;
+}
+.stWarning > div, .stInfo > div {
+    background: #F5F3EE !important;
+    border: 1px solid #DDDAD2 !important;
+    color: #1C1C1C !important;
+    border-radius: 8px !important;
+}
+.stWarning svg, .stInfo svg { color: #1C1C1C !important; fill: #1C1C1C !important; }
+/* Streamlit v1.3x+ selector */
+div[class*="stAlert"] { color: #1C1C1C !important; }
+div[class*="stAlert"] * { color: #1C1C1C !important; }
+
 @media screen and (max-width: 768px) {
     .block-container { padding: 1rem 1rem 2rem 1rem !important; max-width: 100% !important; }
     .auth-left { display: none !important; }
@@ -743,6 +764,15 @@ else:
 
 notif_html = f'<span class="notif-badge">{pending_count}</span>' if (is_admin and pending_count > 0) else ""
 
+if is_admin and pending_count > 0:
+    st.markdown(f"""
+    <div class="notif-banner">
+      <div class="notif-banner-dot"></div>
+      <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
+      — rendez-vous dans l'onglet <strong>Utilisateurs</strong>.</span>
+    </div>
+    """, unsafe_allow_html=True)
+
 st.markdown(f"""
 <div class="topbar">
   <div>
@@ -755,15 +785,6 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
-
-if is_admin and pending_count > 0:
-    st.markdown(f"""
-    <div class="notif-banner">
-      <div class="notif-banner-dot"></div>
-      <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
-      — rendez-vous dans l'onglet <strong>Utilisateurs</strong>.</span>
-    </div>
-    """, unsafe_allow_html=True)
 
 dcol = st.columns([6, 1])[1]
 with dcol:
@@ -1090,6 +1111,7 @@ if is_admin:
 
     with tab7:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
+        st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
 
         # ── ÉDITION DIRECTE DANS LE TABLEUR ──────────────────────────────────
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
@@ -1357,23 +1379,28 @@ elif is_sous_admin:
 
     with tab1:
         st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
-        st.info(f"ℹ️ En tant que sous-admin, la transaction sera enregistrée sous votre nom : **{username.upper()}**")
+        st.markdown(f'<div class="info-count">Transaction enregistrée sous le nom : <strong>{h(username.upper())}</strong></div>', unsafe_allow_html=True)
 
         c1, c2, c3 = st.columns(3, gap="large")
 
         with c1:
             date_sa = st.date_input("Date", datetime.now(), key="sa_date")
-            # Personne figée = username du sous-admin
             st.text_input("Personne", value=username.upper(), disabled=True, key="sa_pers_display")
             type_trans_sa = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"], key="sa_type")
 
         with c2:
-            # Lots limités aux lots autorisés
-            if lots_autorises:
-                lot_val_sa = st.selectbox("Lot", options=lots_autorises, key="sa_lot")
-            else:
-                st.warning("Aucun lot autorisé. Contacte l'administrateur.")
-                lot_val_sa = None
+            # Lot : sélection parmi autorisés OU nouveau lot
+            lots_sa_options = lots_autorises if lots_autorises else []
+            lot_sel_sa = st.selectbox(
+                "Lot (autorisés)",
+                options=lots_sa_options,
+                index=None,
+                placeholder="Choisir un lot existant..." if lots_sa_options else "Aucun lot autorisé",
+                key="sa_lot_sel"
+            )
+            nouveau_lot_sa = st.text_input("Ou créer un nouveau lot", key="sa_new_lot", placeholder="Ex: LOT-007")
+            # Priorité au nouveau lot si renseigné
+            lot_val_sa = sanitize_text(nouveau_lot_sa).upper() if nouveau_lot_sa.strip() else (lot_sel_sa or None)
             description_sa = st.text_input("Description", key="sa_desc")
             montant_sa     = st.number_input("Montant (MAD)", min_value=0.0, step=0.01, key="sa_montant")
 
@@ -1386,14 +1413,14 @@ elif is_sous_admin:
 
         if st.button("Enregistrer", key="sa_btn_save"):
             if not lot_val_sa:
-                st.error("Aucun lot disponible.")
+                st.error("Sélectionne ou crée un lot.")
             else:
                 row_sa = {
                     'Date':                        str(date_sa),
                     'Personne':                    sanitize_text(username.upper()),
                     'Type (Achat/Vente/Dépense)':  type_trans_sa,
                     'Description':                 sanitize_text(description_sa),
-                    'Lot':                         sanitize_text(lot_val_sa.upper()),
+                    'Lot':                         lot_val_sa,
                     'Montant (MAD)':               montant_sa,
                     'Quantité (pièces)':           quantite_sa,
                     'Mode de paiement':            sanitize_text(mode_paiement_sa),
@@ -1402,7 +1429,7 @@ elif is_sous_admin:
                 }
                 try:
                     append_row(row_sa, "Gestion globale")
-                    st.success("Transaction enregistrée.")
+                    st.success(f"Transaction enregistrée sur le lot {lot_val_sa}.")
                     clear_data_cache()
                 except Exception as e:
                     st.error(f"Erreur : {e}")
@@ -1445,19 +1472,78 @@ elif is_sous_admin:
             warn("Aucune donnée à afficher.")
 
     with tab5:
-        st.markdown('<div class="section-title">Modifier une de mes transactions</div>', unsafe_allow_html=True)
-        st.info("Vous pouvez uniquement modifier vos propres transactions sur vos lots autorisés.")
+        st.markdown('<div class="section-title">Modifier mes transactions</div>', unsafe_allow_html=True)
+        st.markdown('<div class="info-count">Cliquez sur une cellule pour la modifier. Seules vos transactions sur vos lots sont éditables.</div>', unsafe_allow_html=True)
 
-        if transactions.empty:
-            st.warning("Aucune transaction disponible pour vos lots.")
+        # Filtrer : uniquement les transactions du sous-admin sur ses lots autorisés
+        df_sa_edit = transactions_all.copy()
+        df_sa_edit.index = range(len(df_sa_edit))
+        df_sa_edit["_orig_idx"] = df_sa_edit.index
+
+        # Filtrer sur personne = username ET lots autorisés
+        mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
+        if lots_autorises:
+            mask_sa &= df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
+        df_sa_view = df_sa_edit[mask_sa].copy()
+
+        if df_sa_view.empty:
+            st.markdown('<div class="info-count">Aucune transaction à afficher pour votre compte.</div>', unsafe_allow_html=True)
         else:
-            # Le sous-admin ne peut modifier que ses propres transactions sur ses lots
-            transactions_all = render_edit_transaction_form(
-                transactions_all,
-                lots_filter=lots_autorises if lots_autorises else None,
-                personne_filter=username.upper(),
-                key_prefix="sa_edit"
+            # Filtre additionnel par lot
+            lots_sa_disp = ["Tous"] + sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
+            fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
+            if fsa_lot != "Tous":
+                df_sa_view = df_sa_view[df_sa_view['Lot'] == fsa_lot]
+
+            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot',
+                                         'Description','Montant (MAD)','Quantité (pièces)',
+                                         'Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
+
+            # Lots disponibles pour ce sous-admin (autorisés + nouveaux créés)
+            all_lots_sa = sorted(set(lots_autorises or []) | set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
+
+            col_cfg_sa = {
+                "Date": st.column_config.TextColumn("Date", help="Format YYYY-MM-DD"),
+                "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
+                "Lot": st.column_config.SelectboxColumn("Lot", options=all_lots_sa, required=True),
+                "Description": st.column_config.TextColumn("Description"),
+                "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
+                "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
+                "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
+                "Remarque": st.column_config.TextColumn("Remarque"),
+                "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
+            }
+
+            st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>', unsafe_allow_html=True)
+
+            edited_sa = st.data_editor(
+                df_sa_view[cols_sa_show + ["_orig_idx"]],
+                column_config=col_cfg_sa,
+                hide_index=True,
+                use_container_width=True,
+                num_rows="fixed",
+                column_order=cols_sa_show,
+                key="sa_inline_editor"
             )
+
+            if st.button("💾 Sauvegarder les modifications", key="sa_btn_save_inline"):
+                try:
+                    for _, row_edit in edited_sa.iterrows():
+                        oi = int(row_edit["_orig_idx"])
+                        for col in cols_sa_show:
+                            if col in transactions_all.columns:
+                                val = row_edit[col]
+                                if col in ['Lot','Description','Remarque','Mode de paiement']:
+                                    val = sanitize_text(str(val))
+                                if col == 'Lot':
+                                    val = val.upper()
+                                transactions_all.at[oi, col] = val
+                    save_sheet(transactions_all, "Gestion globale")
+                    st.success("✅ Modifications enregistrées.")
+                    clear_data_cache()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erreur lors de la sauvegarde : {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR (rôle legacy — au cas où des comptes existent encore)
