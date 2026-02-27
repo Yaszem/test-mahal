@@ -292,49 +292,115 @@ div[data-testid="stAlert"][data-alert-type="info"] {
 div[class*="stAlert"] { color: #1C1C1C !important; }
 div[class*="stAlert"] * { color: #1C1C1C !important; }
 
-/* ── DATA EDITOR — TEXTE LISIBLE ── */
-/* Cellules corps */
-[data-testid="stDataEditor"] .dvn-scroller,
-[data-testid="stDataEditor"] canvas { background: #FFFFFF !important; }
+/* ══════════════════════════════════════════════════
+   DATA EDITOR — GLIDE DATA GRID — TEXTE LISIBLE
+   ══════════════════════════════════════════════════ */
 
-/* Toute la zone data_editor */
-[data-testid="stDataEditor"] { background: #FFFFFF !important; border: 1px solid #E0DDD5 !important; border-radius: 10px !important; overflow: hidden !important; }
-
-/* Glide data grid — texte des cellules via variables CSS */
+/* Conteneur principal */
 [data-testid="stDataEditor"] {
-    --gdg-text-dark: #1C1C1C !important;
-    --gdg-text-medium: #1C1C1C !important;
-    --gdg-text-light: #555555 !important;
-    --gdg-text-header: #555555 !important;
-    --gdg-bg-cell: #FFFFFF !important;
-    --gdg-bg-cell-medium: #FAFAF8 !important;
-    --gdg-bg-header: #F0EDE5 !important;
-    --gdg-bg-header-has-focus: #E8E5DE !important;
-    --gdg-bg-header-hovered: #E8E5DE !important;
-    --gdg-border-color: #E0DDD5 !important;
-    --gdg-horizontal-border-color: #E0DDD5 !important;
-    --gdg-accent-color: #1C1C1C !important;
-    --gdg-accent-light: #F0EDE5 !important;
-    --gdg-selection-color: rgba(28,28,28,0.1) !important;
-    --gdg-bg-selected-header: #E8E5DE !important;
-    --gdg-link-color: #1C1C1C !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E0DDD5 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
 }
 
-/* Input actif dans une cellule */
+/* Variables CSS du canvas Glide Data Grid */
+[data-testid="stDataEditor"] {
+    --gdg-text-dark:             #1C1C1C !important;
+    --gdg-text-medium:           #333333 !important;
+    --gdg-text-light:            #555555 !important;
+    --gdg-text-header:           #555555 !important;
+    --gdg-text-group-header:     #555555 !important;
+    --gdg-bg-cell:               #FFFFFF !important;
+    --gdg-bg-cell-medium:        #FAFAF8 !important;
+    --gdg-bg-header:             #F0EDE5 !important;
+    --gdg-bg-header-has-focus:   #E8E5DE !important;
+    --gdg-bg-header-hovered:     #E8E5DE !important;
+    --gdg-border-color:          #E0DDD5 !important;
+    --gdg-horizontal-border-color: #E0DDD5 !important;
+    --gdg-accent-color:          #1C1C1C !important;
+    --gdg-accent-light:          rgba(28,28,28,0.12) !important;
+    --gdg-selection-color:       rgba(28,28,28,0.08) !important;
+    --gdg-bg-selected-header:    #E8E5DE !important;
+    --gdg-link-color:            #1C1C1C !important;
+    --gdg-cell-horizontal-padding: 8px !important;
+}
+
+/* Input texte actif dans cellule */
 [data-testid="stDataEditor"] input,
 [data-testid="stDataEditor"] textarea {
     color: #1C1C1C !important;
     -webkit-text-fill-color: #1C1C1C !important;
     background: #FFFFFF !important;
     caret-color: #1C1C1C !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.88rem !important;
 }
 
-/* Dropdown du SelectboxColumn dans data_editor */
-[data-testid="stDataEditor"] [data-baseweb="select"] *,
-[data-testid="stDataEditor"] [data-baseweb="popover"] *,
-[data-testid="stDataEditor"] [data-baseweb="menu"] li {
-    color: #1C1C1C !important;
+/* ── DROPDOWN / POPOVER DU DATA_EDITOR (flotte dans le body) ──
+   Le popup de SelectboxColumn est rendu HORS du stDataEditor,
+   directement dans le portail du DOM → on cible via Portal/Popover */
+
+/* Fond du portail popover */
+[data-baseweb="popover"],
+[data-baseweb="tooltip"],
+div[class*="portal"] [data-baseweb="popover"] {
     background: #FFFFFF !important;
+}
+
+/* Liste d'options dans le menu déroulant */
+[data-baseweb="menu"],
+[data-baseweb="menu"] ul,
+[data-baseweb="menu"] li,
+[data-baseweb="option"],
+[role="option"],
+[role="listbox"],
+[role="listbox"] li {
+    background: #FFFFFF !important;
+    color: #1C1C1C !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.88rem !important;
+}
+
+/* Hover sur option */
+[data-baseweb="option"]:hover,
+[role="option"]:hover,
+[data-baseweb="option"][aria-selected="true"],
+[role="option"][aria-selected="true"] {
+    background: #F0EDE5 !important;
+    color: #1C1C1C !important;
+}
+
+/* Texte sélectionné dans la cellule (tag/chip) */
+[data-testid="stDataEditor"] [data-baseweb="tag"],
+[data-testid="stDataEditor"] [data-baseweb="tag"] span {
+    background: #E8E5DE !important;
+    color: #1C1C1C !important;
+}
+
+/* Input de recherche dans le dropdown */
+[data-baseweb="select"] input,
+[data-baseweb="combobox"] input,
+[data-baseweb="popover"] input {
+    color: #1C1C1C !important;
+    -webkit-text-fill-color: #1C1C1C !important;
+    background: #F7F6F2 !important;
+    caret-color: #1C1C1C !important;
+}
+
+/* Overlay/backdrop du popover */
+[data-baseweb="popover"] > div,
+div[data-popper-placement] {
+    background: #FFFFFF !important;
+    border: 1px solid #E0DDD5 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* Texte dans les popovers généraux */
+[data-baseweb="popover"] *,
+div[data-popper-placement] * {
+    color: #1C1C1C !important;
 }
 
 @media screen and (max-width: 768px) {
