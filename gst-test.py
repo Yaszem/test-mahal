@@ -1481,7 +1481,56 @@ if is_admin:
                             users_df = users_df[users_df["username"] != uname]
                             save_users(users_df)
                         st.rerun()
+    with tab9:
+        st.markdown('<div class="section-title">Finance</div>', unsafe_allow_html=True)
 
+        subtabs = st.tabs([
+            "Caisse",
+            "Dettes fournisseurs",
+            "Charges",
+            "Rapport mensuel",
+            "Gestion fournisseurs"
+        ])
+        sub1, sub2, sub3, sub4, sub5 = subtabs
+
+        def compute_caisse(t):
+            t = to_numeric(t.copy(), ['Montant (MAD)'])
+
+            total_entrees = t.loc[t['Type (Achat/Vente/Dépense)']=="VENTE","Montant (MAD)"].sum()
+
+            total_sorties = t.loc[
+             t['Type (Achat/Vente/Dépense)'].isin(["ACHAT","DÉPENSE"]),
+                "Montant (MAD)"
+            ].sum()
+
+            return total_entrees - total_sorties
+
+        with sub1:
+            solde = compute_caisse(transactions)
+
+            st.metric("Solde en caisse", f"{solde:,.0f} MAD")
+        
+        def compute_dettes_fournisseurs(t):
+            EMPTY = pd.DataFrame(columns=["Fournisseur","Total Achats","Total Paiements","Dette Restante"])
+
+            if t.empty:
+                return EMPTY
+
+            t = to_numeric(t.copy(), ['Montant (MAD)'])
+
+            g = t.groupby('Personne').apply(lambda x: pd.Series({
+                "Total Achats": x.loc[x['Type (Achat/Vente/Dépense)']=="ACHAT","Montant (MAD)"].sum(),
+                "Total Paiements": x.loc[x['Type (Achat/Vente/Dépense)']=="DÉPENSE","Montant (MAD)"].sum()
+            }), include_groups=False).reset_index()
+
+            g = g.rename(columns={"Personne":"Fournisseur"})
+            g["Dette Restante"] = g["Total Achats"] - g["Total Paiements"]
+
+            return g[g["Total Achats"] > 0]
+        
+        with sub2:
+            df_dettes = compute_dettes_fournisseurs(transactions)
+            st.dataframe(df_dettes, use_container_width=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SOUS-ADMIN
@@ -1658,56 +1707,7 @@ elif is_sous_admin:
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erreur lors de la sauvegarde : {e}")
-    with tab9:
-        st.markdown('<div class="section-title">Finance</div>', unsafe_allow_html=True)
 
-        subtabs = st.tabs([
-            "Caisse",
-            "Dettes fournisseurs",
-            "Charges",
-            "Rapport mensuel",
-            "Gestion fournisseurs"
-        ])
-        sub1, sub2, sub3, sub4, sub5 = subtabs
-
-        def compute_caisse(t):
-            t = to_numeric(t.copy(), ['Montant (MAD)'])
-
-            total_entrees = t.loc[t['Type (Achat/Vente/Dépense)']=="VENTE","Montant (MAD)"].sum()
-
-            total_sorties = t.loc[
-             t['Type (Achat/Vente/Dépense)'].isin(["ACHAT","DÉPENSE"]),
-                "Montant (MAD)"
-            ].sum()
-
-            return total_entrees - total_sorties
-
-        with sub1:
-            solde = compute_caisse(transactions)
-
-            st.metric("Solde en caisse", f"{solde:,.0f} MAD")
-        
-        def compute_dettes_fournisseurs(t):
-            EMPTY = pd.DataFrame(columns=["Fournisseur","Total Achats","Total Paiements","Dette Restante"])
-
-            if t.empty:
-                return EMPTY
-
-            t = to_numeric(t.copy(), ['Montant (MAD)'])
-
-            g = t.groupby('Personne').apply(lambda x: pd.Series({
-                "Total Achats": x.loc[x['Type (Achat/Vente/Dépense)']=="ACHAT","Montant (MAD)"].sum(),
-                "Total Paiements": x.loc[x['Type (Achat/Vente/Dépense)']=="DÉPENSE","Montant (MAD)"].sum()
-            }), include_groups=False).reset_index()
-
-            g = g.rename(columns={"Personne":"Fournisseur"})
-            g["Dette Restante"] = g["Total Achats"] - g["Total Paiements"]
-
-            return g[g["Total Achats"] > 0]
-        
-        with sub2:
-            df_dettes = compute_dettes_fournisseurs(transactions)
-            st.dataframe(df_dettes, use_container_width=True)
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR (rôle legacy — au cas où des comptes existent encore)
 # ═══════════════════════════════════════════════════════════════════════════════
