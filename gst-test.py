@@ -927,8 +927,8 @@ st.markdown(f"""
 if is_admin:
     utl = f"Utilisateurs ({pending_count})" if pending_count > 0 else "Utilisateurs"
     tabs = st.tabs(["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots",
-                    "Résumé par personne","Historique des lots","Suivi des avances", utl])
-    tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8 = tabs
+                    "Résumé par personne","Historique des lots","Suivi des avances","Finance", utl])
+    tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9, = tabs
 elif is_sous_admin:
     tabs = st.tabs(["Nouvelle transaction","Mes lots","Recherche","Graphiques","Modifier une transaction"])
     tab1,tab2,tab3,tab4,tab5 = tabs
@@ -1658,13 +1658,35 @@ elif is_sous_admin:
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erreur lors de la sauvegarde : {e}")
-    with tab6:
-        st.makdown('<div>Caisse et prét</div>')
+    with tab8:
+        st.makdown('<div class="section-title">Finance</div>')
 
-        #def getuser():
-        #    print("")
-        #    return
-            
+        subtabs = st.tabs([
+            "Caisse",
+            "Dettes fournisseurs",
+            "Charges",
+            "Rapport mensuel",
+            "Gestion fournisseurs"
+        ])
+        sub1, sub2, sub3, sub4, sub5 = subtabs
+
+        def compute_caisse(t):
+            t = to_numeric(t.copy(), ['Montant (MAD)'])
+
+            total_entrees = t.loc[t['Type (Achat/Vente/Dépense)']=="VENTE","Montant (MAD)"].sum()
+
+            total_sorties = t.loc[
+             t['Type (Achat/Vente/Dépense)'].isin(["ACHAT","DÉPENSE"]),
+                "Montant (MAD)"
+            ]       .sum()
+
+            return total_entrees - total_sorties
+
+        with sub1:
+            solde = compute_caisse(transactions)
+
+            st.metric("Solde en caisse", f"{solde:,.0f} MAD")
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR (rôle legacy — au cas où des comptes existent encore)
 # ═══════════════════════════════════════════════════════════════════════════════
