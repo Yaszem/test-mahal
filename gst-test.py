@@ -1659,7 +1659,7 @@ elif is_sous_admin:
                 except Exception as e:
                     st.error(f"Erreur lors de la sauvegarde : {e}")
     with tab8:
-        st.makdown('<div class="section-title">Finance</div>')
+        st.makdown('<div class="section-title">Finance</div>', unsafe_allow_html=True)
 
         subtabs = st.tabs([
             "Caisse",
