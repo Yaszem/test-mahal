@@ -444,19 +444,17 @@ def get_client():
     creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPES)
     return gspread.authorize(creds)
 
-def load_sheet(sheet_name):
-    """Lecture directe sans cache — toujours à jour depuis Google Sheets."""
+@st.cache_data(ttl=30)
+def _load_sheet_cached(sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
     data = sh.worksheet(sheet_name).get_all_records()
     return pd.DataFrame(data) if data else pd.DataFrame()
 
-# Garde une fonction _load_sheet_cached pour compatibilité avec les appels .clear()
-class _FakeCache:
-    def clear(self): pass
-_load_sheet_cached = _FakeCache()
+def load_sheet(sheet_name):
+    return _load_sheet_cached(sheet_name)
 
 def clear_data_cache():
-    pass  # Plus de cache — les données sont relues à chaque refresh
+    _load_sheet_cached.clear()
 
 def save_sheet(df, sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
@@ -1224,7 +1222,6 @@ if is_admin:
 
     with tab7:
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
-        st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
 
         # ── ÉDITION DIRECTE DANS LE TABLEUR ──────────────────────────────────
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
@@ -1592,7 +1589,8 @@ elif is_sous_admin:
         # Filtrer : uniquement les transactions du sous-admin sur ses lots autorisés
         df_sa_edit = transactions_all.copy()
         df_sa_edit.index = range(len(df_sa_edit))
-        df_sa_edit["_orig_idx"] = df_sa_edit.index
+        df_sa_edit["_orig_idx"] = df_sa_edit.index 
+        # df_sa_edit = index.non
 
         # Filtrer sur personne = username ET lots autorisés
         mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
@@ -1609,10 +1607,11 @@ elif is_sous_admin:
             if fsa_lot != "Tous":
                 df_sa_view = df_sa_view[df_sa_view['Lot'] == fsa_lot]
 
-            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot',
+            cols_sa_show = [c for c qin ['Date','Type (Achat/Vente/Dépense)','Lot',
                                          'Description','Montant (MAD)','Quantité (pièces)',
                                          'Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
 
+            cols_show = [c for c in ['Date', 'Personne', 'Type (achat,Vente,Depense)']]
             # Lots disponibles pour ce sous-admin (autorisés + nouveaux créés)
             all_lots_sa = sorted(set(lots_autorises or []) | set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
 
@@ -1658,7 +1657,13 @@ elif is_sous_admin:
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erreur lors de la sauvegarde : {e}")
+    with tab6:
+        st.makdown('<div>Caisse et prét</div>')
 
+        #def getuser():
+        #    print("")
+        #    return
+            
 # ═══════════════════════════════════════════════════════════════════════════════
 # VISITEUR (rôle legacy — au cas où des comptes existent encore)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1693,3 +1698,11 @@ else:
             st.plotly_chart(fig_v,use_container_width=True)
         else:
             warn("Aucune donnée à afficher.")
+
+#sous admin :------- 
+#Peut voir les lot a sons nom  
+#|
+#|
+#|
+#caisse et charge :-------------
+#Dette finacière -------- Dette fourniseur ------ caisse ------- encaissement 
