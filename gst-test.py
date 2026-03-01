@@ -928,7 +928,7 @@ if is_admin:
     utl = f"Utilisateurs ({pending_count})" if pending_count > 0 else "Utilisateurs"
     tabs = st.tabs(["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots",
                     "Résumé par personne","Historique des lots","Suivi des avances","Finance", utl])
-    tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9,tab10, = tabs
+    tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab8,tab9, = tabs
 elif is_sous_admin:
     tabs = st.tabs(["Nouvelle transaction","Mes lots","Recherche","Graphiques","Modifier une transaction"])
     tab1,tab2,tab3,tab4,tab5 = tabs
