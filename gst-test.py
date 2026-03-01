@@ -1460,7 +1460,8 @@ if is_admin:
                 ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
                 with ac2:
                     la = [x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]
-                    new_lots = st.multiselect("Lots", options=lots_all, default=la, key=f"edit_lots_{uname}")
+                    la_valid = [x for x in la if x in lots_all]  # filtre les lots qui n'existent plus dans les transactions
+                    new_lots = st.multiselect("Lots", options=lots_all, default=la_valid, key=f"edit_lots_{uname}")
                 with ac3:
                     # Rôles disponibles : admin, sous-admin (plus de "visiteur")
                     role_options = ["sous-admin","admin"]
