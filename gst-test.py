@@ -1607,11 +1607,12 @@ elif is_sous_admin:
             if fsa_lot != "Tous":
                 df_sa_view = df_sa_view[df_sa_view['Lot'] == fsa_lot]
 
-            cols_sa_show = [c for c qin ['Date','Type (Achat/Vente/Dépense)','Lot',
+            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot',
                                          'Description','Montant (MAD)','Quantité (pièces)',
                                          'Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
 
-            cols_show = [c for c in ['Date', 'Personne', 'Type (achat,Vente,Depense)']]
+            cols_show = [c for c in ['Date', 'Personne', 'Type (achat,Vente,Depense)','Lot']]
+            
             # Lots disponibles pour ce sous-admin (autorisés + nouveaux créés)
             all_lots_sa = sorted(set(lots_autorises or []) | set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
 
