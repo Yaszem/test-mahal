@@ -444,17 +444,19 @@ def get_client():
     creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPES)
     return gspread.authorize(creds)
 
-@st.cache_data(ttl=30)
-def _load_sheet_cached(sheet_name):
+def load_sheet(sheet_name):
+    """Lecture directe sans cache — toujours à jour depuis Google Sheets."""
     sh = get_client().open_by_key(SPREADSHEET_ID)
     data = sh.worksheet(sheet_name).get_all_records()
     return pd.DataFrame(data) if data else pd.DataFrame()
 
-def load_sheet(sheet_name):
-    return _load_sheet_cached(sheet_name)
+# Garde une fonction _load_sheet_cached pour compatibilité avec les appels .clear()
+class _FakeCache:
+    def clear(self): pass
+_load_sheet_cached = _FakeCache()
 
 def clear_data_cache():
-    _load_sheet_cached.clear()
+    pass  # Plus de cache — les données sont relues à chaque refresh
 
 def save_sheet(df, sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
