@@ -1660,7 +1660,6 @@ elif is_sous_admin:
                     st.error(f"Erreur lors de la sauvegarde : {e}")
     with tab9:
         st.markdown('<div class="section-title">Finance</div>', unsafe_allow_html=True)
-        st.write("JE SUIS DANS FINANCE")
 
         subtabs = st.tabs([
             "Caisse",
