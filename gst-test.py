@@ -1167,7 +1167,7 @@ _html_parts = [
     # Functions
     'function openDrawer(){dr.style.right="0";ov.style.display="block";pdoc.body.style.overflow="hidden";}',
     'function closeDrawer(){dr.style.right="-320px";ov.style.display="none";pdoc.body.style.overflow="";}',
-    'function navTo(key){closeDrawer();window.parent.postMessage({type:"mahal_nav",key:key,token:TOKEN},"*");}',
+    'function navTo(key){closeDrawer();var a=pdoc.createElement("a");var url=pdoc.location.pathname+"?nav="+encodeURIComponent(key);if(TOKEN)url+="&t="+encodeURIComponent(TOKEN);a.href=url;a.style.display="none";pdoc.body.appendChild(a);a.click();a.remove();}',
     # Events
     'btn.addEventListener("click",function(e){e.stopPropagation();openDrawer();});',
     'ov.addEventListener("click",closeDrawer);',
@@ -1184,23 +1184,7 @@ _html_parts = [
 _html = "\n".join(_html_parts)
 components.html(_html, height=0, scrolling=False)
 
-# Second iframe: receives postMessage from drawer iframe and does the actual navigation
-# window.parent.location is accessible here because Streamlit loads this iframe differently
-_listener = (
-    '<!DOCTYPE html><html><body><script>' +
-    'window.addEventListener("message",function(e){' +
-    '  if(!e.data||e.data.type!=="mahal_nav")return;' +
-    '  try{' +
-    '    var url=window.parent.location.pathname+"?nav="+encodeURIComponent(e.data.key);' +
-    '    if(e.data.token)url+="&t="+encodeURIComponent(e.data.token);' +
-    '    window.parent.location.href=url;' +
-    '  }catch(err){' +
-    '    window.location.href="/?nav="+encodeURIComponent(e.data.key)+(e.data.token?"&t="+encodeURIComponent(e.data.token):"");' +
-    '  }' +
-    '});' +
-    '</script></body></html>'
-)
-components.html(_listener, height=0, scrolling=False)
+# drawer navigation handled via anchor click in iframe
 
 
 
