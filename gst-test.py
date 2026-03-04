@@ -1051,7 +1051,7 @@ st.markdown(f"""
   <div style="display:flex;align-items:center;padding-top:0.8rem;gap:0.5rem">
     <span class="topbar-user">{h(username)}</span>
     <span class="topbar-role {role_class}">{role_label_top}</span>
-    <div class="active-tab-pill" onclick="document.getElementById('mahal-menu-btn').click()">
+    <div class="active-tab-pill" id="mahal-tab-pill">
       <span class="active-tab-pill-icon">{active_icon}</span>
       <span>{h(active_label)}</span>
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;margin-left:2px">
@@ -1099,75 +1099,136 @@ for item in nav_items:
     sections_map[sec].append(item)
 
 drawer_items_html = ""
+# Build JS nav map: key -> nav_key
+nav_keys_js = []
 for sec in sections_order:
     drawer_items_html += f'<div class="drawer-section-label">{sec}</div>'
     for item in sections_map[sec]:
         is_active = "active" if item["key"] == active_page else ""
         badge_html = f'<span class="drawer-notif">{item["badge"]}</span>' if item.get("badge", 0) > 0 else ""
+        # Use data-navkey attribute instead of onclick — React won't intercept data attrs
         drawer_items_html += f"""
-        <button class="drawer-item {is_active}" onclick="navigateTo('{item['key']}')" title="{item['label']}">
+        <button class="drawer-item {is_active}" data-navkey="{item['key']}" title="{item['label']}">
           <span class="drawer-item-icon">{item['icon']}</span>
           <span>{item['label']}</span>
           {badge_html}
         </button>"""
+        nav_keys_js.append(item['key'])
 
 # Get current token for nav URL
 current_token = st.session_state.get("_sess_token", "")
 
 st.markdown(f"""
-<!-- Hamburger button -->
-<button id="mahal-menu-btn" onclick="toggleDrawer()" title="Menu navigation">
+<!-- Hamburger button — NO onclick, id-based only -->
+<button id="mahal-menu-btn" title="Menu navigation">
   <span></span><span></span><span></span>
 </button>
 
 <!-- Overlay -->
-<div id="mahal-overlay" onclick="closeDrawer()"></div>
+<div id="mahal-overlay"></div>
 
 <!-- Drawer -->
 <div id="mahal-drawer">
   <div class="drawer-header">
     <div class="drawer-brand">Mahal</div>
-    <div class="drawer-close" onclick="closeDrawer()">
+    <div class="drawer-close" id="mahal-drawer-close">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path d="M1 1l10 10M11 1L1 11" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
   </div>
-  <div class="drawer-nav">
+  <div class="drawer-nav" id="mahal-drawer-nav">
     {drawer_items_html}
   </div>
   <div class="drawer-footer">© 2025 — Plateforme privée</div>
 </div>
 
 <script>
-function toggleDrawer() {{
-  var d = document.getElementById('mahal-drawer');
-  var o = document.getElementById('mahal-overlay');
-  var isOpen = d.classList.contains('open');
-  if (isOpen) {{ closeDrawer(); }} else {{ openDrawer(); }}
-}}
-function openDrawer() {{
-  document.getElementById('mahal-drawer').classList.add('open');
-  document.getElementById('mahal-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}}
-function closeDrawer() {{
-  document.getElementById('mahal-drawer').classList.remove('open');
-  document.getElementById('mahal-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-}}
-function navigateTo(pageKey) {{
-  closeDrawer();
-  // Build URL with both session token and nav param
-  var token = '{current_token}';
-  var url = window.location.pathname + '?nav=' + pageKey;
-  if (token) {{ url += '&t=' + token; }}
-  window.location.href = url;
-}}
-// Close drawer on Escape key
-document.addEventListener('keydown', function(e) {{
-  if (e.key === 'Escape') closeDrawer();
-}});
+(function() {{
+  var TOKEN = '{current_token}';
+
+  function openDrawer() {{
+    var d = document.getElementById('mahal-drawer');
+    var o = document.getElementById('mahal-overlay');
+    if (d) d.classList.add('open');
+    if (o) o.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }}
+
+  function closeDrawer() {{
+    var d = document.getElementById('mahal-drawer');
+    var o = document.getElementById('mahal-overlay');
+    if (d) d.classList.remove('open');
+    if (o) o.classList.remove('open');
+    document.body.style.overflow = '';
+  }}
+
+  function navigateTo(pageKey) {{
+    closeDrawer();
+    var url = window.location.pathname + '?nav=' + encodeURIComponent(pageKey);
+    if (TOKEN) url += '&t=' + encodeURIComponent(TOKEN);
+    window.location.href = url;
+  }}
+
+  function attachDrawerEvents() {{
+    var btn = document.getElementById('mahal-menu-btn');
+    var overlay = document.getElementById('mahal-overlay');
+    var closeBtn = document.getElementById('mahal-drawer-close');
+    var nav = document.getElementById('mahal-drawer-nav');
+    var pill = document.getElementById('mahal-tab-pill');
+
+    if (btn && !btn._drawerBound) {{
+      btn.addEventListener('click', function(e) {{ e.stopPropagation(); openDrawer(); }});
+      btn._drawerBound = true;
+    }}
+    if (overlay && !overlay._drawerBound) {{
+      overlay.addEventListener('click', closeDrawer);
+      overlay._drawerBound = true;
+    }}
+    if (closeBtn && !closeBtn._drawerBound) {{
+      closeBtn.addEventListener('click', closeDrawer);
+      closeBtn._drawerBound = true;
+    }}
+    if (pill && !pill._drawerBound) {{
+      pill.addEventListener('click', function(e) {{ e.stopPropagation(); openDrawer(); }});
+      pill._drawerBound = true;
+    }}
+    // Attach nav item clicks via event delegation on the nav container
+    if (nav && !nav._drawerBound) {{
+      nav.addEventListener('click', function(e) {{
+        var target = e.target;
+        // Walk up to find the button with data-navkey
+        while (target && target !== nav) {{
+          if (target.tagName === 'BUTTON' && target.dataset.navkey) {{
+            navigateTo(target.dataset.navkey);
+            return;
+          }}
+          target = target.parentElement;
+        }}
+      }});
+      nav._drawerBound = true;
+    }}
+  }}
+
+  // Escape key to close
+  document.addEventListener('keydown', function(e) {{
+    if (e.key === 'Escape') closeDrawer();
+  }});
+
+  // Attach immediately + retry after DOM settles (Streamlit re-renders)
+  attachDrawerEvents();
+  setTimeout(attachDrawerEvents, 200);
+  setTimeout(attachDrawerEvents, 600);
+  setTimeout(attachDrawerEvents, 1500);
+
+  // Also observe DOM mutations in case Streamlit re-renders the nodes
+  if (typeof MutationObserver !== 'undefined') {{
+    var observer = new MutationObserver(function() {{
+      attachDrawerEvents();
+    }});
+    observer.observe(document.body, {{ childList: true, subtree: true }});
+  }}
+}})();
 </script>
 """, unsafe_allow_html=True)
 
