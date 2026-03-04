@@ -383,6 +383,11 @@ for k, v in [("authenticated", False), ("username", ""), ("role", ""),
               ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
     if k not in st.session_state: st.session_state[k] = v
 
+# Capture ?nav= BEFORE auth check so it survives the full page load
+_early_nav = st.query_params.get("nav", "")
+if _early_nav:
+    st.session_state["_pending_nav"] = _early_nav
+
 if not st.session_state.authenticated:
     token_url = st.query_params.get("t", "")
     if token_url:
@@ -1004,18 +1009,17 @@ else:
 if "active_page" not in st.session_state:
     st.session_state.active_page = nav_items[0]["key"]
 
-# Handle navigation via query param (for JS → Python communication)
-qp_nav = st.query_params.get("nav", "")
-if qp_nav and qp_nav != st.session_state.active_page:
+# Apply pending navigation captured early (before auth check)
+_pnav = st.session_state.pop("_pending_nav", "") or st.query_params.get("nav", "")
+if _pnav:
     valid_keys = [item["key"] for item in nav_items]
-    if qp_nav in valid_keys:
-        st.session_state.active_page = qp_nav
-        # Keep the session token but clear nav param
-        token_keep = st.query_params.get("t", "")
-        st.query_params.clear()
-        if token_keep:
-            st.query_params["t"] = token_keep
-        st.rerun()
+    if _pnav in valid_keys:
+        st.session_state.active_page = _pnav
+    # Clean nav param from URL, keep session token
+    token_keep = st.query_params.get("t", "")
+    st.query_params.clear()
+    if token_keep:
+        st.query_params["t"] = token_keep
 
 active_page = st.session_state.active_page
 active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
