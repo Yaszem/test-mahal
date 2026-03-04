@@ -1640,7 +1640,9 @@ def render_page():
             st.markdown(f"**🔔 Demandes en attente ({len(pending)})**")
             for _, row in pending.iterrows():
                 uname = row["username"]
-                fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
+                _p = str(row.get("prenom", "") or ""); _p = "" if _p in ("nan","None") else _p
+                _n = str(row.get("nom",    "") or ""); _n = "" if _n in ("nan","None") else _n
+                fn = (_p.strip() + " " + _n.strip()).strip() or "—"
                 with st.container():
                     st.markdown(f"""<div class="user-card"><div class="user-card-name">{h(fn)}</div>
                     <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))}</div></div>""", unsafe_allow_html=True)
@@ -1678,7 +1680,9 @@ def render_page():
         for _, row in approved.iterrows():
             uname = row["username"]
             if uname == username: continue
-            fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
+            _p = str(row.get("prenom", "") or ""); _p = "" if _p in ("nan","None") else _p
+            _n = str(row.get("nom",    "") or ""); _n = "" if _n in ("nan","None") else _n
+            fn = (_p.strip() + " " + _n.strip()).strip() or "—"
             sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
             cur_role = str(row["role"])
             rlu = "Admin" if cur_role=="admin" else ("Sous-Admin" if cur_role=="sous-admin" else "Visiteur")
