@@ -228,15 +228,15 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
 }
 .sb-logout:hover{background:rgba(229,57,53,0.18);border-color:rgba(229,57,53,0.35);}
 
-/* Hamburger / close toggle button */
+/* Hamburger / close toggle — div to avoid React conflicts */
 .nav-toggle{
   position:fixed;top:1.2rem;right:1.4rem;z-index:10000;
   width:42px;height:42px;border-radius:10px;
-  background:#1C1C1C;border:none;cursor:pointer;
+  background:#1C1C1C;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:5px;
   box-shadow:0 2px 12px rgba(0,0,0,0.15);
-  transition:all 0.2s ease;
+  transition:all 0.2s ease;user-select:none;
 }
 .nav-toggle:hover{background:#2D2D2D;transform:scale(1.05);}
 .nav-toggle span{
@@ -789,33 +789,21 @@ else:
     role_class_top = "role-visiteur"
     role_label_top = "Visiteur"
 
-sidebar_open = st.session_state.get("sidebar_open", False)
 notif_dot_html = '<div class="nav-toggle-notif"></div>' if (is_admin and pending_count > 0) else ""
 
-# Build sidebar HTML
+# Build sidebar nav items HTML — use <div> not <button> to avoid React event conflicts
 sb_items_html = ""
 for group in NAV_GROUPS:
     sb_items_html += f'<div class="sb-group-label">{group["label"]}</div>'
     for item in group["items"]:
         active_cls = "active" if st.session_state.active_section == item["key"] else ""
         badge_html = f'<span class="sb-badge">{item["badge"]}</span>' if item.get("badge") else ""
-        sb_items_html += f'''
-        <button class="sb-item {active_cls}" onclick="selectSection('{item["key"]}')" id="sb-{item["key"]}">
-          <span class="sb-icon">{item["icon"]}</span>
-          {item["label"]}
-          {badge_html}
-        </button>'''
-
-overlay_class = "open" if sidebar_open else ""
-sidebar_class = "open" if sidebar_open else ""
-toggle_class  = "open" if sidebar_open else ""
+        sb_items_html += f'<div class="sb-item {active_cls}" data-nav="{item["key"]}" id="sb-{item["key"]}"><span class="sb-icon">{item["icon"]}</span>{item["label"]}{badge_html}</div>'
 
 st.markdown(f"""
-<!-- Overlay -->
-<div class="sidebar-overlay {overlay_class}" id="sb-overlay" onclick="closeSidebar()"></div>
+<div class="sidebar-overlay" id="sb-overlay"></div>
 
-<!-- Right sidebar -->
-<div class="right-sidebar {sidebar_class}" id="right-sidebar">
+<div class="right-sidebar" id="right-sidebar">
   <div class="sb-header">
     <div class="sb-brand">Mahal</div>
     <div class="sb-user-line">{h(username)}</div>
@@ -825,49 +813,86 @@ st.markdown(f"""
     {sb_items_html}
   </nav>
   <div class="sb-footer">
-    <button class="sb-logout" onclick="doLogout()">
+    <div class="sb-logout" id="sb-logout-btn">
       <span>⎋</span> Déconnexion
-    </button>
+    </div>
   </div>
 </div>
 
-<!-- Toggle button -->
-<button class="nav-toggle {toggle_class}" id="nav-toggle" onclick="toggleSidebar()">
+<div class="nav-toggle" id="nav-toggle">
   <span></span><span></span><span></span>
   {notif_dot_html}
-</button>
+</div>
 
 <script>
-function toggleSidebar() {{
-  var sb = document.getElementById('right-sidebar');
-  var ov = document.getElementById('sb-overlay');
-  var tg = document.getElementById('nav-toggle');
-  sb.classList.toggle('open');
-  ov.classList.toggle('open');
-  tg.classList.toggle('open');
-}}
-function closeSidebar() {{
-  document.getElementById('right-sidebar').classList.remove('open');
-  document.getElementById('sb-overlay').classList.remove('open');
-  document.getElementById('nav-toggle').classList.remove('open');
-}}
-function selectSection(key) {{
-  // Update active state immediately for visual feedback
-  document.querySelectorAll('.sb-item').forEach(function(el) {{
-    el.classList.remove('active');
-  }});
-  var el = document.getElementById('sb-' + key);
-  if (el) el.classList.add('active');
-  // Use Streamlit's setComponentValue via query param
-  var url = new URL(window.location.href);
-  url.searchParams.set('nav', key);
-  window.location.href = url.toString();
-}}
-function doLogout() {{
-  var url = new URL(window.location.href);
-  url.searchParams.set('nav', '__logout__');
-  window.location.href = url.toString();
-}}
+(function() {{
+  function init() {{
+    var toggle = document.getElementById('nav-toggle');
+    var sidebar = document.getElementById('right-sidebar');
+    var overlay = document.getElementById('sb-overlay');
+    var logoutBtn = document.getElementById('sb-logout-btn');
+
+    if (!toggle || !sidebar || !overlay) {{
+      setTimeout(init, 100);
+      return;
+    }}
+
+    function openSidebar() {{
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      toggle.classList.add('open');
+    }}
+    function closeSidebar() {{
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      toggle.classList.remove('open');
+    }}
+    function toggleSidebar() {{
+      if (sidebar.classList.contains('open')) {{
+        closeSidebar();
+      }} else {{
+        openSidebar();
+      }}
+    }}
+
+    toggle.addEventListener('click', function(e) {{
+      e.stopPropagation();
+      toggleSidebar();
+    }});
+
+    overlay.addEventListener('click', function() {{
+      closeSidebar();
+    }});
+
+    // Nav item clicks
+    var navItems = document.querySelectorAll('.sb-item[data-nav]');
+    navItems.forEach(function(el) {{
+      el.addEventListener('click', function() {{
+        var key = el.getAttribute('data-nav');
+        navItems.forEach(function(i) {{ i.classList.remove('active'); }});
+        el.classList.add('active');
+        var url = new URL(window.location.href);
+        url.searchParams.set('nav', key);
+        window.location.href = url.toString();
+      }});
+    }});
+
+    // Logout
+    if (logoutBtn) {{
+      logoutBtn.addEventListener('click', function() {{
+        var url = new URL(window.location.href);
+        url.searchParams.set('nav', '__logout__');
+        window.location.href = url.toString();
+      }});
+    }}
+  }}
+
+  if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', init);
+  }} else {{
+    init();
+  }}
+}})();
 </script>
 """, unsafe_allow_html=True)
 
