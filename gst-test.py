@@ -789,108 +789,138 @@ else:
     role_class_top = "role-visiteur"
     role_label_top = "Visiteur"
 
-notif_dot_html = '<div class="nav-toggle-notif"></div>' if (is_admin and pending_count > 0) else ""
+import json as _json
 
-# Build sidebar nav items HTML — use <div> not <button> to avoid React event conflicts
-sb_items_html = ""
-for group in NAV_GROUPS:
-    sb_items_html += f'<div class="sb-group-label">{group["label"]}</div>'
-    for item in group["items"]:
-        active_cls = "active" if st.session_state.active_section == item["key"] else ""
-        badge_html = f'<span class="sb-badge">{item["badge"]}</span>' if item.get("badge") else ""
-        sb_items_html += f'<div class="sb-item {active_cls}" data-nav="{item["key"]}" id="sb-{item["key"]}"><span class="sb-icon">{item["icon"]}</span>{item["label"]}{badge_html}</div>'
+# Build nav items as JSON for pure-JS injection into document.body
+_nav_items_js = []
+for _g in NAV_GROUPS:
+    _nav_items_js.append({"type": "group", "label": _g["label"]})
+    for _item in _g["items"]:
+        _nav_items_js.append({
+            "type": "item",
+            "key": _item["key"],
+            "icon": _item["icon"],
+            "label": _item["label"],
+            "active": st.session_state.active_section == _item["key"],
+            "badge": _item.get("badge") or 0,
+        })
+
+_nav_json     = _json.dumps(_nav_items_js)
+_username_js  = _json.dumps(h(username))
+_role_lbl_js  = _json.dumps(role_label_sb)
+_role_cls_js  = _json.dumps(role_class_sb)
+_has_notif_js = "true" if (is_admin and pending_count > 0) else "false"
 
 st.markdown(f"""
-<div class="sidebar-overlay" id="sb-overlay"></div>
-
-<div class="right-sidebar" id="right-sidebar">
-  <div class="sb-header">
-    <div class="sb-brand">Mahal</div>
-    <div class="sb-user-line">{h(username)}</div>
-    <div class="sb-role-pill {role_class_sb}">{role_label_sb}</div>
-  </div>
-  <nav class="sb-nav" id="sb-nav">
-    {sb_items_html}
-  </nav>
-  <div class="sb-footer">
-    <div class="sb-logout" id="sb-logout-btn">
-      <span>⎋</span> Déconnexion
-    </div>
-  </div>
-</div>
-
-<div class="nav-toggle" id="nav-toggle">
-  <span></span><span></span><span></span>
-  {notif_dot_html}
-</div>
-
 <script>
 (function() {{
-  function init() {{
-    var toggle = document.getElementById('nav-toggle');
-    var sidebar = document.getElementById('right-sidebar');
-    var overlay = document.getElementById('sb-overlay');
-    var logoutBtn = document.getElementById('sb-logout-btn');
+  // Remove stale sidebar elements on Streamlit reruns
+  ['mahal-toggle','mahal-overlay','mahal-sidebar'].forEach(function(id) {{
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  }});
 
-    if (!toggle || !sidebar || !overlay) {{
-      setTimeout(init, 100);
-      return;
+  var NAV  = {_nav_json};
+  var USER = {_username_js};
+  var RLBL = {_role_lbl_js};
+  var RCLS = {_role_cls_js};
+  var NOTIF = {_has_notif_js};
+
+  // Build nav HTML
+  var navHTML = '';
+  NAV.forEach(function(item) {{
+    if (item.type === 'group') {{
+      navHTML += '<div class="sb-group-label">' + item.label + '</div>';
+    }} else {{
+      var ac = item.active ? ' active' : '';
+      var bdg = item.badge ? '<span class="sb-badge">' + item.badge + '</span>' : '';
+      navHTML += '<div class="sb-item' + ac + '" data-nav="' + item.key + '">'
+               + '<span class="sb-icon">' + item.icon + '</span>'
+               + item.label + bdg + '</div>';
     }}
+  }});
 
-    function openSidebar() {{
-      sidebar.classList.add('open');
-      overlay.classList.add('open');
-      toggle.classList.add('open');
+  // Overlay
+  var overlay = document.createElement('div');
+  overlay.id = 'mahal-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(28,28,28,0.45);backdrop-filter:blur(2px);z-index:9998;opacity:0;pointer-events:none;transition:opacity 0.3s ease;';
+  document.body.appendChild(overlay);
+
+  // Sidebar panel
+  var sidebar = document.createElement('div');
+  sidebar.id = 'mahal-sidebar';
+  sidebar.style.cssText = 'position:fixed;top:0;right:-320px;width:300px;height:100%;background:#1C1C1C;z-index:9999;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,0.3);overflow-y:auto;font-family:"DM Sans",sans-serif;';
+  sidebar.innerHTML =
+    '<div style="padding:2.2rem 1.8rem 1.4rem;border-bottom:1px solid rgba(247,246,242,0.08);">'
+    + '<div style="font-family:serif;font-size:2rem;color:#F7F6F2;margin-bottom:0.25rem;">Mahal</div>'
+    + '<div style="font-size:0.7rem;color:rgba(247,246,242,0.4);letter-spacing:0.12em;text-transform:uppercase;">' + USER + '</div>'
+    + '<div class="sb-role-pill ' + RCLS + '" style="display:inline-block;font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.18rem 0.7rem;border-radius:20px;margin-top:0.5rem;">' + RLBL + '</div>'
+    + '</div>'
+    + '<nav style="padding:1.2rem 0;flex:1;">' + navHTML + '</nav>'
+    + '<div style="padding:1.2rem 1.8rem 2rem;border-top:1px solid rgba(247,246,242,0.08);">'
+    + '<div id="mahal-logout" style="display:flex;align-items:center;gap:0.65rem;width:100%;padding:0.65rem 1rem;background:rgba(229,57,53,0.1);border:1px solid rgba(229,57,53,0.2);border-radius:8px;color:#FF8A80;font-size:0.82rem;font-weight:500;cursor:pointer;box-sizing:border-box;">⎋ Déconnexion</div>'
+    + '</div>';
+  document.body.appendChild(sidebar);
+
+  // Toggle button
+  var toggle = document.createElement('div');
+  toggle.id = 'mahal-toggle';
+  toggle.style.cssText = 'position:fixed;top:1.2rem;right:1.4rem;z-index:10000;width:42px;height:42px;border-radius:10px;background:#1C1C1C;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 12px rgba(0,0,0,0.2);transition:all 0.2s ease;user-select:none;';
+  toggle.innerHTML = '<span style="display:block;width:18px;height:1.5px;background:#F7F6F2;border-radius:2px;transition:all 0.25s ease;transform-origin:center;"></span>'
+    + '<span style="display:block;width:18px;height:1.5px;background:#F7F6F2;border-radius:2px;transition:all 0.25s ease;transform-origin:center;"></span>'
+    + '<span style="display:block;width:18px;height:1.5px;background:#F7F6F2;border-radius:2px;transition:all 0.25s ease;transform-origin:center;"></span>'
+    + (NOTIF ? '<div style="position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E53935;border:1.5px solid #F7F6F2;"></div>' : '');
+  document.body.appendChild(toggle);
+
+  // Open / close
+  function openSB() {{
+    sidebar.style.right = '0';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+    // animate bars to X
+    var bars = toggle.querySelectorAll('span');
+    if (bars.length >= 3) {{
+      bars[0].style.transform = 'translateY(6.5px) rotate(45deg)';
+      bars[1].style.opacity = '0';
+      bars[2].style.transform = 'translateY(-6.5px) rotate(-45deg)';
     }}
-    function closeSidebar() {{
-      sidebar.classList.remove('open');
-      overlay.classList.remove('open');
-      toggle.classList.remove('open');
-    }}
-    function toggleSidebar() {{
-      if (sidebar.classList.contains('open')) {{
-        closeSidebar();
-      }} else {{
-        openSidebar();
-      }}
-    }}
-
-    toggle.addEventListener('click', function(e) {{
-      e.stopPropagation();
-      toggleSidebar();
-    }});
-
-    overlay.addEventListener('click', function() {{
-      closeSidebar();
-    }});
-
-    // Nav item clicks
-    var navItems = document.querySelectorAll('.sb-item[data-nav]');
-    navItems.forEach(function(el) {{
-      el.addEventListener('click', function() {{
-        var key = el.getAttribute('data-nav');
-        navItems.forEach(function(i) {{ i.classList.remove('active'); }});
-        el.classList.add('active');
-        var url = new URL(window.location.href);
-        url.searchParams.set('nav', key);
-        window.location.href = url.toString();
-      }});
-    }});
-
-    // Logout
-    if (logoutBtn) {{
-      logoutBtn.addEventListener('click', function() {{
-        var url = new URL(window.location.href);
-        url.searchParams.set('nav', '__logout__');
-        window.location.href = url.toString();
-      }});
+  }}
+  function closeSB() {{
+    sidebar.style.right = '-320px';
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    var bars = toggle.querySelectorAll('span');
+    if (bars.length >= 3) {{
+      bars[0].style.transform = '';
+      bars[1].style.opacity = '1';
+      bars[2].style.transform = '';
     }}
   }}
 
-  if (document.readyState === 'loading') {{
-    document.addEventListener('DOMContentLoaded', init);
-  }} else {{
-    init();
+  toggle.addEventListener('click', function(e) {{
+    e.stopPropagation();
+    sidebar.style.right === '0px' ? closeSB() : openSB();
+  }});
+  overlay.addEventListener('click', closeSB);
+
+  // Nav items
+  sidebar.querySelectorAll('.sb-item[data-nav]').forEach(function(el) {{
+    el.addEventListener('click', function() {{
+      var key = el.getAttribute('data-nav');
+      var url = new URL(window.location.href);
+      url.searchParams.set('nav', key);
+      window.location.href = url.toString();
+    }});
+  }});
+
+  // Logout
+  var logoutEl = document.getElementById('mahal-logout');
+  if (logoutEl) {{
+    logoutEl.addEventListener('click', function() {{
+      var url = new URL(window.location.href);
+      url.searchParams.set('nav', '__logout__');
+      window.location.href = url.toString();
+    }});
   }}
 }})();
 </script>
