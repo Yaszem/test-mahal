@@ -29,6 +29,8 @@ html,body,.stApp{background-color:#F7F6F2;color:#1C1C1C;font-family:'DM Sans',sa
 input,textarea,[contenteditable]{caret-color:#1C1C1C !important}
 .stTextInput button{background:transparent !important;border:none !important}
 ._terminalButton_rix23_138{display:none !important}
+
+/* ── AUTH ── */
 .auth-left{background:#1C1C1C;display:flex;flex-direction:column;justify-content:space-between;padding:4rem 3.5rem;min-height:88vh;border-radius:0 16px 16px 0;position:relative;overflow:hidden}
 .auth-left::before{content:'';position:absolute;width:560px;height:560px;border-radius:50%;border:1px solid rgba(247,246,242,0.05);top:-140px;right:-200px;pointer-events:none}
 .auth-left::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(247,246,242,0.04) 0%,transparent 70%);bottom:40px;left:-80px;pointer-events:none}
@@ -49,6 +51,8 @@ input,textarea,[contenteditable]{caret-color:#1C1C1C !important}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#E8E5DE}
 .auth-switch-text{font-size:0.7rem;color:#C0BAB0;text-align:center;margin-top:1.8rem;letter-spacing:0.04em}
 [data-testid="stButton"]>button[kind="secondary"]{background:#F0EDE5 !important;color:#555 !important}
+
+/* ── TOP BAR ── */
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.3rem}
 .topbar-user{font-size:0.8rem;color:#999;letter-spacing:0.04em;padding-top:0.8rem}
 .topbar-role{display:inline-block;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.25rem 0.8rem;border-radius:20px;margin-left:0.5rem}
@@ -61,15 +65,21 @@ input,textarea,[contenteditable]{caret-color:#1C1C1C !important}
 .badge-pending{display:inline-block;background:#FFF8E1;border:1px solid #F0C040;color:#7A5C00;font-size:0.72rem;padding:0.2rem 0.7rem;border-radius:20px;font-weight:500}
 .badge-approved{background:#EEF7EE;border:1px solid #C3DEC3;color:#2D6A2D}
 .badge-rejected{background:#FDECEA;border:1px solid #E8B4B0;color:#7A1C1C}
+
+/* ── TYPOGRAPHY ── */
 .page-title{font-family:'DM Serif Display',serif;font-size:2.6rem;color:#1C1C1C;margin-bottom:0.2rem;line-height:1.1}
 .page-subtitle{font-size:0.85rem;color:#999;font-weight:300;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2.5rem}
 .section-title{font-family:'DM Serif Display',serif;font-size:1.35rem;color:#1C1C1C;margin-top:2rem;margin-bottom:1.2rem;padding-bottom:0.6rem;border-bottom:1px solid #E0DDD5}
+
+/* ── METRICS ── */
 .metric-row{display:flex;gap:1rem;margin-bottom:2rem}
 .metric-card{background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1.2rem 1.5rem;flex:1}
 .metric-label{font-size:0.72rem;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:#AAA;margin-bottom:0.5rem}
 .metric-value{font-family:'DM Serif Display',serif;font-size:1.55rem;color:#1C1C1C;line-height:1}
 .metric-value.positive{color:#2D7A3A}
 .metric-value.negative{color:#B03A2E}
+
+/* ── INPUTS ── */
 .stTextInput>div>div>input,.stNumberInput>div>div>input,.stDateInput>div>div>input{background:#F7F6F2 !important;border:1px solid #DDDAD2 !important;border-radius:8px !important;color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.9rem !important;padding:0.55rem 0.9rem !important;-webkit-text-fill-color:#1C1C1C !important;caret-color:#1C1C1C !important}
 .stTextInput>div>div>input::placeholder,.stNumberInput>div>div>input::placeholder{color:#AAAAAA !important;-webkit-text-fill-color:#AAAAAA !important;opacity:1 !important}
 .stTextInput>div>div>input:focus,.stNumberInput>div>div>input:focus{border-color:#1C1C1C !important;box-shadow:none !important}
@@ -81,22 +91,31 @@ input,textarea,[contenteditable]{caret-color:#1C1C1C !important}
 [data-baseweb="popover"] li,[data-baseweb="menu"] li,[data-baseweb="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important;font-size:0.9rem !important}
 [data-baseweb="option"]:hover{background:#F0EDE5 !important}
 .stCheckbox label,.stCheckbox label p,.stCheckbox span{color:#1C1C1C !important;font-size:0.88rem !important}
+
+/* ── BUTTONS ── */
 .stButton>button{background:#1C1C1C !important;color:#F7F6F2 !important;border:none !important;border-radius:8px !important;padding:0.65rem 2.2rem !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important;font-weight:500 !important;letter-spacing:0.03em !important;margin-top:1rem;transition:opacity 0.2s ease !important}
 .stButton>button:hover{opacity:0.72 !important}
 .stSuccess>div{background:#F0F7F0 !important;border:1px solid #C3DEC3 !important;border-radius:8px !important;color:#2D6A2D !important;font-size:0.88rem !important}
+
+/* ── TABLES ── */
 .stDataFrame{border-radius:10px !important;overflow:hidden !important;border:1px solid #E8E5DE !important}
 .stDataFrame table{font-size:0.88rem !important;font-family:'DM Sans',sans-serif !important}
 .stDataFrame thead th{background:#F0EDE5 !important;color:#777 !important;font-weight:500 !important;font-size:0.75rem !important;letter-spacing:0.05em !important;text-transform:uppercase !important;padding:0.75rem 1rem !important;border-bottom:1px solid #DDDAD2 !important}
 .stDataFrame tbody tr:nth-child(even) td{background:#FAFAF8 !important}
 .stDataFrame tbody td{padding:0.65rem 1rem !important;border-bottom:1px solid #F0EDE5 !important;color:#1C1C1C !important}
+
+/* ── TABS — hidden (we use sidebar nav) ── */
 .stTabs [data-baseweb="tab-list"]{gap:0;background:transparent;border-bottom:1px solid #E0DDD5}
 .stTabs [data-baseweb="tab"]{font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important;font-weight:400 !important;color:#AAA !important;background:transparent !important;border:none !important;border-bottom:2px solid transparent !important;border-radius:0 !important;padding:0.65rem 1.4rem !important}
 .stTabs [aria-selected="true"]{color:#1C1C1C !important;border-bottom:2px solid #1C1C1C !important;font-weight:500 !important}
 .stTabs [data-baseweb="tab-panel"]{padding-top:0 !important}
+
 .info-count{font-size:0.8rem;color:#999;margin-bottom:0.8rem}
 [data-testid="manage-app-button"],.st-emotion-cache-ztfqz8,[class*="viewerBadge"],#MainMenu{visibility:hidden !important;display:none !important}
 .stDeployButton{display:none !important}
 div[data-testid="stStatusWidget"]{display:none !important}
+
+/* ── USER CARDS ── */
 .user-card{background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.2rem;margin-bottom:0.7rem}
 .user-card-name{font-weight:600;font-size:0.95rem;color:#1C1C1C}
 .user-card-meta{font-size:0.75rem;color:#AAA;margin-top:0.2rem}
@@ -112,6 +131,130 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
 [data-testid="stDataEditor"] input,[data-testid="stDataEditor"] textarea{color:#1C1C1C !important;-webkit-text-fill-color:#1C1C1C !important;background:#FFFFFF !important;caret-color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
+
+/* ══════════════════════════════════════════════
+   RIGHT SIDEBAR NAVIGATION
+══════════════════════════════════════════════ */
+/* Overlay */
+.sidebar-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(28,28,28,0.35);backdrop-filter:blur(2px);
+  z-index:9998;opacity:0;pointer-events:none;
+  transition:opacity 0.35s ease;
+}
+.sidebar-overlay.open{opacity:1;pointer-events:all;}
+
+/* Panel */
+.right-sidebar{
+  position:fixed;top:0;right:-320px;width:300px;height:100%;
+  background:#1C1C1C;z-index:9999;
+  transition:right 0.38s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;
+  box-shadow:-8px 0 40px rgba(0,0,0,0.25);
+  overflow-y:auto;
+}
+.right-sidebar.open{right:0;}
+
+/* Sidebar header */
+.sb-header{
+  padding:2.2rem 1.8rem 1.4rem;
+  border-bottom:1px solid rgba(247,246,242,0.08);
+}
+.sb-brand{
+  font-family:'DM Serif Display',serif;
+  font-size:2rem;color:#F7F6F2;letter-spacing:-0.02em;margin-bottom:0.25rem;
+}
+.sb-user-line{
+  font-size:0.7rem;color:rgba(247,246,242,0.4);
+  letter-spacing:0.12em;text-transform:uppercase;
+}
+.sb-role-pill{
+  display:inline-block;font-size:0.6rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.18rem 0.7rem;border-radius:20px;margin-top:0.5rem;
+}
+.sb-role-admin{background:rgba(247,246,242,0.12);color:#F7F6F2;}
+.sb-role-sous-admin{background:rgba(45,74,138,0.5);color:#A8C4FF;}
+.sb-role-visiteur{background:rgba(247,246,242,0.06);color:rgba(247,246,242,0.4);}
+
+/* Nav groups */
+.sb-nav{padding:1.2rem 0;flex:1;}
+.sb-group-label{
+  font-size:0.58rem;font-weight:600;letter-spacing:0.2em;
+  text-transform:uppercase;color:rgba(247,246,242,0.25);
+  padding:0.8rem 1.8rem 0.4rem;
+}
+.sb-item{
+  display:flex;align-items:center;gap:0.75rem;
+  padding:0.7rem 1.8rem;cursor:pointer;
+  font-size:0.88rem;color:rgba(247,246,242,0.55);
+  font-weight:400;letter-spacing:0.01em;
+  transition:all 0.18s ease;position:relative;
+  border:none;background:none;width:100%;text-align:left;
+  text-decoration:none;
+}
+.sb-item:hover{
+  color:#F7F6F2;background:rgba(247,246,242,0.05);
+}
+.sb-item.active{
+  color:#F7F6F2;background:rgba(247,246,242,0.08);
+  font-weight:500;
+}
+.sb-item.active::before{
+  content:'';position:absolute;left:0;top:20%;height:60%;
+  width:2px;background:#F7F6F2;border-radius:0 2px 2px 0;
+}
+.sb-icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.sb-badge{
+  margin-left:auto;background:#E53935;color:#FFF;
+  font-size:0.6rem;font-weight:700;
+  min-width:18px;height:18px;border-radius:9px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0 4px;
+}
+
+/* Sidebar footer */
+.sb-footer{
+  padding:1.2rem 1.8rem 2rem;
+  border-top:1px solid rgba(247,246,242,0.08);
+}
+.sb-logout{
+  display:flex;align-items:center;gap:0.65rem;
+  width:100%;padding:0.65rem 1rem;
+  background:rgba(229,57,53,0.1);border:1px solid rgba(229,57,53,0.2);
+  border-radius:8px;color:#FF8A80;font-size:0.82rem;
+  font-weight:500;cursor:pointer;letter-spacing:0.02em;
+  transition:all 0.18s ease;font-family:'DM Sans',sans-serif;
+}
+.sb-logout:hover{background:rgba(229,57,53,0.18);border-color:rgba(229,57,53,0.35);}
+
+/* Hamburger / close toggle button */
+.nav-toggle{
+  position:fixed;top:1.2rem;right:1.4rem;z-index:10000;
+  width:42px;height:42px;border-radius:10px;
+  background:#1C1C1C;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:5px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.15);
+  transition:all 0.2s ease;
+}
+.nav-toggle:hover{background:#2D2D2D;transform:scale(1.05);}
+.nav-toggle span{
+  display:block;width:18px;height:1.5px;background:#F7F6F2;
+  border-radius:2px;transition:all 0.25s ease;transform-origin:center;
+}
+.nav-toggle.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+.nav-toggle.open span:nth-child(2){opacity:0;transform:scaleX(0);}
+.nav-toggle.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
+
+/* Notif dot on toggle */
+.nav-toggle-notif{
+  position:absolute;top:8px;right:8px;
+  width:8px;height:8px;border-radius:50%;
+  background:#E53935;border:1.5px solid #F7F6F2;
+}
+
+/* ── MOBILE ── */
 @media screen and (max-width:768px){
   .block-container{padding:1rem 1rem 2rem 1rem !important;max-width:100% !important}
   .auth-left{display:none !important}
@@ -124,6 +267,7 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
   .stTabs [data-baseweb="tab"]{font-size:0.78rem !important;padding:0.5rem 0.85rem !important;white-space:nowrap !important;flex-shrink:0 !important}
   .stButton>button{width:100% !important;padding:0.8rem 1rem !important;font-size:0.95rem !important;min-height:44px !important}
   .stDataFrame{overflow-x:auto !important}
+  .right-sidebar{width:280px;}
 }
 @media screen and (max-width:480px){
   .block-container{padding:0.7rem 0.6rem 1.5rem 0.6rem !important}
@@ -132,7 +276,6 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 
 # ─── Google Sheets ─────────────────────────────────────────────────────────────
@@ -174,7 +317,6 @@ def ensure_users_sheet():
         ws = sh.add_worksheet("Utilisateurs", rows=500, cols=12)
         ws.update([["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"]])
 
-# ─── Finance Sheet Setup ────────────────────────────────────────────────────────
 def ensure_finance_sheets():
     sh = get_client().open_by_key(SPREADSHEET_ID)
     sheets_config = {
@@ -205,6 +347,7 @@ def _fin_load(sname, cols):
         return df
     except Exception:
         return pd.DataFrame(columns=cols)
+
 
 # ─── Auth helpers ───────────────────────────────────────────────────────────────
 def hash_password(p): return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
@@ -286,7 +429,6 @@ def count_pending():
     try: return len(get_users().query("statut == 'en_attente'"))
     except: return 0
 
-import hashlib as _hl
 SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
 
 @st.cache_resource
@@ -308,7 +450,8 @@ def _load_session(token):
 def _clear_session(token): _session_store().pop(token, None)
 
 for k, v in [("authenticated", False), ("username", ""), ("role", ""),
-              ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
+              ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", ""),
+              ("sidebar_open", False), ("active_section", None)]:
     if k not in st.session_state: st.session_state[k] = v
 
 if not st.session_state.authenticated:
@@ -327,7 +470,6 @@ if not st.session_state.authenticated:
 def warn(m): st.warning(m)
 def err(m):  st.error(m)
 def ok(m):   st.success(m)
-
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -387,6 +529,7 @@ def page_login():
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
             st.session_state.auth_page = "register"; st.rerun()
         st.markdown('<div class="auth-switch-text">Accès réservé aux membres autorisés.</div>', unsafe_allow_html=True)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # INSCRIPTION
@@ -466,7 +609,6 @@ if not st.session_state.authenticated:
     st.stop()
 
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # APP PRINCIPALE
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -538,6 +680,269 @@ def compute_suivi_avances(t):
     g['Solde'] = g['Total Encaissé'] - g['Total Avancé']; return g
 
 
+# ─── Chargement données ────────────────────────────────────────────────────────
+try:
+    transactions_all = load_sheet("Gestion globale")
+except Exception as e:
+    st.error(f"Impossible de charger les données : {e}"); st.stop()
+
+transactions_all = add_quantity_column(transactions_all)
+transactions_all = to_numeric(transactions_all, ['Montant (MAD)','Quantité (pièces)'])
+
+if is_admin:
+    transactions = transactions_all.copy()
+else:
+    if lots_autorises:
+        transactions = transactions_all[transactions_all['Lot'].astype(str).isin(lots_autorises)]
+    else:
+        transactions = transactions_all.iloc[0:0]
+
+lots_existants       = sorted([l for l in transactions['Lot'].dropna().astype(str).unique() if l.strip()])
+personnes_existantes = sorted([p for p in transactions['Personne'].dropna().astype(str).unique() if p.strip()])
+pending_count = count_pending() if is_admin else 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RIGHT SIDEBAR NAVIGATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Define nav structure per role
+if is_admin:
+    NAV_GROUPS = [
+        {
+            "label": "Transactions",
+            "items": [
+                {"key": "nouvelle_transaction", "icon": "＋", "label": "Nouvelle transaction"},
+                {"key": "recherche",             "icon": "🔍", "label": "Recherche"},
+                {"key": "graphiques",            "icon": "📊", "label": "Graphiques"},
+            ]
+        },
+        {
+            "label": "Analyse",
+            "items": [
+                {"key": "catalogue_lots",        "icon": "📦", "label": "Catalogue des lots"},
+                {"key": "resume_personne",       "icon": "👤", "label": "Résumé par personne"},
+                {"key": "historique_lots",       "icon": "📋", "label": "Historique des lots"},
+                {"key": "suivi_avances",         "icon": "💹", "label": "Suivi des avances"},
+            ]
+        },
+        {
+            "label": "Finance",
+            "items": [
+                {"key": "finance",               "icon": "💰", "label": "Finance"},
+            ]
+        },
+        {
+            "label": "Administration",
+            "items": [
+                {"key": "utilisateurs",          "icon": "👥", "label": "Utilisateurs",
+                 "badge": pending_count if pending_count > 0 else None},
+            ]
+        },
+    ]
+    DEFAULT_SECTION = "nouvelle_transaction"
+elif is_sous_admin:
+    NAV_GROUPS = [
+        {
+            "label": "Transactions",
+            "items": [
+                {"key": "nouvelle_transaction",  "icon": "＋", "label": "Nouvelle transaction"},
+                {"key": "mes_lots",              "icon": "📦", "label": "Mes lots"},
+                {"key": "recherche",             "icon": "🔍", "label": "Recherche"},
+                {"key": "graphiques",            "icon": "📊", "label": "Graphiques"},
+                {"key": "modifier_transaction",  "icon": "✏️",  "label": "Modifier une transaction"},
+            ]
+        },
+    ]
+    DEFAULT_SECTION = "nouvelle_transaction"
+else:
+    NAV_GROUPS = [
+        {
+            "label": "Consultation",
+            "items": [
+                {"key": "mes_lots",   "icon": "📦", "label": "Mes lots"},
+                {"key": "recherche",  "icon": "🔍", "label": "Recherche"},
+                {"key": "graphiques", "icon": "📊", "label": "Graphiques"},
+            ]
+        },
+    ]
+    DEFAULT_SECTION = "mes_lots"
+
+# Set default active section on first load
+if st.session_state.active_section is None:
+    st.session_state.active_section = DEFAULT_SECTION
+
+# Role styling
+if is_admin:
+    role_class_sb = "sb-role-admin"
+    role_label_sb = "Administrateur"
+    role_class_top = "role-admin"
+    role_label_top = "Admin"
+elif is_sous_admin:
+    role_class_sb = "sb-role-sous-admin"
+    role_label_sb = "Sous-Administrateur"
+    role_class_top = "role-sous-admin"
+    role_label_top = "Sous-Admin"
+else:
+    role_class_sb = "sb-role-visiteur"
+    role_label_sb = "Visiteur"
+    role_class_top = "role-visiteur"
+    role_label_top = "Visiteur"
+
+sidebar_open = st.session_state.get("sidebar_open", False)
+notif_dot_html = '<div class="nav-toggle-notif"></div>' if (is_admin and pending_count > 0) else ""
+
+# Build sidebar HTML
+sb_items_html = ""
+for group in NAV_GROUPS:
+    sb_items_html += f'<div class="sb-group-label">{group["label"]}</div>'
+    for item in group["items"]:
+        active_cls = "active" if st.session_state.active_section == item["key"] else ""
+        badge_html = f'<span class="sb-badge">{item["badge"]}</span>' if item.get("badge") else ""
+        sb_items_html += f'''
+        <button class="sb-item {active_cls}" onclick="selectSection('{item["key"]}')" id="sb-{item["key"]}">
+          <span class="sb-icon">{item["icon"]}</span>
+          {item["label"]}
+          {badge_html}
+        </button>'''
+
+overlay_class = "open" if sidebar_open else ""
+sidebar_class = "open" if sidebar_open else ""
+toggle_class  = "open" if sidebar_open else ""
+
+st.markdown(f"""
+<!-- Overlay -->
+<div class="sidebar-overlay {overlay_class}" id="sb-overlay" onclick="closeSidebar()"></div>
+
+<!-- Right sidebar -->
+<div class="right-sidebar {sidebar_class}" id="right-sidebar">
+  <div class="sb-header">
+    <div class="sb-brand">Mahal</div>
+    <div class="sb-user-line">{h(username)}</div>
+    <div class="sb-role-pill {role_class_sb}">{role_label_sb}</div>
+  </div>
+  <nav class="sb-nav" id="sb-nav">
+    {sb_items_html}
+  </nav>
+  <div class="sb-footer">
+    <button class="sb-logout" onclick="doLogout()">
+      <span>⎋</span> Déconnexion
+    </button>
+  </div>
+</div>
+
+<!-- Toggle button -->
+<button class="nav-toggle {toggle_class}" id="nav-toggle" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+  {notif_dot_html}
+</button>
+
+<script>
+function toggleSidebar() {{
+  var sb = document.getElementById('right-sidebar');
+  var ov = document.getElementById('sb-overlay');
+  var tg = document.getElementById('nav-toggle');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+  tg.classList.toggle('open');
+}}
+function closeSidebar() {{
+  document.getElementById('right-sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+  document.getElementById('nav-toggle').classList.remove('open');
+}}
+function selectSection(key) {{
+  // Update active state immediately for visual feedback
+  document.querySelectorAll('.sb-item').forEach(function(el) {{
+    el.classList.remove('active');
+  }});
+  var el = document.getElementById('sb-' + key);
+  if (el) el.classList.add('active');
+  // Use Streamlit's setComponentValue via query param
+  var url = new URL(window.location.href);
+  url.searchParams.set('nav', key);
+  window.location.href = url.toString();
+}}
+function doLogout() {{
+  var url = new URL(window.location.href);
+  url.searchParams.set('nav', '__logout__');
+  window.location.href = url.toString();
+}}
+</script>
+""", unsafe_allow_html=True)
+
+# Handle nav param from URL
+nav_param = st.query_params.get("nav", None)
+if nav_param == "__logout__":
+    _clear_session(st.session_state.get("_sess_token", ""))
+    st.query_params.clear()
+    for k in ["authenticated","username","role","lots_autorises","_sess_token","active_section","sidebar_open"]:
+        st.session_state.pop(k, None)
+    st.session_state.auth_page = "login"
+    st.rerun()
+elif nav_param and nav_param != st.session_state.active_section:
+    st.session_state.active_section = nav_param
+    # Keep the t param, clear nav
+    t_param = st.query_params.get("t", "")
+    st.query_params.clear()
+    if t_param:
+        st.query_params["t"] = t_param
+    st.rerun()
+
+active = st.session_state.active_section
+
+
+# ─── Top bar ───────────────────────────────────────────────────────────────────
+SECTION_TITLES = {
+    "nouvelle_transaction": ("Nouvelle transaction", "Enregistrer un mouvement"),
+    "recherche":            ("Recherche", "Filtrer les transactions"),
+    "graphiques":           ("Graphiques", "Visualisation & Tendances"),
+    "catalogue_lots":       ("Catalogue des lots", "Vue d'ensemble par lot"),
+    "resume_personne":      ("Résumé par personne", "Performance individuelle"),
+    "historique_lots":      ("Historique des lots", "Détail chronologique"),
+    "suivi_avances":        ("Suivi des avances", "Avances & Encaissements"),
+    "finance":              ("Finance", "Dette · Caisse · Encaissement"),
+    "utilisateurs":         ("Utilisateurs", "Gestion des accès"),
+    "mes_lots":             ("Mes lots", "Lots autorisés"),
+    "modifier_transaction": ("Modifier une transaction", "Édition & Suppression"),
+}
+title_main, title_sub = SECTION_TITLES.get(active, ("Mahal", "Gestion"))
+
+notif_html = f'<span class="notif-badge">{pending_count}</span>' if (is_admin and pending_count > 0) else ""
+
+if is_admin and pending_count > 0 and active != "utilisateurs":
+    st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div>
+    <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
+    — ouvrez le menu et sélectionnez <strong>Utilisateurs</strong>.</span></div>""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="topbar">
+  <div>
+    <div class="page-title">{h(title_main)}</div>
+    <div class="page-subtitle">{h(title_sub)}</div>
+  </div>
+  <div style="display:flex;align-items:center;padding-top:0.8rem;padding-right:3.5rem">
+    <span class="topbar-user">{h(username)}</span>
+    <span class="topbar-role {role_class_top}">{role_label_top}</span>{notif_html}
+  </div>
+</div>""", unsafe_allow_html=True)
+
+
+# ─── Métriques globales ────────────────────────────────────────────────────────
+ta_g = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
+tv_g = transactions[transactions['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
+td_g = transactions[transactions['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
+rn_g = tv_g - (ta_g + td_g)
+cr_g = "positive" if rn_g >= 0 else "negative"
+
+st.markdown(f"""
+<div class="metric-row">
+  <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta_g:,.0f} <small style="opacity:.5">MAD</small></div></div>
+  <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv_g:,.0f} <small style="opacity:.5">MAD</small></div></div>
+  <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td_g:,.0f} <small style="opacity:.5">MAD</small></div></div>
+  <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr_g}">{rn_g:+,.0f} <small style="opacity:.5">MAD</small></div></div>
+</div>""", unsafe_allow_html=True)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FINANCE TAB RENDERER
@@ -590,7 +995,6 @@ def render_finance_tab(lots_list):
 
     ftab1, ftab2, ftab3, ftab4 = st.tabs(["🏦 Dette financiere","📦 Dette fournisseur","💵 Caisse","✅ Encaissement"])
 
-    # ── DETTE FINANCIERE ─────────────────────────────────────────────────────
     with ftab1:
         st.markdown('<div class="section-title">Dette financiere</div>', unsafe_allow_html=True)
         st.caption("Emprunts bancaires, credits, dettes envers des personnes physiques ou morales.")
@@ -613,11 +1017,9 @@ def render_finance_tab(lots_list):
                        "Montant initial (MAD)": df_mi, "Montant rembourse (MAD)": df_mr, "Taux interet (%)": df_taux,
                        "Date echeance": str(df_ech), "Statut": df_stat, "Remarque": sanitize_text(df_rem)}
                 try:
-                    append_row(row, "Dette financiere")
-                    st.success("Dette financiere enregistree.")
+                    append_row(row, "Dette financiere"); st.success("Dette financiere enregistree.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-
         if not df_df.empty:
             df_df_d = df_df.copy()
             df_df_d["Restant (MAD)"] = (df_df_d["Montant initial (MAD)"] - df_df_d["Montant rembourse (MAD)"]).clip(lower=0)
@@ -633,7 +1035,6 @@ def render_finance_tab(lots_list):
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Aucune dette financiere enregistree.")
-
         st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un remboursement</div>', unsafe_allow_html=True)
         if not df_df.empty:
             creas = df_df["Creancier"].dropna().unique().tolist()
@@ -644,12 +1045,10 @@ def render_finance_tab(lots_list):
                     df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] = (
                         df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] + rm)
                     try:
-                        save_sheet(df_df, "Dette financiere")
-                        st.success(f"Remboursement de {rm:,.0f} MAD enregistre.")
+                        save_sheet(df_df, "Dette financiere"); st.success(f"Remboursement de {rm:,.0f} MAD enregistre.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-    # ── DETTE FOURNISSEUR ─────────────────────────────────────────────────────
     with ftab2:
         st.markdown('<div class="section-title">Dette fournisseur</div>', unsafe_allow_html=True)
         st.caption("Ce que vous devez a vos fournisseurs pour des achats non encore regles.")
@@ -673,11 +1072,9 @@ def render_finance_tab(lots_list):
                        "Montant du (MAD)": dfo_du, "Montant paye (MAD)": dfo_pay,
                        "Date echeance": str(dfo_ech), "Statut": dfo_stat, "Remarque": sanitize_text(dfo_rem)}
                 try:
-                    append_row(row, "Dette fournisseur")
-                    st.success("Dette fournisseur enregistree.")
+                    append_row(row, "Dette fournisseur"); st.success("Dette fournisseur enregistree.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-
         if not df_dfo.empty:
             df_dfo_d = df_dfo.copy()
             df_dfo_d["Restant (MAD)"] = (df_dfo_d["Montant du (MAD)"] - df_dfo_d["Montant paye (MAD)"]).clip(lower=0)
@@ -696,7 +1093,6 @@ def render_finance_tab(lots_list):
             st.dataframe(res, hide_index=True, use_container_width=True)
         else:
             st.info("Aucune dette fournisseur enregistree.")
-
         st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un paiement fournisseur</div>', unsafe_allow_html=True)
         if not df_dfo.empty:
             fours = df_dfo["Fournisseur"].dropna().unique().tolist()
@@ -711,15 +1107,13 @@ def render_finance_tab(lots_list):
                         if r <= 0: df_dfo.at[i,"Statut"] = "Solde"
                         elif df_dfo.at[i,"Montant paye (MAD)"] > 0: df_dfo.at[i,"Statut"] = "Partiellement paye"
                     try:
-                        save_sheet(df_dfo, "Dette fournisseur")
-                        st.success(f"Paiement de {pm:,.0f} MAD enregistre.")
+                        save_sheet(df_dfo, "Dette fournisseur"); st.success(f"Paiement de {pm:,.0f} MAD enregistre.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-    # ── CAISSE ────────────────────────────────────────────────────────────────
     with ftab3:
         st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
-        st.caption("Suivi de toutes les entrees et sorties d\'argent en caisse.")
+        st.caption("Suivi de toutes les entrees et sorties d'argent en caisse.")
         c_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_sol = c_in - c_out
@@ -739,7 +1133,6 @@ def render_finance_tab(lots_list):
             <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_col}">{c_sol:+,.0f} MAD</div>
           </div>
         </div>""", unsafe_allow_html=True)
-
         with st.expander("➕ Nouvelle operation de caisse", expanded=False):
             cc1, cc2, cc3 = st.columns(3, gap="large")
             with cc1:
@@ -755,16 +1148,14 @@ def render_finance_tab(lots_list):
             with cc3:
                 ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
                 ca_rem  = st.text_input("Remarque", key="ca_rem")
-            if st.button("Enregistrer l\'operation", key="btn_ca_save"):
+            if st.button("Enregistrer l'operation", key="btn_ca_save"):
                 row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
                        "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
                        "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
                 try:
-                    append_row(row, "Caisse")
-                    st.success("Operation de caisse enregistree.")
+                    append_row(row, "Caisse"); st.success("Operation de caisse enregistree.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-
         if not df_ca.empty:
             ca1, ca2, ca3 = st.columns(3)
             with ca1: fca_t = st.selectbox("Type", ["Tous","ENTREE","SORTIE"], key="fca_t")
@@ -780,7 +1171,6 @@ def render_finance_tab(lots_list):
             if fca_l != "Tous": df_ca_d = df_ca_d[df_ca_d["Lot"]==fca_l]
             st.markdown(f'<div class="info-count">{len(df_ca_d)} operation(s)</div>', unsafe_allow_html=True)
             st.dataframe(df_ca_d, hide_index=True, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Evolution de la caisse</div>', unsafe_allow_html=True)
             df_ca_t = df_ca.copy()
             df_ca_t["Date"] = pd.to_datetime(df_ca_t["Date"], errors="coerce")
             df_ca_t = df_ca_t.dropna(subset=["Date"]).sort_values("Date")
@@ -788,21 +1178,18 @@ def render_finance_tab(lots_list):
             df_ca_t["Solde cumule"] = df_ca_t["Flux"].cumsum()
             if not df_ca_t.empty:
                 fig_ca = go.Figure()
-                fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumule"],
-                    mode="lines+markers", name="Solde cumule",
-                    line=dict(color="#1565C0",width=2), fill="tozeroy", fillcolor="rgba(21,101,192,0.08)"))
+                fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumule"], mode="lines+markers",
+                    name="Solde cumule", line=dict(color="#1565C0",width=2), fill="tozeroy", fillcolor="rgba(21,101,192,0.08)"))
                 fig_ca.add_trace(go.Bar(x=df_ca_t["Date"], y=df_ca_t["Flux"], name="Flux",
                     marker_color=["#2D7A3A" if v>=0 else "#B03A2E" for v in df_ca_t["Flux"]], opacity=0.5))
                 fig_ca.update_layout(**PL, legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"),
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
                 st.plotly_chart(fig_ca, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Resume par categorie</div>', unsafe_allow_html=True)
             res_ca = df_ca.groupby(["Categorie","Type operation"])["Montant (MAD)"].sum().reset_index()
             st.dataframe(res_ca, hide_index=True, use_container_width=True)
         else:
             st.info("Aucune operation de caisse enregistree.")
 
-    # ── ENCAISSEMENT ──────────────────────────────────────────────────────────
     with ftab4:
         st.markdown('<div class="section-title">Encaissement</div>', unsafe_allow_html=True)
         st.caption("Suivi de tous les paiements recus de vos clients et partenaires.")
@@ -824,7 +1211,6 @@ def render_finance_tab(lots_list):
             <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{enc_att:,.0f} MAD</div>
           </div>
         </div>""", unsafe_allow_html=True)
-
         with st.expander("➕ Enregistrer un encaissement", expanded=False):
             ec1, ec2, ec3 = st.columns(3, gap="large")
             with ec1:
@@ -839,17 +1225,15 @@ def render_finance_tab(lots_list):
                 en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
                 en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
                 en_rem  = st.text_input("Remarque", key="en_rem")
-            if st.button("Enregistrer l\'encaissement", key="btn_en_save"):
+            if st.button("Enregistrer l'encaissement", key="btn_en_save"):
                 row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
                        "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
                        "Mode de paiement": en_mode, "Type encaissement": en_type,
                        "Statut": en_stat, "Remarque": sanitize_text(en_rem)}
                 try:
-                    append_row(row, "Encaissement")
-                    st.success("Encaissement enregistre.")
+                    append_row(row, "Encaissement"); st.success("Encaissement enregistre.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-
         if not df_enc.empty:
             ce1, ce2, ce3 = st.columns(3)
             with ce1: fes = st.selectbox("Statut", ["Tous"]+sorted(df_enc["Statut"].dropna().unique().tolist()), key="fes")
@@ -868,12 +1252,10 @@ def render_finance_tab(lots_list):
             enc_lot = df_enc.groupby("Lot")["Montant (MAD)"].sum().reset_index()
             enc_lot = enc_lot[enc_lot["Lot"].astype(str) != "—"]
             if not enc_lot.empty:
-                st.markdown('<div class="section-title" style="font-size:1rem">Encaissement par lot</div>', unsafe_allow_html=True)
                 fig_enc = go.Figure(go.Bar(x=enc_lot["Lot"], y=enc_lot["Montant (MAD)"],
                     marker_color="#1565C0", hovertemplate="%{x}<br>%{y:,.0f} MAD<extra></extra>"))
                 fig_enc.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
                 st.plotly_chart(fig_enc, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Resume par client / payeur</div>', unsafe_allow_html=True)
             res_enc = df_enc.groupby("Payeur").agg(Total=("Montant (MAD)","sum"), Nb=("Montant (MAD)","count")
                 ).reset_index().sort_values("Total", ascending=False)
             st.dataframe(res_enc, hide_index=True, use_container_width=True)
@@ -881,189 +1263,16 @@ def render_finance_tab(lots_list):
             st.info("Aucun encaissement enregistre.")
 
 
-
-# ─── Chargement données ────────────────────────────────────────────────────────
-try:
-    transactions_all = load_sheet("Gestion globale")
-except Exception as e:
-    st.error(f"Impossible de charger les données : {e}"); st.stop()
-
-transactions_all = add_quantity_column(transactions_all)
-transactions_all = to_numeric(transactions_all, ['Montant (MAD)','Quantité (pièces)'])
-
-if is_admin:
-    transactions = transactions_all.copy()
-else:
-    if lots_autorises:
-        transactions = transactions_all[transactions_all['Lot'].astype(str).isin(lots_autorises)]
-    else:
-        transactions = transactions_all.iloc[0:0]
-
-lots_existants       = sorted([l for l in transactions['Lot'].dropna().astype(str).unique() if l.strip()])
-personnes_existantes = sorted([p for p in transactions['Personne'].dropna().astype(str).unique() if p.strip()])
-pending_count = count_pending() if is_admin else 0
-
-# ─── TOP BAR ──────────────────────────────────────────────────────────────────
-if is_admin:    role_class, role_label_top = "role-admin", "Admin"
-elif is_sous_admin: role_class, role_label_top = "role-sous-admin", "Sous-Admin"
-else:           role_class, role_label_top = "role-visiteur", "Visiteur"
-
-notif_html = f'<span class="notif-badge">{pending_count}</span>' if (is_admin and pending_count > 0) else ""
-
-if is_admin and pending_count > 0:
-    st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div>
-    <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
-    — rendez-vous dans l'onglet <strong>Utilisateurs</strong>.</span></div>""", unsafe_allow_html=True)
-
-st.markdown(f"""
-<div class="topbar">
-  <div>
-    <div class="page-title">Mahal</div>
-    <div class="page-subtitle">Gestion de stock et transactions</div>
-  </div>
-  <div style="display:flex;align-items:center;padding-top:0.8rem">
-    <span class="topbar-user">{h(username)}</span>
-    <span class="topbar-role {role_class}">{role_label_top}</span>{notif_html}
-  </div>
-</div>""", unsafe_allow_html=True)
-
-dcol = st.columns([6, 1])[1]
-with dcol:
-    if st.button("Déconnexion", key="btn_logout"):
-        _clear_session(st.session_state.get("_sess_token", ""))
-        st.query_params.clear()
-        for k in ["authenticated","username","role","lots_autorises","_sess_token"]:
-            st.session_state.pop(k, None)
-        st.session_state.auth_page = "login"
-        st.rerun()
-
-# ─── Métriques ─────────────────────────────────────────────────────────────────
-ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
-tv = transactions[transactions['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
-td = transactions[transactions['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
-rn = tv - (ta + td)
-cr = "positive" if rn >= 0 else "negative"
-
-st.markdown(f"""
-<div class="metric-row">
-  <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
-</div>""", unsafe_allow_html=True)
-
-# ─── Onglets ───────────────────────────────────────────────────────────────────
-if is_admin:
-    utl = f"Utilisateurs ({pending_count})" if pending_count > 0 else "Utilisateurs"
-    tabs = st.tabs(["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots",
-                    "Résumé par personne","Historique des lots","Suivi des avances","💰 Finance", utl])
-    tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab_fin,tab8 = tabs
-elif is_sous_admin:
-    tabs = st.tabs(["Nouvelle transaction","Mes lots","Recherche","Graphiques","Modifier une transaction"])
-    tab1,tab2,tab3,tab4,tab5 = tabs
-else:
-    tabs = st.tabs(["Mes lots","Recherche","Graphiques"])
-    tab1,tab2,tab3 = tabs
-
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN — Formulaire édition transaction
+# SECTION RENDERER
 # ═══════════════════════════════════════════════════════════════════════════════
-def render_edit_transaction_form(transactions_df, lots_filter=None, personne_filter=None, key_prefix="edit"):
-    lots_all_edit = sorted(transactions_df['Lot'].dropna().astype(str).unique().tolist())
-    personnes_all_edit = sorted(transactions_df['Personne'].dropna().astype(str).unique().tolist())
-    sf1, sf2, sf3 = st.columns(3, gap="large")
-    with sf1:
-        lots_opts = ["Tous"] + (lots_filter if lots_filter else lots_all_edit)
-        f_lot = st.selectbox("Filtrer par lot", lots_opts, key=f"{key_prefix}_flot")
-    with sf2:
-        if personne_filter:
-            f_pers = personne_filter
-            st.text_input("Filtrer par personne", value=f_pers, disabled=True, key=f"{key_prefix}_fpers_disp")
-        else:
-            f_pers = st.selectbox("Filtrer par personne", ["Tous"]+personnes_all_edit, key=f"{key_prefix}_fpers")
-    with sf3:
-        f_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key=f"{key_prefix}_ftype")
-    df_edit = transactions_df.copy().reset_index(drop=False)
-    if f_lot != "Tous": df_edit = df_edit[df_edit['Lot']==f_lot]
-    if personne_filter:
-        df_edit = df_edit[df_edit['Personne'].astype(str).str.upper()==personne_filter.upper()]
-    elif f_pers != "Tous":
-        df_edit = df_edit[df_edit['Personne']==f_pers]
-    if f_type != "Tous": df_edit = df_edit[df_edit['Type (Achat/Vente/Dépense)']==f_type]
-    if df_edit.empty:
-        st.warning("Aucune transaction ne correspond aux filtres."); return transactions_df
-    def make_label(r):
-        return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-    labels = [make_label(row) for _, row in df_edit.iterrows()]
-    orig_indices = df_edit['index'].tolist()
-    st.caption(f"{len(df_edit)} transaction(s) filtrée(s)")
-    choix_label = st.selectbox("Sélectionner la transaction à modifier", ["— sélectionner —"]+labels, key=f"{key_prefix}_sel")
-    if choix_label == "— sélectionner —": return transactions_df
-    ligne_idx = labels.index(choix_label)
-    orig_idx = orig_indices[ligne_idx]
-    row_sel = transactions_df.loc[orig_idx]
-    st.markdown('<div class="edit-card">', unsafe_allow_html=True)
-    st.markdown(f"**Modifier la transaction — {h(str(row_sel.get('Lot','')))}**")
-    ec1, ec2, ec3 = st.columns(3, gap="large")
-    with ec1:
-        try: date_val = datetime.strptime(str(row_sel.get('Date','')), "%Y-%m-%d").date()
-        except: date_val = datetime.now().date()
-        new_date = st.date_input("Date", value=date_val, key=f"{key_prefix}_date")
-        if personne_filter:
-            new_personne = personne_filter.upper()
-            st.text_input("Personne (fixé)", value=new_personne, disabled=True, key=f"{key_prefix}_pers_disp")
-        else:
-            new_personne = st.text_input("Personne", value=str(row_sel.get('Personne','')), key=f"{key_prefix}_pers")
-        types_list = ["ACHAT","VENTE","DÉPENSE"]
-        cur_type = str(row_sel.get('Type (Achat/Vente/Dépense)','ACHAT'))
-        tidx = types_list.index(cur_type) if cur_type in types_list else 0
-        new_type = st.selectbox("Type de transaction", types_list, index=tidx, key=f"{key_prefix}_type")
-    with ec2:
-        lot_opts = lots_filter if lots_filter else lots_all_edit
-        cur_lot = str(row_sel.get('Lot',''))
-        lidx = lot_opts.index(cur_lot) if cur_lot in lot_opts else 0
-        new_lot = st.selectbox("Lot", lot_opts, index=lidx, key=f"{key_prefix}_lot")
-        new_desc = st.text_input("Description", value=str(row_sel.get('Description','')), key=f"{key_prefix}_desc")
-        new_montant = st.number_input("Montant (MAD)", min_value=0.0, step=0.01,
-                                      value=float(row_sel.get('Montant (MAD)',0)), key=f"{key_prefix}_montant")
-    with ec3:
-        new_qty = st.number_input("Quantité (pièces)", min_value=1, step=1,
-                                   value=max(1, int(float(row_sel.get('Quantité (pièces)',1)))), key=f"{key_prefix}_qty")
-        new_mode = st.text_input("Mode de paiement", value=str(row_sel.get('Mode de paiement','')), key=f"{key_prefix}_mode")
-        statuts = ["Actif","Fermé"]
-        cur_s = str(row_sel.get('Statut du lot','Actif'))
-        sidx = statuts.index(cur_s) if cur_s in statuts else 0
-        new_statut = st.selectbox("Statut du lot", statuts, index=sidx, key=f"{key_prefix}_statut")
-    new_rem = st.text_input("Remarque", value=str(row_sel.get('Remarque','')), key=f"{key_prefix}_remarque")
-    st.markdown('</div>', unsafe_allow_html=True)
-    if st.button("💾 Enregistrer les modifications", key=f"{key_prefix}_save"):
-        transactions_df.at[orig_idx,'Date'] = str(new_date)
-        transactions_df.at[orig_idx,'Personne'] = sanitize_text(new_personne.upper())
-        transactions_df.at[orig_idx,'Type (Achat/Vente/Dépense)'] = new_type
-        transactions_df.at[orig_idx,'Lot'] = sanitize_text(new_lot.upper())
-        transactions_df.at[orig_idx,'Description'] = sanitize_text(new_desc)
-        transactions_df.at[orig_idx,'Montant (MAD)'] = new_montant
-        transactions_df.at[orig_idx,'Quantité (pièces)'] = new_qty
-        transactions_df.at[orig_idx,'Mode de paiement'] = sanitize_text(new_mode)
-        transactions_df.at[orig_idx,'Remarque'] = sanitize_text(new_rem)
-        transactions_df.at[orig_idx,'Statut du lot'] = new_statut
-        try:
-            save_sheet(transactions_df, "Gestion globale")
-            st.success("✅ Transaction modifiée avec succès.")
-            clear_data_cache(); st.rerun()
-        except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
-    return transactions_df
+PL = dict(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+          font=dict(family='DM Sans', color='#555', size=12), margin=dict(l=10,r=10,t=40,b=10))
+COLORS = {'ACHAT':'#5C85D6','VENTE':'#2D7A3A','DÉPENSE':'#C0864A'}
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN — TABS
-# ═══════════════════════════════════════════════════════════════════════════════
-if is_admin:
-
-    with tab1:
-        st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
+# ── NOUVELLE TRANSACTION ──────────────────────────────────────────────────────
+if active == "nouvelle_transaction":
+    if is_admin:
         c1, c2, c3 = st.columns(3, gap="large")
         with c1:
             date = st.date_input("Date", datetime.now())
@@ -1091,328 +1300,11 @@ if is_admin:
                    'Quantité (pièces)': quantite, 'Mode de paiement': sanitize_text(mode_paiement),
                    'Remarque': sanitize_text(remarque), 'Statut du lot': statut_lot}
             try:
-                append_row(row, "Gestion globale")
-                st.success("Transaction enregistrée.")
+                append_row(row, "Gestion globale"); st.success("Transaction enregistrée.")
                 clear_data_cache()
             except Exception as e: st.error(f"Erreur : {e}")
 
-    with tab2:
-        st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        cs1, cs2, cs3 = st.columns([2,1,1], gap="large")
-        with cs1: query = st.text_input("Rechercher", placeholder="Nom, lot, description...")
-        with cs2: filtre_type = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"])
-        with cs3:
-            lots_dispo = ["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-            filtre_lot = st.selectbox("Lot", lots_dispo)
-        df_f = transactions.copy()
-        if query:
-            mask = (df_f['Personne'].astype(str).str.contains(query,case=False,na=False)|
-                    df_f['Lot'].astype(str).str.contains(query,case=False,na=False)|
-                    df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
-                    df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
-            df_f = df_f[mask]
-        if filtre_type != "Tous": df_f = df_f[df_f['Type (Achat/Vente/Dépense)']==filtre_type]
-        if filtre_lot  != "Tous": df_f = df_f[df_f['Lot']==filtre_lot]
-        st.markdown(f'<div class="info-count">{len(df_f)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_f, width='stretch', hide_index=True)
-
-    with tab3:
-        st.markdown('<div class="section-title">Graphiques</div>', unsafe_allow_html=True)
-        COLORS = {'ACHAT':'#5C85D6','VENTE':'#2D7A3A','DÉPENSE':'#C0864A'}
-        PL = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
-        gc1,gc2 = st.columns(2,gap="large")
-        with gc1:
-            st.markdown('<div class="section-title" style="font-size:1rem;">Répartition globale</div>', unsafe_allow_html=True)
-            fig = go.Figure(go.Pie(labels=['Achats','Ventes','Dépenses'], values=[ta,tv,td], hole=0.55,
-                marker=dict(colors=['#5C85D6','#2D7A3A','#C0864A'],line=dict(color='#F7F6F2',width=3)),
-                hovertemplate='%{label}<br>%{value:,.0f} MAD<extra></extra>'))
-            fig.update_layout(**PL,showlegend=True,legend=dict(orientation='h',y=-0.15,x=0.5,xanchor='center'))
-            st.plotly_chart(fig,use_container_width=True)
-        with gc2:
-            st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par lot</div>', unsafe_allow_html=True)
-            sl = compute_suivi_lot(transactions)
-            if not sl.empty:
-                fig2 = go.Figure(go.Bar(x=sl['Lot'],y=sl['Résultat'],
-                    marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl['Résultat']],
-                    hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-                fig2.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-                st.plotly_chart(fig2,use_container_width=True)
-        st.markdown('<div class="section-title" style="font-size:1rem;">Évolution dans le temps</div>', unsafe_allow_html=True)
-        df_t = transactions.copy()
-        df_t['Date'] = pd.to_datetime(df_t['Date'],errors='coerce')
-        df_t = df_t.dropna(subset=['Date'])
-        df_t['Mois'] = df_t['Date'].dt.to_period('M').astype(str)
-        dp = df_t.groupby(['Mois','Type (Achat/Vente/Dépense)'])['Montant (MAD)'].sum().reset_index()
-        fig3 = go.Figure()
-        for tv2, col in COLORS.items():
-            d = dp[dp['Type (Achat/Vente/Dépense)']==tv2]
-            if not d.empty:
-                fig3.add_trace(go.Scatter(x=d['Mois'],y=d['Montant (MAD)'],mode='lines+markers',name=tv2,
-                    line=dict(color=col,width=2),marker=dict(size=6)))
-        fig3.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'),
-            legend=dict(orientation='h',y=-0.2,x=0.5,xanchor='center'))
-        st.plotly_chart(fig3,use_container_width=True)
-        st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par personne</div>', unsafe_allow_html=True)
-        rp = compute_resume_personne(transactions)
-        if not rp.empty:
-            fig4 = go.Figure(go.Bar(x=rp['Personne'],y=rp['Résultat'],
-                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in rp['Résultat']],
-                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-            fig4.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-            st.plotly_chart(fig4,use_container_width=True)
-
-    with tab4:
-        st.markdown('<div class="section-title">Catalogue des lots</div>', unsafe_allow_html=True)
-        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
-
-    with tab5:
-        st.markdown('<div class="section-title">Résumé par personne</div>', unsafe_allow_html=True)
-        st.dataframe(compute_resume_personne(transactions), width='stretch', hide_index=True)
-
-    with tab6:
-        st.markdown('<div class="section-title">Historique des lots</div>', unsafe_allow_html=True)
-        filtre_lot_hist = st.selectbox("Filtrer par lot", ["Tous"]+lots_existants, key="hist_filtre")
-        hist_df = compute_historique_lot(transactions)
-        if filtre_lot_hist != "Tous":
-            hist_df = hist_df[hist_df['Lot']==filtre_lot_hist]
-            t_lot = transactions[transactions['Lot']==filtre_lot_hist]
-            a_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
-            v_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
-            d_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
-            r_l = v_l - (a_l + d_l)
-            cr_l = "#2D7A3A" if r_l >= 0 else "#B03A2E"
-            st.markdown(f"""<div class="metric-row" style="margin-bottom:1rem">
-              <div class="metric-card"><div class="metric-label">Achats</div><div class="metric-value">{a_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
-              <div class="metric-card"><div class="metric-label">Ventes</div><div class="metric-value">{v_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
-              <div class="metric-card"><div class="metric-label">Dépenses</div><div class="metric-value">{d_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
-              <div class="metric-card"><div class="metric-label">Résultat</div><div class="metric-value" style="color:{cr_l}">{r_l:+,.0f} <small style="opacity:.5">MAD</small></div></div>
-            </div>""", unsafe_allow_html=True)
-        if not hist_df.empty:
-            st.markdown(f'<div class="info-count">{len(hist_df)} transaction(s)</div>', unsafe_allow_html=True)
-            st.dataframe(hist_df, width='stretch', hide_index=True)
-        else:
-            st.warning("Aucune transaction pour ce lot.")
-
-    with tab7:
-        st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
-        st.caption("Cliquez sur une cellule pour la modifier directement.")
-        ef1, ef2, ef3 = st.columns(3, gap="large")
-        with ef1:
-            lots_edit_opts = ["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
-            e_lot = st.selectbox("Filtrer par lot", lots_edit_opts, key="edit_inline_lot")
-        with ef2:
-            pers_edit_opts = ["Tous"]+sorted(transactions_all['Personne'].dropna().astype(str).unique().tolist())
-            e_pers = st.selectbox("Filtrer par personne", pers_edit_opts, key="edit_inline_pers")
-        with ef3:
-            e_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="edit_inline_type")
-        df_editable = transactions_all.copy()
-        df_editable.index = range(len(df_editable))
-        df_editable["_orig_idx"] = df_editable.index
-        mask_edit = pd.Series([True]*len(df_editable))
-        if e_lot  != "Tous": mask_edit &= df_editable['Lot'].astype(str) == e_lot
-        if e_pers != "Tous": mask_edit &= df_editable['Personne'].astype(str) == e_pers
-        if e_type != "Tous": mask_edit &= df_editable['Type (Achat/Vente/Dépense)'].astype(str) == e_type
-        df_view = df_editable[mask_edit].copy()
-        cols_show = [c for c in ['Date','Personne','Type (Achat/Vente/Dépense)','Lot','Description',
-                                  'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_view.columns]
-        column_config = {
-            "Date": st.column_config.TextColumn("Date"),
-            "Personne": st.column_config.TextColumn("Personne"),
-            "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
-            "Lot": st.column_config.TextColumn("Lot"),
-            "Description": st.column_config.TextColumn("Description"),
-            "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
-            "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
-            "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
-            "Remarque": st.column_config.TextColumn("Remarque"),
-            "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
-        }
-        st.markdown(f'<div class="info-count">{len(df_view)} transaction(s) affichée(s)</div>', unsafe_allow_html=True)
-        edited_df = st.data_editor(df_view[cols_show+["_orig_idx"]], column_config=column_config,
-            hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_show, key="inline_editor")
-        if st.button("💾 Sauvegarder toutes les modifications", key="btn_save_inline"):
-            try:
-                for _, row_edit in edited_df.iterrows():
-                    oi = int(row_edit["_orig_idx"])
-                    for col in cols_show:
-                        if col in transactions_all.columns:
-                            val = row_edit[col]
-                            if col in ['Personne','Lot','Description','Remarque','Mode de paiement']:
-                                val = sanitize_text(str(val))
-                                if col in ['Personne','Lot']: val = val.upper()
-                            transactions_all.at[oi, col] = val
-                save_sheet(transactions_all, "Gestion globale")
-                st.success("✅ Modifications enregistrées.")
-                clear_data_cache(); st.rerun()
-            except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
-
-        st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
-        sf1, sf2, sf3 = st.columns(3, gap="large")
-        with sf1:
-            lots_f = ["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-            f_lot = st.selectbox("Filtrer par lot", lots_f, key="sf_lot")
-        with sf2:
-            pers_f = ["Tous"]+sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
-            f_pers = st.selectbox("Filtrer par personne", pers_f, key="sf_pers")
-        with sf3:
-            f_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sf_type")
-        df_del = transactions.copy().reset_index(drop=True)
-        if f_lot  != "Tous": df_del = df_del[df_del['Lot']==f_lot]
-        if f_pers != "Tous": df_del = df_del[df_del['Personne']==f_pers]
-        if f_type != "Tous": df_del = df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
-        if not df_del.empty:
-            def make_label_del(r):
-                return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-            labels_del = [make_label_del(row) for _, row in df_del.iterrows()]
-            idx_to_orig = df_del.index.tolist()
-            st.caption(f"{len(df_del)} transaction(s) filtrée(s)")
-            choix_del = st.selectbox("Choisir la transaction à supprimer", ["— sélectionner —"]+labels_del, key="del_single_sel")
-            if choix_del != "— sélectionner —":
-                li = labels_del.index(choix_del)
-                oi = idx_to_orig[li]
-                rs = transactions.loc[oi]
-                with st.container(border=True):
-                    st.markdown(f"**{h(str(rs.get('Lot','')))} — {h(str(rs.get('Type (Achat/Vente/Dépense)','')))}**", unsafe_allow_html=True)
-                    st.caption(f"{rs.get('Date','')} · {rs.get('Personne','')} · {float(rs.get('Montant (MAD)',0)):,.0f} MAD")
-                c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
-                if st.button("Supprimer cette transaction", key="btn_del_single"):
-                    if not c_single: st.warning("Coche la case de confirmation.")
-                    else:
-                        transactions = transactions.drop(index=oi).reset_index(drop=True)
-                        save_sheet(transactions, "Gestion globale")
-                        st.success("Transaction supprimée.")
-                        clear_data_cache(); st.rerun()
-        else:
-            st.warning("Aucune transaction ne correspond aux filtres.")
-
-        st.markdown('<div class="section-title">Supprimer en masse</div>', unsafe_allow_html=True)
-        dc1, dc2 = st.columns(2, gap="large")
-        with dc1:
-            st.markdown("**Toutes les transactions d'un lot**")
-            lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-            lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
-            if lot_sup != "— sélectionner —":
-                st.caption(f"{len(transactions[transactions['Lot']==lot_sup])} transaction(s)")
-            c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
-            if st.button("Supprimer le lot", key="btn_del_lot"):
-                if lot_sup == "— sélectionner —": st.warning("Sélectionne un lot.")
-                elif not c_lot: st.warning("Coche la case de confirmation.")
-                else:
-                    transactions = transactions[transactions['Lot']!=lot_sup]
-                    save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
-        with dc2:
-            st.markdown("**Toutes les transactions d'une personne**")
-            pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
-            pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
-            if pers_sup != "— sélectionner —":
-                st.caption(f"{len(transactions[transactions['Personne']==pers_sup])} transaction(s)")
-            c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
-            if st.button("Supprimer la personne", key="btn_del_pers"):
-                if pers_sup == "— sélectionner —": st.warning("Sélectionne une personne.")
-                elif not c_pers: st.warning("Coche la case de confirmation.")
-                else:
-                    transactions = transactions[transactions['Personne']!=pers_sup]
-                    save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
-
-    with tab_fin:
-        st.markdown('<div class="page-title" style="font-size:2rem">Finance</div>', unsafe_allow_html=True)
-        st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement</div>', unsafe_allow_html=True)
-        render_finance_tab(lots_existants)
-
-
-    with tab8:
-        st.markdown('<div class="section-title">Gestion des utilisateurs</div>', unsafe_allow_html=True)
-        users_df = get_users()
-        lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-        pending = users_df[users_df["statut"]=="en_attente"]
-        if not pending.empty:
-            st.markdown(f"**🔔 Demandes en attente ({len(pending)})**")
-            for _, row in pending.iterrows():
-                uname = row["username"]
-                fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
-                with st.container():
-                    st.markdown(f"""<div class="user-card"><div class="user-card-name">{h(fn)}</div>
-                    <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))}</div></div>""", unsafe_allow_html=True)
-                    pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
-                    with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
-                    with pc2:
-                        if st.button("✓ Approuver", key=f"approve_{uname}",
-                                     disabled=st.session_state.get(f"approving_{uname}", False)):
-                            if not st.session_state.get(f"approving_{uname}", False):
-                                st.session_state[f"approving_{uname}"] = True
-                                with st.spinner(""):
-                                    users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
-                                    users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
-                                    save_users(users_df); _load_sheet_cached.clear()
-                                st.rerun()
-                    with pc3:
-                        if st.button("✗ Refuser", key=f"reject_{uname}",
-                                     disabled=st.session_state.get(f"rejecting_{uname}", False)):
-                            if not st.session_state.get(f"rejecting_{uname}", False):
-                                st.session_state[f"rejecting_{uname}"] = True
-                                with st.spinner(""):
-                                    users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
-                                    save_users(users_df); _load_sheet_cached.clear()
-                                st.rerun()
-            st.markdown("---")
-        st.markdown("**Tous les utilisateurs**")
-        search_user = st.text_input("Rechercher un utilisateur", placeholder="Nom, prénom ou identifiant...", key="search_users")
-        approved = users_df[users_df["statut"]!="en_attente"].copy()
-        if search_user:
-            m = (approved["username"].astype(str).str.contains(search_user,case=False,na=False)|
-                 approved["nom"].astype(str).str.contains(search_user,case=False,na=False)|
-                 approved["prenom"].astype(str).str.contains(search_user,case=False,na=False))
-            approved = approved[m]
-        st.markdown(f'<div class="info-count">{len(approved)} utilisateur(s)</div>', unsafe_allow_html=True)
-        for _, row in approved.iterrows():
-            uname = row["username"]
-            if uname == username: continue
-            fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
-            sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
-            cur_role = str(row["role"])
-            rlu = "Admin" if cur_role=="admin" else ("Sous-Admin" if cur_role=="sous-admin" else "Visiteur")
-            with st.container():
-                st.markdown(f"""<div class="user-card">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                    <div><div class="user-card-name">{h(fn)}</div>
-                    <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {rlu}</div></div>
-                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span>
-                  </div></div>""", unsafe_allow_html=True)
-                ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
-                with ac2:
-                    la = [x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]
-                    la_valid = [x for x in la if x in lots_all]
-                    new_lots = st.multiselect("Lots", options=lots_all, default=la_valid, key=f"edit_lots_{uname}")
-                with ac3:
-                    role_options = ["sous-admin","admin"]
-                    role_idx = 0 if cur_role!="admin" else 1
-                    new_role = st.selectbox("Rôle", role_options, index=role_idx, key=f"role_{uname}")
-                with ac4:
-                    if st.button("Sauvegarder", key=f"save_{uname}", disabled=st.session_state.get(f"saving_{uname}", False)):
-                        st.session_state[f"saving_{uname}"] = True
-                        with st.spinner("Enregistrement…"):
-                            users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(new_lots)
-                            users_df.loc[users_df["username"]==uname,"role"] = new_role
-                            save_users(users_df)
-                            update_session_for_user(uname, new_role, new_lots)
-                        st.rerun()
-                    if st.button("Supprimer", key=f"del_{uname}", disabled=st.session_state.get(f"deleting_{uname}", False)):
-                        st.session_state[f"deleting_{uname}"] = True
-                        with st.spinner("Suppression…"):
-                            users_df = users_df[users_df["username"]!=uname]
-                            save_users(users_df)
-                        st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SOUS-ADMIN
-# ═══════════════════════════════════════════════════════════════════════════════
-elif is_sous_admin:
-
-    with tab1:
-        st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
+    elif is_sous_admin:
         st.markdown(f'<div class="info-count">Transaction enregistrée sous le nom : <strong>{h(username.upper())}</strong></div>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3, gap="large")
         with c1:
@@ -1441,124 +1333,373 @@ elif is_sous_admin:
                           'Mode de paiement': sanitize_text(mode_paiement_sa), 'Remarque': sanitize_text(remarque_sa),
                           'Statut du lot': statut_lot_sa}
                 try:
-                    append_row(row_sa, "Gestion globale")
-                    st.success(f"Transaction enregistrée sur le lot {lot_val_sa}.")
+                    append_row(row_sa, "Gestion globale"); st.success(f"Transaction enregistrée sur le lot {lot_val_sa}.")
                     clear_data_cache()
                 except Exception as e: st.error(f"Erreur : {e}")
 
-    with tab2:
-        st.markdown('<div class="section-title">Mes lots autorisés</div>', unsafe_allow_html=True)
-        if lots_autorises:
-            st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
-        else: warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
-        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
+# ── RECHERCHE ─────────────────────────────────────────────────────────────────
+elif active == "recherche":
+    cs1, cs2, cs3 = st.columns([2,1,1], gap="large")
+    with cs1: query = st.text_input("Rechercher", placeholder="Nom, lot, description...")
+    with cs2: filtre_type = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"])
+    with cs3:
+        lots_dispo = ["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+        filtre_lot = st.selectbox("Lot", lots_dispo)
+    df_f = transactions.copy()
+    if query:
+        mask = (df_f['Personne'].astype(str).str.contains(query,case=False,na=False)|
+                df_f['Lot'].astype(str).str.contains(query,case=False,na=False)|
+                df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
+                df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
+        df_f = df_f[mask]
+    if filtre_type != "Tous": df_f = df_f[df_f['Type (Achat/Vente/Dépense)']==filtre_type]
+    if filtre_lot  != "Tous": df_f = df_f[df_f['Lot']==filtre_lot]
+    st.markdown(f'<div class="info-count">{len(df_f)} transaction(s)</div>', unsafe_allow_html=True)
+    st.dataframe(df_f, width='stretch', hide_index=True)
 
-    with tab3:
-        st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        query_sa = st.text_input("Rechercher", placeholder="Nom, lot, description...", key="sa_search")
-        filtre_type_sa = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sa_ftype")
-        df_sa = transactions.copy()
-        if query_sa:
-            mask = (df_sa['Personne'].astype(str).str.contains(query_sa,case=False,na=False)|
-                    df_sa['Lot'].astype(str).str.contains(query_sa,case=False,na=False)|
-                    df_sa['Description'].astype(str).str.contains(query_sa,case=False,na=False)|
-                    df_sa['Remarque'].astype(str).str.contains(query_sa,case=False,na=False))
-            df_sa = df_sa[mask]
-        if filtre_type_sa != "Tous": df_sa = df_sa[df_sa['Type (Achat/Vente/Dépense)']==filtre_type_sa]
-        st.markdown(f'<div class="info-count">{len(df_sa)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_sa, width='stretch', hide_index=True)
-
-    with tab4:
-        st.markdown('<div class="section-title">Graphiques de mes lots</div>', unsafe_allow_html=True)
-        PL_sa = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
-        sl_sa = compute_suivi_lot(transactions)
-        if not sl_sa.empty:
-            fig_sa = go.Figure(go.Bar(x=sl_sa['Lot'],y=sl_sa['Résultat'],
-                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl_sa['Résultat']],
+# ── GRAPHIQUES ────────────────────────────────────────────────────────────────
+elif active == "graphiques":
+    ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
+    tv = transactions[transactions['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
+    td = transactions[transactions['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
+    gc1, gc2 = st.columns(2, gap="large")
+    with gc1:
+        st.markdown('<div class="section-title" style="font-size:1rem;">Répartition globale</div>', unsafe_allow_html=True)
+        fig = go.Figure(go.Pie(labels=['Achats','Ventes','Dépenses'], values=[ta,tv,td], hole=0.55,
+            marker=dict(colors=['#5C85D6','#2D7A3A','#C0864A'],line=dict(color='#F7F6F2',width=3)),
+            hovertemplate='%{label}<br>%{value:,.0f} MAD<extra></extra>'))
+        fig.update_layout(**PL, showlegend=True, legend=dict(orientation='h',y=-0.15,x=0.5,xanchor='center'))
+        st.plotly_chart(fig, use_container_width=True)
+    with gc2:
+        st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par lot</div>', unsafe_allow_html=True)
+        sl = compute_suivi_lot(transactions)
+        if not sl.empty:
+            fig2 = go.Figure(go.Bar(x=sl['Lot'], y=sl['Résultat'],
+                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl['Résultat']],
                 hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-            fig_sa.update_layout(**PL_sa,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-            st.plotly_chart(fig_sa,use_container_width=True)
-        else: warn("Aucune donnée à afficher.")
+            fig2.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
+            st.plotly_chart(fig2, use_container_width=True)
+    st.markdown('<div class="section-title" style="font-size:1rem;">Évolution dans le temps</div>', unsafe_allow_html=True)
+    df_t = transactions.copy()
+    df_t['Date'] = pd.to_datetime(df_t['Date'], errors='coerce')
+    df_t = df_t.dropna(subset=['Date'])
+    df_t['Mois'] = df_t['Date'].dt.to_period('M').astype(str)
+    dp = df_t.groupby(['Mois','Type (Achat/Vente/Dépense)'])['Montant (MAD)'].sum().reset_index()
+    fig3 = go.Figure()
+    for tv2, col in COLORS.items():
+        d = dp[dp['Type (Achat/Vente/Dépense)']==tv2]
+        if not d.empty:
+            fig3.add_trace(go.Scatter(x=d['Mois'], y=d['Montant (MAD)'], mode='lines+markers', name=tv2,
+                line=dict(color=col,width=2), marker=dict(size=6)))
+    fig3.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'),
+        legend=dict(orientation='h',y=-0.2,x=0.5,xanchor='center'))
+    st.plotly_chart(fig3, use_container_width=True)
+    if is_admin:
+        st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par personne</div>', unsafe_allow_html=True)
+        rp = compute_resume_personne(transactions)
+        if not rp.empty:
+            fig4 = go.Figure(go.Bar(x=rp['Personne'], y=rp['Résultat'],
+                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in rp['Résultat']],
+                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
+            fig4.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
+            st.plotly_chart(fig4, use_container_width=True)
 
-    with tab5:
-        st.markdown('<div class="section-title">Modifier mes transactions</div>', unsafe_allow_html=True)
-        df_sa_edit = transactions_all.copy()
-        df_sa_edit.index = range(len(df_sa_edit))
-        df_sa_edit["_orig_idx"] = df_sa_edit.index
-        mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
-        if lots_autorises:
-            mask_sa &= df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
-        df_sa_view = df_sa_edit[mask_sa].copy()
-        if df_sa_view.empty:
-            st.info("Aucune transaction à afficher pour votre compte.")
-        else:
-            lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
-            fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
-            if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
-            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot','Description',
-                                         'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
-            all_lots_sa = sorted(set(lots_autorises or [])|set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
-            col_cfg_sa = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
-                "Lot": st.column_config.SelectboxColumn("Lot", options=all_lots_sa, required=True),
-                "Description": st.column_config.TextColumn("Description"),
-                "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
-                "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
-                "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-                "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
-            }
-            st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>', unsafe_allow_html=True)
-            edited_sa = st.data_editor(df_sa_view[cols_sa_show+["_orig_idx"]], column_config=col_cfg_sa,
-                hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_sa_show, key="sa_inline_editor")
-            if st.button("💾 Sauvegarder les modifications", key="sa_btn_save_inline"):
-                try:
-                    for _, row_edit in edited_sa.iterrows():
-                        oi = int(row_edit["_orig_idx"])
-                        for col in cols_sa_show:
-                            if col in transactions_all.columns:
-                                val = row_edit[col]
-                                if col in ['Lot','Description','Remarque','Mode de paiement']:
-                                    val = sanitize_text(str(val))
-                                if col == 'Lot': val = val.upper()
-                                transactions_all.at[oi, col] = val
-                    save_sheet(transactions_all, "Gestion globale")
-                    st.success("✅ Modifications enregistrées.")
+# ── CATALOGUE DES LOTS (admin) ────────────────────────────────────────────────
+elif active == "catalogue_lots" and is_admin:
+    st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
+
+# ── MES LOTS (sous-admin / visiteur) ─────────────────────────────────────────
+elif active == "mes_lots":
+    if lots_autorises:
+        st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
+    else: warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
+    st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
+
+# ── RÉSUMÉ PAR PERSONNE (admin) ───────────────────────────────────────────────
+elif active == "resume_personne" and is_admin:
+    st.dataframe(compute_resume_personne(transactions), width='stretch', hide_index=True)
+
+# ── HISTORIQUE DES LOTS (admin) ───────────────────────────────────────────────
+elif active == "historique_lots" and is_admin:
+    filtre_lot_hist = st.selectbox("Filtrer par lot", ["Tous"]+lots_existants, key="hist_filtre")
+    hist_df = compute_historique_lot(transactions)
+    if filtre_lot_hist != "Tous":
+        hist_df = hist_df[hist_df['Lot']==filtre_lot_hist]
+        t_lot = transactions[transactions['Lot']==filtre_lot_hist]
+        a_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
+        v_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
+        d_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
+        r_l = v_l - (a_l + d_l)
+        cr_l = "#2D7A3A" if r_l >= 0 else "#B03A2E"
+        st.markdown(f"""<div class="metric-row" style="margin-bottom:1rem">
+          <div class="metric-card"><div class="metric-label">Achats</div><div class="metric-value">{a_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
+          <div class="metric-card"><div class="metric-label">Ventes</div><div class="metric-value">{v_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
+          <div class="metric-card"><div class="metric-label">Dépenses</div><div class="metric-value">{d_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
+          <div class="metric-card"><div class="metric-label">Résultat</div><div class="metric-value" style="color:{cr_l}">{r_l:+,.0f} <small style="opacity:.5">MAD</small></div></div>
+        </div>""", unsafe_allow_html=True)
+    if not hist_df.empty:
+        st.markdown(f'<div class="info-count">{len(hist_df)} transaction(s)</div>', unsafe_allow_html=True)
+        st.dataframe(hist_df, width='stretch', hide_index=True)
+    else:
+        st.warning("Aucune transaction pour ce lot.")
+
+# ── SUIVI DES AVANCES + MODIFIER (admin) ─────────────────────────────────────
+elif active == "suivi_avances" and is_admin:
+    st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
+    st.caption("Cliquez sur une cellule pour la modifier directement.")
+    ef1, ef2, ef3 = st.columns(3, gap="large")
+    with ef1:
+        lots_edit_opts = ["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
+        e_lot = st.selectbox("Filtrer par lot", lots_edit_opts, key="edit_inline_lot")
+    with ef2:
+        pers_edit_opts = ["Tous"]+sorted(transactions_all['Personne'].dropna().astype(str).unique().tolist())
+        e_pers = st.selectbox("Filtrer par personne", pers_edit_opts, key="edit_inline_pers")
+    with ef3:
+        e_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="edit_inline_type")
+    df_editable = transactions_all.copy()
+    df_editable.index = range(len(df_editable))
+    df_editable["_orig_idx"] = df_editable.index
+    mask_edit = pd.Series([True]*len(df_editable))
+    if e_lot  != "Tous": mask_edit &= df_editable['Lot'].astype(str) == e_lot
+    if e_pers != "Tous": mask_edit &= df_editable['Personne'].astype(str) == e_pers
+    if e_type != "Tous": mask_edit &= df_editable['Type (Achat/Vente/Dépense)'].astype(str) == e_type
+    df_view = df_editable[mask_edit].copy()
+    cols_show = [c for c in ['Date','Personne','Type (Achat/Vente/Dépense)','Lot','Description',
+                              'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_view.columns]
+    column_config = {
+        "Date": st.column_config.TextColumn("Date"),
+        "Personne": st.column_config.TextColumn("Personne"),
+        "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
+        "Lot": st.column_config.TextColumn("Lot"),
+        "Description": st.column_config.TextColumn("Description"),
+        "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
+        "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
+        "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
+        "Remarque": st.column_config.TextColumn("Remarque"),
+        "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
+    }
+    st.markdown(f'<div class="info-count">{len(df_view)} transaction(s) affichée(s)</div>', unsafe_allow_html=True)
+    edited_df = st.data_editor(df_view[cols_show+["_orig_idx"]], column_config=column_config,
+        hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_show, key="inline_editor")
+    if st.button("💾 Sauvegarder toutes les modifications", key="btn_save_inline"):
+        try:
+            for _, row_edit in edited_df.iterrows():
+                oi = int(row_edit["_orig_idx"])
+                for col in cols_show:
+                    if col in transactions_all.columns:
+                        val = row_edit[col]
+                        if col in ['Personne','Lot','Description','Remarque','Mode de paiement']:
+                            val = sanitize_text(str(val))
+                            if col in ['Personne','Lot']: val = val.upper()
+                        transactions_all.at[oi, col] = val
+            save_sheet(transactions_all, "Gestion globale")
+            st.success("✅ Modifications enregistrées.")
+            clear_data_cache(); st.rerun()
+        except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
+
+    st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
+    sf1, sf2, sf3 = st.columns(3, gap="large")
+    with sf1:
+        lots_f = ["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+        f_lot = st.selectbox("Filtrer par lot", lots_f, key="sf_lot")
+    with sf2:
+        pers_f = ["Tous"]+sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
+        f_pers = st.selectbox("Filtrer par personne", pers_f, key="sf_pers")
+    with sf3:
+        f_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sf_type")
+    df_del = transactions.copy().reset_index(drop=True)
+    if f_lot  != "Tous": df_del = df_del[df_del['Lot']==f_lot]
+    if f_pers != "Tous": df_del = df_del[df_del['Personne']==f_pers]
+    if f_type != "Tous": df_del = df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
+    if not df_del.empty:
+        def make_label_del(r):
+            return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
+        labels_del = [make_label_del(row) for _, row in df_del.iterrows()]
+        idx_to_orig = df_del.index.tolist()
+        st.caption(f"{len(df_del)} transaction(s) filtrée(s)")
+        choix_del = st.selectbox("Choisir la transaction à supprimer", ["— sélectionner —"]+labels_del, key="del_single_sel")
+        if choix_del != "— sélectionner —":
+            li = labels_del.index(choix_del)
+            oi = idx_to_orig[li]
+            rs = transactions.loc[oi]
+            with st.container(border=True):
+                st.markdown(f"**{h(str(rs.get('Lot','')))} — {h(str(rs.get('Type (Achat/Vente/Dépense)','')))}**", unsafe_allow_html=True)
+                st.caption(f"{rs.get('Date','')} · {rs.get('Personne','')} · {float(rs.get('Montant (MAD)',0)):,.0f} MAD")
+            c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
+            if st.button("Supprimer cette transaction", key="btn_del_single"):
+                if not c_single: st.warning("Coche la case de confirmation.")
+                else:
+                    transactions = transactions.drop(index=oi).reset_index(drop=True)
+                    save_sheet(transactions, "Gestion globale")
+                    st.success("Transaction supprimée.")
                     clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
+    else:
+        st.warning("Aucune transaction ne correspond aux filtres.")
 
+    st.markdown('<div class="section-title">Supprimer en masse</div>', unsafe_allow_html=True)
+    dc1, dc2 = st.columns(2, gap="large")
+    with dc1:
+        st.markdown("**Toutes les transactions d'un lot**")
+        lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+        lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
+        if lot_sup != "— sélectionner —":
+            st.caption(f"{len(transactions[transactions['Lot']==lot_sup])} transaction(s)")
+        c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
+        if st.button("Supprimer le lot", key="btn_del_lot"):
+            if lot_sup == "— sélectionner —": st.warning("Sélectionne un lot.")
+            elif not c_lot: st.warning("Coche la case de confirmation.")
+            else:
+                transactions = transactions[transactions['Lot']!=lot_sup]
+                save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
+    with dc2:
+        st.markdown("**Toutes les transactions d'une personne**")
+        pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
+        pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
+        if pers_sup != "— sélectionner —":
+            st.caption(f"{len(transactions[transactions['Personne']==pers_sup])} transaction(s)")
+        c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
+        if st.button("Supprimer la personne", key="btn_del_pers"):
+            if pers_sup == "— sélectionner —": st.warning("Sélectionne une personne.")
+            elif not c_pers: st.warning("Coche la case de confirmation.")
+            else:
+                transactions = transactions[transactions['Personne']!=pers_sup]
+                save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# VISITEUR
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── FINANCE (admin) ───────────────────────────────────────────────────────────
+elif active == "finance" and is_admin:
+    render_finance_tab(lots_existants)
+
+# ── UTILISATEURS (admin) ──────────────────────────────────────────────────────
+elif active == "utilisateurs" and is_admin:
+    users_df = get_users()
+    lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+    pending = users_df[users_df["statut"]=="en_attente"]
+    if not pending.empty:
+        st.markdown(f"**🔔 Demandes en attente ({len(pending)})**")
+        for _, row in pending.iterrows():
+            uname = row["username"]
+            fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
+            with st.container():
+                st.markdown(f"""<div class="user-card"><div class="user-card-name">{h(fn)}</div>
+                <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))}</div></div>""", unsafe_allow_html=True)
+                pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
+                with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
+                with pc2:
+                    if st.button("✓ Approuver", key=f"approve_{uname}",
+                                 disabled=st.session_state.get(f"approving_{uname}", False)):
+                        if not st.session_state.get(f"approving_{uname}", False):
+                            st.session_state[f"approving_{uname}"] = True
+                            with st.spinner(""):
+                                users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
+                                users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
+                                save_users(users_df); _load_sheet_cached.clear()
+                            st.rerun()
+                with pc3:
+                    if st.button("✗ Refuser", key=f"reject_{uname}",
+                                 disabled=st.session_state.get(f"rejecting_{uname}", False)):
+                        if not st.session_state.get(f"rejecting_{uname}", False):
+                            st.session_state[f"rejecting_{uname}"] = True
+                            with st.spinner(""):
+                                users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
+                                save_users(users_df); _load_sheet_cached.clear()
+                            st.rerun()
+        st.markdown("---")
+    st.markdown("**Tous les utilisateurs**")
+    search_user = st.text_input("Rechercher un utilisateur", placeholder="Nom, prénom ou identifiant...", key="search_users")
+    approved = users_df[users_df["statut"]!="en_attente"].copy()
+    if search_user:
+        m = (approved["username"].astype(str).str.contains(search_user,case=False,na=False)|
+             approved["nom"].astype(str).str.contains(search_user,case=False,na=False)|
+             approved["prenom"].astype(str).str.contains(search_user,case=False,na=False))
+        approved = approved[m]
+    st.markdown(f'<div class="info-count">{len(approved)} utilisateur(s)</div>', unsafe_allow_html=True)
+    for _, row in approved.iterrows():
+        uname = row["username"]
+        if uname == username: continue
+        fn = f"{str(row.get('prenom','')).strip()} {str(row.get('nom','')).strip()}".strip() or "—"
+        sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
+        cur_role = str(row["role"])
+        rlu = "Admin" if cur_role=="admin" else ("Sous-Admin" if cur_role=="sous-admin" else "Visiteur")
+        with st.container():
+            st.markdown(f"""<div class="user-card">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div><div class="user-card-name">{h(fn)}</div>
+                <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {rlu}</div></div>
+                <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span>
+              </div></div>""", unsafe_allow_html=True)
+            ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
+            with ac2:
+                la = [x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]
+                la_valid = [x for x in la if x in lots_all]
+                new_lots = st.multiselect("Lots", options=lots_all, default=la_valid, key=f"edit_lots_{uname}")
+            with ac3:
+                role_options = ["sous-admin","admin"]
+                role_idx = 0 if cur_role!="admin" else 1
+                new_role = st.selectbox("Rôle", role_options, index=role_idx, key=f"role_{uname}")
+            with ac4:
+                if st.button("Sauvegarder", key=f"save_{uname}", disabled=st.session_state.get(f"saving_{uname}", False)):
+                    st.session_state[f"saving_{uname}"] = True
+                    with st.spinner("Enregistrement…"):
+                        users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(new_lots)
+                        users_df.loc[users_df["username"]==uname,"role"] = new_role
+                        save_users(users_df)
+                        update_session_for_user(uname, new_role, new_lots)
+                    st.rerun()
+                if st.button("Supprimer", key=f"del_{uname}", disabled=st.session_state.get(f"deleting_{uname}", False)):
+                    st.session_state[f"deleting_{uname}"] = True
+                    with st.spinner("Suppression…"):
+                        users_df = users_df[users_df["username"]!=uname]
+                        save_users(users_df)
+                    st.rerun()
+
+# ── MODIFIER TRANSACTION (sous-admin) ────────────────────────────────────────
+elif active == "modifier_transaction" and is_sous_admin:
+    df_sa_edit = transactions_all.copy()
+    df_sa_edit.index = range(len(df_sa_edit))
+    df_sa_edit["_orig_idx"] = df_sa_edit.index
+    mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
+    if lots_autorises:
+        mask_sa &= df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
+    df_sa_view = df_sa_edit[mask_sa].copy()
+    if df_sa_view.empty:
+        st.info("Aucune transaction à afficher pour votre compte.")
+    else:
+        lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
+        fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
+        if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
+        cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot','Description',
+                                     'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
+        all_lots_sa = sorted(set(lots_autorises or [])|set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
+        col_cfg_sa = {
+            "Date": st.column_config.TextColumn("Date"),
+            "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
+            "Lot": st.column_config.SelectboxColumn("Lot", options=all_lots_sa, required=True),
+            "Description": st.column_config.TextColumn("Description"),
+            "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
+            "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
+            "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
+            "Remarque": st.column_config.TextColumn("Remarque"),
+            "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
+        }
+        st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>', unsafe_allow_html=True)
+        edited_sa = st.data_editor(df_sa_view[cols_sa_show+["_orig_idx"]], column_config=col_cfg_sa,
+            hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_sa_show, key="sa_inline_editor")
+        if st.button("💾 Sauvegarder les modifications", key="sa_btn_save_inline"):
+            try:
+                for _, row_edit in edited_sa.iterrows():
+                    oi = int(row_edit["_orig_idx"])
+                    for col in cols_sa_show:
+                        if col in transactions_all.columns:
+                            val = row_edit[col]
+                            if col in ['Lot','Description','Remarque','Mode de paiement']:
+                                val = sanitize_text(str(val))
+                            if col == 'Lot': val = val.upper()
+                            transactions_all.at[oi, col] = val
+                save_sheet(transactions_all, "Gestion globale")
+                st.success("✅ Modifications enregistrées.")
+                clear_data_cache(); st.rerun()
+            except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
+
+# ── FALLBACK ──────────────────────────────────────────────────────────────────
 else:
-    with tab1:
-        st.markdown('<div class="section-title">Mes lots autorisés</div>', unsafe_allow_html=True)
-        if lots_autorises:
-            st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
-        else: warn("Aucun lot ne t\'a été attribué. Contacte l\'administrateur.")
-        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
-    with tab2:
-        st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        query_v = st.text_input("Rechercher", placeholder="Description, remarque...")
-        df_v = transactions.copy()
-        if query_v:
-            mask = (df_v['Description'].astype(str).str.contains(query_v,case=False,na=False)|
-                    df_v['Remarque'].astype(str).str.contains(query_v,case=False,na=False))
-            df_v = df_v[mask]
-        st.markdown(f'<div class="info-count">{len(df_v)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_v, width='stretch', hide_index=True)
-    with tab3:
-        st.markdown('<div class="section-title">Graphiques de mes lots</div>', unsafe_allow_html=True)
-        PL_v = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
-        sl_v = compute_suivi_lot(transactions)
-        if not sl_v.empty:
-            fig_v = go.Figure(go.Bar(x=sl_v['Lot'],y=sl_v['Résultat'],
-                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl_v['Résultat']],
-                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-            fig_v.update_layout(**PL_v,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-            st.plotly_chart(fig_v,use_container_width=True)
-        else: warn("Aucune donnée à afficher.")
+    st.info("Sélectionnez une section dans le menu de navigation (→ en haut à droite).")
