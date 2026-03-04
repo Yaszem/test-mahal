@@ -174,18 +174,7 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
   padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;flex-shrink:0;
   font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase
 }
-#mahal-menu-btn{
-  position:fixed;top:1.6rem;right:1.8rem;z-index:9990;
-  width:40px;height:40px;border-radius:10px;
-  background:#1C1C1C;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:0;flex-direction:column;
-  transition:opacity 0.2s ease;box-shadow:0 2px 12px rgba(28,28,28,0.15)
-}
-#mahal-menu-btn:hover{opacity:0.75}
-#mahal-menu-btn span{
-  display:block;width:16px;height:1.5px;background:#F7F6F2;
-  margin:2px 0;transition:all 0.25s ease;border-radius:2px
-}
+/* hamburger handled inside components.html iframe */
 
 /* Active tab indicator in topbar */
 .active-tab-pill{
@@ -1100,118 +1089,138 @@ for item in nav_items:
 
 import streamlit.components.v1 as components
 
-drawer_items_html = ""
-for sec in sections_order:
-    drawer_items_html += f'<div class="drawer-section-label">{sec}</div>'
-    for item in sections_map[sec]:
-        is_active = "active" if item["key"] == active_page else ""
-        badge_html = f'<span class="drawer-notif">{item["badge"]}</span>' if item.get("badge", 0) > 0 else ""
-        drawer_items_html += f"""
-        <button class="drawer-item {is_active}" data-navkey="{item['key']}" title="{item['label']}">
-          <span class="drawer-item-icon">{item['icon']}</span>
-          <span>{item['label']}</span>
-          {badge_html}
-        </button>"""
+# Build nav items data for the drawer
+_nav_items_for_drawer = []
+for _sec in sections_order:
+    for _item in sections_map[_sec]:
+        _nav_items_for_drawer.append({
+            "key": _item["key"],
+            "label": _item["label"],
+            "icon": _item["icon"],
+            "section": _sec,
+            "badge": _item.get("badge", 0),
+            "active": _item["key"] == active_page,
+        })
 
 current_token = st.session_state.get("_sess_token", "")
 
-# HTML structure injected into main page DOM
-st.markdown(f"""
-<button id="mahal-menu-btn" title="Ouvrir le menu">
+# Build HTML for nav items
+_drawer_items_html = ""
+_cur_sec = None
+for _it in _nav_items_for_drawer:
+    if _it["section"] != _cur_sec:
+        _cur_sec = _it["section"]
+        _drawer_items_html += f'''<div style="font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#BBBBBB;padding:1.2rem 1.8rem 0.5rem 1.8rem">{_it["section"]}</div>'''
+    _badge = f'<span style="display:inline-flex;align-items:center;justify-content:center;background:#E53935;color:#FFF;font-size:0.6rem;font-weight:700;width:16px;height:16px;border-radius:50%;margin-left:auto;flex-shrink:0">{_it["badge"]}</span>' if _it["badge"] > 0 else ""
+    _active_style = "background:#F7F6F2;color:#1C1C1C;font-weight:500;" if _it["active"] else ""
+    _bar = '<div style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#1C1C1C;border-radius:0 2px 2px 0"></div>' if _it["active"] else ""
+    _drawer_items_html += f'''<button onclick="nav(\'{_it["key"]}\')" style="display:flex;align-items:center;gap:0.9rem;padding:0.75rem 1.8rem;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:#555;letter-spacing:0.01em;position:relative;{_active_style}" onmouseover="this.style.background='#F7F6F2';this.style.color='#1C1C1C'" onmouseout="this.style.background='{("#F7F6F2" if _it["active"] else "transparent")}';this.style.color='#555'">
+      {_bar}
+      <span style="width:30px;height:30px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;background:{("#1C1C1C" if _it["active"] else "#F0EDE5")}">{_it["icon"]}</span>
+      <span style="color:{("#1C1C1C" if _it["active"] else "#555")}">{_it["label"]}</span>
+      {_badge}
+    </button>'''
+
+components.html(f"""<!DOCTYPE html>
+<html>
+<head>
+<style>
+  *{{box-sizing:border-box;margin:0;padding:0}}
+  body{{background:transparent;overflow:hidden}}
+  #overlay{{
+    display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);
+    z-index:9998;backdrop-filter:blur(2px);cursor:pointer
+  }}
+  #drawer{{
+    position:fixed;top:0;right:-320px;width:300px;height:100vh;
+    background:#FFFFFF;border-left:1px solid #E0DDD5;
+    z-index:9999;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
+    display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:-8px 0 32px rgba(28,28,28,0.08);
+    font-family:'DM Sans',sans-serif
+  }}
+  #drawer.open{{right:0}}
+  #overlay.open{{display:block}}
+  #menu-btn{{
+    position:fixed;top:1.4rem;right:1.6rem;z-index:9990;
+    width:38px;height:38px;border-radius:10px;
+    background:#1C1C1C;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:4px;
+    box-shadow:0 2px 12px rgba(28,28,28,0.18)
+  }}
+  #menu-btn:hover{{opacity:0.75}}
+  #menu-btn span{{display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px}}
+  .drawer-header{{
+    padding:2rem 1.8rem 1.4rem 1.8rem;border-bottom:1px solid #F0EDE5;
+    display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0
+  }}
+  .drawer-brand{{font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em}}
+  .close-btn{{
+    width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;
+    background:#F7F6F2;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;transition:all 0.2s
+  }}
+  .close-btn:hover{{background:#1C1C1C;border-color:#1C1C1C}}
+  .close-btn:hover svg path{{stroke:#F7F6F2}}
+  .drawer-nav{{flex:1;overflow-y:auto;padding-bottom:1.5rem}}
+  .drawer-footer{{
+    padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;
+    font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase
+  }}
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+</style>
+</head>
+<body>
+
+<button id="menu-btn" onclick="openDrawer()" title="Menu">
   <span></span><span></span><span></span>
 </button>
-<div id="mahal-overlay"></div>
-<div id="mahal-drawer">
+
+<div id="overlay" onclick="closeDrawer()"></div>
+
+<div id="drawer">
   <div class="drawer-header">
     <div class="drawer-brand">Mahal</div>
-    <div class="drawer-close" id="mahal-drawer-close">
+    <button class="close-btn" onclick="closeDrawer()">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path d="M1 1l10 10M11 1L1 11" stroke="#1C1C1C" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-    </div>
+    </button>
   </div>
-  <div class="drawer-nav" id="mahal-drawer-nav">
-    {drawer_items_html}
+  <div class="drawer-nav">
+    {_drawer_items_html}
   </div>
   <div class="drawer-footer">© 2025 — Plateforme privée</div>
 </div>
-""", unsafe_allow_html=True)
 
-# JS in a components.html iframe — uses window.parent to reach the real DOM
-# Streamlit strips <script> from st.markdown, but components.html runs JS freely
-components.html(f"""<!DOCTYPE html><html><body><script>
-(function() {{
-  var TOKEN = '{current_token}';
-  var doc = window.parent.document;
+<script>
+var TOKEN = '{current_token}';
 
-  function openDrawer() {{
-    var d = doc.getElementById('mahal-drawer');
-    var o = doc.getElementById('mahal-overlay');
-    if (d) d.classList.add('open');
-    if (o) o.classList.add('open');
-    doc.body.style.overflow = 'hidden';
-  }}
+function openDrawer() {{
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}}
 
-  function closeDrawer() {{
-    var d = doc.getElementById('mahal-drawer');
-    var o = doc.getElementById('mahal-overlay');
-    if (d) d.classList.remove('open');
-    if (o) o.classList.remove('open');
-    doc.body.style.overflow = '';
-  }}
+function closeDrawer() {{
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}}
 
-  function navigateTo(pageKey) {{
-    closeDrawer();
-    var url = window.parent.location.pathname + '?nav=' + encodeURIComponent(pageKey);
-    if (TOKEN) url += '&t=' + encodeURIComponent(TOKEN);
-    window.parent.location.href = url;
-  }}
+function nav(pageKey) {{
+  closeDrawer();
+  var url = window.parent.location.pathname + '?nav=' + encodeURIComponent(pageKey);
+  if (TOKEN) url += '&t=' + encodeURIComponent(TOKEN);
+  window.parent.location.href = url;
+}}
 
-  function bind() {{
-    var btn     = doc.getElementById('mahal-menu-btn');
-    var overlay = doc.getElementById('mahal-overlay');
-    var closeEl = doc.getElementById('mahal-drawer-close');
-    var nav     = doc.getElementById('mahal-drawer-nav');
-    var pill    = doc.getElementById('mahal-tab-pill');
+document.addEventListener('keydown', function(e) {{
+  if (e.key === 'Escape') closeDrawer();
+}});
+</script>
+</body>
+</html>""", height=60, scrolling=False)
 
-    if (btn && !btn._mb) {{
-      btn.addEventListener('click', function(e) {{ e.stopPropagation(); openDrawer(); }});
-      btn._mb = true;
-    }}
-    if (overlay && !overlay._mb) {{
-      overlay.addEventListener('click', closeDrawer);
-      overlay._mb = true;
-    }}
-    if (closeEl && !closeEl._mb) {{
-      closeEl.addEventListener('click', closeDrawer);
-      closeEl._mb = true;
-    }}
-    if (pill && !pill._mb) {{
-      pill.addEventListener('click', function(e) {{ e.stopPropagation(); openDrawer(); }});
-      pill._mb = true;
-    }}
-    if (nav && !nav._mb) {{
-      nav.addEventListener('click', function(e) {{
-        var t = e.target;
-        while (t && t !== nav) {{
-          if (t.dataset && t.dataset.navkey) {{ navigateTo(t.dataset.navkey); return; }}
-          t = t.parentElement;
-        }}
-      }});
-      nav._mb = true;
-    }}
-    doc.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeDrawer(); }});
-  }}
-
-  var attempts = 0;
-  function tryBind() {{
-    bind();
-    attempts++;
-    if (attempts < 25) setTimeout(tryBind, 200);
-  }}
-  tryBind();
-}})();
-</script></body></html>""", height=0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
