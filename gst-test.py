@@ -112,6 +112,92 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
 [data-testid="stDataEditor"] input,[data-testid="stDataEditor"] textarea{color:#1C1C1C !important;-webkit-text-fill-color:#1C1C1C !important;background:#FFFFFF !important;caret-color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
+
+/* ── DRAWER MENU ── */
+#mahal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);
+  z-index:9998;backdrop-filter:blur(2px);transition:opacity 0.3s ease
+}
+#mahal-overlay.open{display:block}
+#mahal-drawer{
+  position:fixed;top:0;right:-340px;width:300px;height:100vh;
+  background:#FFFFFF;border-left:1px solid #E0DDD5;
+  z-index:9999;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:-8px 0 32px rgba(28,28,28,0.08)
+}
+#mahal-drawer.open{right:0}
+.drawer-header{
+  padding:2rem 1.8rem 1.4rem 1.8rem;border-bottom:1px solid #F0EDE5;
+  display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0
+}
+.drawer-brand{font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em}
+.drawer-close{
+  width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;
+  background:#F7F6F2;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s ease;flex-shrink:0
+}
+.drawer-close:hover{background:#1C1C1C}
+.drawer-close:hover svg path{stroke:#F7F6F2}
+.drawer-close svg path{stroke:#1C1C1C;transition:stroke 0.2s ease}
+.drawer-section-label{
+  font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;
+  color:#BBBBBB;padding:1.2rem 1.8rem 0.5rem 1.8rem
+}
+.drawer-nav{flex:1;overflow-y:auto;padding-bottom:1.5rem}
+.drawer-item{
+  display:flex;align-items:center;gap:0.9rem;
+  padding:0.75rem 1.8rem;cursor:pointer;
+  transition:background 0.15s ease;border:none;
+  background:transparent;width:100%;text-align:left;
+  font-family:'DM Sans',sans-serif;font-size:0.88rem;color:#555;
+  letter-spacing:0.01em;position:relative
+}
+.drawer-item:hover{background:#F7F6F2;color:#1C1C1C}
+.drawer-item.active{background:#F7F6F2;color:#1C1C1C;font-weight:500}
+.drawer-item.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:60%;background:#1C1C1C;border-radius:0 2px 2px 0
+}
+.drawer-item-icon{
+  width:30px;height:30px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;font-size:0.9rem;flex-shrink:0;
+  background:#F0EDE5;transition:background 0.15s ease
+}
+.drawer-item.active .drawer-item-icon{background:#1C1C1C}
+.drawer-notif{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#E53935;color:#FFF;font-size:0.6rem;font-weight:700;
+  width:16px;height:16px;border-radius:50%;margin-left:auto;flex-shrink:0
+}
+.drawer-footer{
+  padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;flex-shrink:0;
+  font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase
+}
+#mahal-menu-btn{
+  position:fixed;top:1.6rem;right:1.8rem;z-index:9990;
+  width:40px;height:40px;border-radius:10px;
+  background:#1C1C1C;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:0;flex-direction:column;
+  transition:opacity 0.2s ease;box-shadow:0 2px 12px rgba(28,28,28,0.15)
+}
+#mahal-menu-btn:hover{opacity:0.75}
+#mahal-menu-btn span{
+  display:block;width:16px;height:1.5px;background:#F7F6F2;
+  margin:2px 0;transition:all 0.25s ease;border-radius:2px
+}
+
+/* Active tab indicator in topbar */
+.active-tab-pill{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:#F0EDE5;border:1px solid #DDDAD2;border-radius:20px;
+  padding:0.28rem 0.85rem;font-size:0.72rem;color:#555;
+  font-weight:500;letter-spacing:0.03em;cursor:pointer;
+  transition:all 0.2s ease;margin-left:0.8rem
+}
+.active-tab-pill:hover{background:#E8E5DE}
+.active-tab-pill-icon{font-size:0.78rem}
+
 @media screen and (max-width:768px){
   .block-container{padding:1rem 1rem 2rem 1rem !important;max-width:100% !important}
   .auth-left{display:none !important}
@@ -119,90 +205,13 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
   .page-subtitle{font-size:0.72rem !important;margin-bottom:1rem !important}
   .metric-row{display:grid !important;grid-template-columns:1fr 1fr !important;gap:0.6rem !important;margin-bottom:1.2rem !important}
   .section-title{font-size:1.1rem !important;margin-top:1.2rem !important;margin-bottom:0.8rem !important}
-  .stTabs [data-baseweb="tab-list"]{overflow-x:auto !important;overflow-y:hidden !important;flex-wrap:nowrap !important;-webkit-overflow-scrolling:touch !important;scrollbar-width:none !important}
-  .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar{display:none !important}
-  .stTabs [data-baseweb="tab"]{font-size:0.78rem !important;padding:0.5rem 0.85rem !important;white-space:nowrap !important;flex-shrink:0 !important}
-  .stButton>button{width:100% !important;padding:0.8rem 1rem !important;font-size:0.95rem !important;min-height:44px !important}
-  .stDataFrame{overflow-x:auto !important}
+  #mahal-drawer{width:280px}
+  #mahal-menu-btn{top:1rem;right:1rem}
 }
 @media screen and (max-width:480px){
   .block-container{padding:0.7rem 0.6rem 1.5rem 0.6rem !important}
   .page-title{font-size:1.5rem !important}
   .metric-value{font-size:1rem !important}
-}
-
-/* Menu sliding panel */
-.menu-btn {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
-  cursor: pointer;
-  position: relative;
-  z-index: 1001;
-}
-.menu-btn span {
-  display: block;
-  width: 24px;
-  height: 2px;
-  background: #1C1C1C;
-  margin: 5px auto;
-  transition: 0.3s;
-}
-.menu-panel {
-  position: fixed;
-  top: 0;
-  right: -300px;
-  width: 280px;
-  height: 100vh;
-  background: #FFFFFF;
-  border-left: 1px solid #E8E5DE;
-  box-shadow: -2px 0 10px rgba(0,0,0,0.05);
-  z-index: 1000;
-  transition: right 0.3s ease;
-  padding: 2rem 1.5rem;
-  overflow-y: auto;
-  font-family: 'DM Sans', sans-serif;
-}
-.menu-panel.open {
-  right: 0;
-}
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.2);
-  z-index: 999;
-  display: none;
-}
-.menu-overlay.open {
-  display: block;
-}
-.menu-item {
-  display: block;
-  padding: 0.8rem 0;
-  font-size: 0.95rem;
-  color: #1C1C1C;
-  text-decoration: none;
-  border-bottom: 1px solid #F0EDE5;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.menu-item:hover {
-  color: #999;
-}
-.menu-item:last-child {
-  border-bottom: none;
-}
-.menu-close {
-  position: absolute;
-  top: 1rem;
-  right: 1.2rem;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #AAA;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -664,7 +673,6 @@ def render_finance_tab(lots_list):
 
     ftab1, ftab2, ftab3, ftab4 = st.tabs(["🏦 Dette financiere","📦 Dette fournisseur","💵 Caisse","✅ Encaissement"])
 
-    # ── DETTE FINANCIERE ─────────────────────────────────────────────────────
     with ftab1:
         st.markdown('<div class="section-title">Dette financiere</div>', unsafe_allow_html=True)
         st.caption("Emprunts bancaires, credits, dettes envers des personnes physiques ou morales.")
@@ -723,7 +731,6 @@ def render_finance_tab(lots_list):
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-    # ── DETTE FOURNISSEUR ─────────────────────────────────────────────────────
     with ftab2:
         st.markdown('<div class="section-title">Dette fournisseur</div>', unsafe_allow_html=True)
         st.caption("Ce que vous devez a vos fournisseurs pour des achats non encore regles.")
@@ -790,7 +797,6 @@ def render_finance_tab(lots_list):
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-    # ── CAISSE ────────────────────────────────────────────────────────────────
     with ftab3:
         st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
         st.caption("Suivi de toutes les entrees et sorties d\'argent en caisse.")
@@ -876,7 +882,6 @@ def render_finance_tab(lots_list):
         else:
             st.info("Aucune operation de caisse enregistree.")
 
-    # ── ENCAISSEMENT ──────────────────────────────────────────────────────────
     with ftab4:
         st.markdown('<div class="section-title">Encaissement</div>', unsafe_allow_html=True)
         st.caption("Suivi de tous les paiements recus de vos clients et partenaires.")
@@ -977,17 +982,65 @@ lots_existants       = sorted([l for l in transactions['Lot'].dropna().astype(st
 personnes_existantes = sorted([p for p in transactions['Personne'].dropna().astype(str).unique() if p.strip()])
 pending_count = count_pending() if is_admin else 0
 
+# ─── DRAWER MENU SETUP ────────────────────────────────────────────────────────
+# Define navigation items per role
+if is_admin:
+    nav_items = [
+        {"key": "nouvelle_transaction", "label": "Nouvelle transaction", "icon": "✚", "section": "Saisie"},
+        {"key": "recherche",            "label": "Recherche",            "icon": "◎", "section": "Saisie"},
+        {"key": "graphiques",           "label": "Graphiques",           "icon": "◈", "section": "Analyse"},
+        {"key": "catalogue_lots",       "label": "Catalogue des lots",   "icon": "◉", "section": "Analyse"},
+        {"key": "resume_personne",      "label": "Résumé par personne",  "icon": "◐", "section": "Analyse"},
+        {"key": "historique_lots",      "label": "Historique des lots",  "icon": "◑", "section": "Analyse"},
+        {"key": "suivi_avances",        "label": "Suivi des avances",    "icon": "◒", "section": "Analyse"},
+        {"key": "finance",              "label": "Finance",              "icon": "◆", "section": "Finance"},
+        {"key": "utilisateurs",         "label": "Utilisateurs",         "icon": "◇", "section": "Administration", "badge": pending_count},
+    ]
+elif is_sous_admin:
+    nav_items = [
+        {"key": "nouvelle_transaction", "label": "Nouvelle transaction", "icon": "✚", "section": "Saisie"},
+        {"key": "mes_lots",             "label": "Mes lots",             "icon": "◉", "section": "Données"},
+        {"key": "recherche",            "label": "Recherche",            "icon": "◎", "section": "Données"},
+        {"key": "graphiques",           "label": "Graphiques",           "icon": "◈", "section": "Analyse"},
+        {"key": "modifier_transaction", "label": "Modifier",             "icon": "◐", "section": "Saisie"},
+    ]
+else:
+    nav_items = [
+        {"key": "mes_lots",  "label": "Mes lots",   "icon": "◉", "section": "Données"},
+        {"key": "recherche", "label": "Recherche",  "icon": "◎", "section": "Données"},
+        {"key": "graphiques","label": "Graphiques", "icon": "◈", "section": "Analyse"},
+    ]
+
+# Initialize active page
+if "active_page" not in st.session_state:
+    st.session_state.active_page = nav_items[0]["key"]
+
+# Handle navigation via query param (for JS → Python communication)
+qp_nav = st.query_params.get("nav", "")
+if qp_nav and qp_nav != st.session_state.active_page:
+    valid_keys = [item["key"] for item in nav_items]
+    if qp_nav in valid_keys:
+        st.session_state.active_page = qp_nav
+        # Keep the session token but clear nav param
+        token_keep = st.query_params.get("t", "")
+        st.query_params.clear()
+        if token_keep:
+            st.query_params["t"] = token_keep
+        st.rerun()
+
+active_page = st.session_state.active_page
+active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
+active_icon  = next((item["icon"]  for item in nav_items if item["key"] == active_page), "")
+
 # ─── TOP BAR ──────────────────────────────────────────────────────────────────
 if is_admin:    role_class, role_label_top = "role-admin", "Admin"
 elif is_sous_admin: role_class, role_label_top = "role-sous-admin", "Sous-Admin"
 else:           role_class, role_label_top = "role-visiteur", "Visiteur"
 
-notif_html = f'<span class="notif-badge">{pending_count}</span>' if (is_admin and pending_count > 0) else ""
-
 if is_admin and pending_count > 0:
     st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div>
     <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
-    — rendez-vous dans l'onglet <strong>Utilisateurs</strong>.</span></div>""", unsafe_allow_html=True)
+    — rendez-vous dans <strong>Utilisateurs</strong> via le menu.</span></div>""", unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="topbar">
@@ -995,45 +1048,26 @@ st.markdown(f"""
     <div class="page-title">Mahal</div>
     <div class="page-subtitle">Gestion de stock et transactions</div>
   </div>
-  <div style="display:flex;align-items:center;gap:0.8rem;padding-top:0.8rem">
-    <div class="menu-btn" id="menuToggle">
-      <span></span><span></span><span></span>
-    </div>
+  <div style="display:flex;align-items:center;padding-top:0.8rem;gap:0.5rem">
     <span class="topbar-user">{h(username)}</span>
-    <span class="topbar-role {role_class}">{role_label_top}</span>{notif_html}
+    <span class="topbar-role {role_class}">{role_label_top}</span>
+    <div class="active-tab-pill" onclick="document.getElementById('mahal-menu-btn').click()">
+      <span class="active-tab-pill-icon">{active_icon}</span>
+      <span>{h(active_label)}</span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;margin-left:2px">
+        <path d="M2 4l3 3 3-3" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
   </div>
 </div>""", unsafe_allow_html=True)
 
-# Menu panel (hidden by default)
-menu_labels = []
-if is_admin:
-    menu_labels = ["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots",
-                   "Résumé par personne","Historique des lots","Suivi des avances","Finance","Utilisateurs"]
-elif is_sous_admin:
-    menu_labels = ["Nouvelle transaction","Mes lots","Recherche","Graphiques","Modifier une transaction"]
-else:
-    menu_labels = ["Mes lots","Recherche","Graphiques"]
-
-menu_items_html = ""
-for idx, label in enumerate(menu_labels):
-    menu_items_html += f'<div class="menu-item" data-tab-index="{idx}">{h(label)}</div>'
-
-menu_html = f"""
-<div class="menu-panel" id="menuPanel">
-  <div class="menu-close" id="menuClose">&times;</div>
-  <h3 style="font-family:'DM Serif Display',serif; font-size:1.2rem; margin-bottom:1.5rem;">Navigation</h3>
-  {menu_items_html}
-</div>
-<div class="menu-overlay" id="menuOverlay"></div>
-"""
-st.markdown(menu_html, unsafe_allow_html=True)
-
-dcol = st.columns([6, 1])[1]
+# Logout button (small, positioned below topbar)
+dcol = st.columns([8, 1])[1]
 with dcol:
-    if st.button("Déconnexion", key="btn_logout"):
+    if st.button("Déco.", key="btn_logout"):
         _clear_session(st.session_state.get("_sess_token", ""))
         st.query_params.clear()
-        for k in ["authenticated","username","role","lots_autorises","_sess_token"]:
+        for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
             st.session_state.pop(k, None)
         st.session_state.auth_page = "login"
         st.rerun()
@@ -1053,19 +1087,89 @@ st.markdown(f"""
   <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
 </div>""", unsafe_allow_html=True)
 
-# ─── Onglets ───────────────────────────────────────────────────────────────────
-if is_admin:
-    utl = f"Utilisateurs ({pending_count})" if pending_count > 0 else "Utilisateurs"
-    tabs = st.tabs(["Nouvelle transaction","Recherche","Graphiques","Catalogue des lots",
-                    "Résumé par personne","Historique des lots","Suivi des avances","💰 Finance", utl])
-    tab1,tab2,tab3,tab4,tab5,tab6,tab7,tab_fin,tab8 = tabs
-elif is_sous_admin:
-    tabs = st.tabs(["Nouvelle transaction","Mes lots","Recherche","Graphiques","Modifier une transaction"])
-    tab1,tab2,tab3,tab4,tab5 = tabs
-else:
-    tabs = st.tabs(["Mes lots","Recherche","Graphiques"])
-    tab1,tab2,tab3 = tabs
+# ─── BUILD DRAWER HTML ────────────────────────────────────────────────────────
+# Group items by section
+sections_order = []
+sections_map = {}
+for item in nav_items:
+    sec = item["section"]
+    if sec not in sections_map:
+        sections_map[sec] = []
+        sections_order.append(sec)
+    sections_map[sec].append(item)
 
+drawer_items_html = ""
+for sec in sections_order:
+    drawer_items_html += f'<div class="drawer-section-label">{sec}</div>'
+    for item in sections_map[sec]:
+        is_active = "active" if item["key"] == active_page else ""
+        badge_html = f'<span class="drawer-notif">{item["badge"]}</span>' if item.get("badge", 0) > 0 else ""
+        drawer_items_html += f"""
+        <button class="drawer-item {is_active}" onclick="navigateTo('{item['key']}')" title="{item['label']}">
+          <span class="drawer-item-icon">{item['icon']}</span>
+          <span>{item['label']}</span>
+          {badge_html}
+        </button>"""
+
+# Get current token for nav URL
+current_token = st.session_state.get("_sess_token", "")
+
+st.markdown(f"""
+<!-- Hamburger button -->
+<button id="mahal-menu-btn" onclick="toggleDrawer()" title="Menu navigation">
+  <span></span><span></span><span></span>
+</button>
+
+<!-- Overlay -->
+<div id="mahal-overlay" onclick="closeDrawer()"></div>
+
+<!-- Drawer -->
+<div id="mahal-drawer">
+  <div class="drawer-header">
+    <div class="drawer-brand">Mahal</div>
+    <div class="drawer-close" onclick="closeDrawer()">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M1 1l10 10M11 1L1 11" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+  <div class="drawer-nav">
+    {drawer_items_html}
+  </div>
+  <div class="drawer-footer">© 2025 — Plateforme privée</div>
+</div>
+
+<script>
+function toggleDrawer() {{
+  var d = document.getElementById('mahal-drawer');
+  var o = document.getElementById('mahal-overlay');
+  var isOpen = d.classList.contains('open');
+  if (isOpen) {{ closeDrawer(); }} else {{ openDrawer(); }}
+}}
+function openDrawer() {{
+  document.getElementById('mahal-drawer').classList.add('open');
+  document.getElementById('mahal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}}
+function closeDrawer() {{
+  document.getElementById('mahal-drawer').classList.remove('open');
+  document.getElementById('mahal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}}
+function navigateTo(pageKey) {{
+  closeDrawer();
+  // Build URL with both session token and nav param
+  var token = '{current_token}';
+  var url = window.location.pathname + '?nav=' + pageKey;
+  if (token) {{ url += '&t=' + token; }}
+  window.location.href = url;
+}}
+// Close drawer on Escape key
+document.addEventListener('keydown', function(e) {{
+  if (e.key === 'Escape') closeDrawer();
+}});
+</script>
+""", unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1159,25 +1263,40 @@ def render_edit_transaction_form(transactions_df, lots_filter=None, personne_fil
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN — TABS
+# PAGE RENDERER — switches on active_page
 # ═══════════════════════════════════════════════════════════════════════════════
-if is_admin:
+def render_page():
+    page = st.session_state.active_page
 
-    with tab1:
+    # ── NOUVELLE TRANSACTION ──────────────────────────────────────────────────
+    if page == "nouvelle_transaction":
         st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
+        if is_sous_admin:
+            st.markdown(f'<div class="info-count">Transaction enregistrée sous le nom : <strong>{h(username.upper())}</strong></div>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3, gap="large")
         with c1:
             date = st.date_input("Date", datetime.now())
-            personne_val = st.selectbox("Personne", options=personnes_existantes, index=None,
-                placeholder="Sélectionner ou taper un nom...", key="sel_personne")
-            if personne_val is None:
-                personne_val = st.text_input("Nouveau nom", key="new_personne_input", placeholder="Ex: DUPONT")
+            if is_admin:
+                personne_val = st.selectbox("Personne", options=personnes_existantes, index=None,
+                    placeholder="Sélectionner ou taper un nom...", key="sel_personne")
+                if personne_val is None:
+                    personne_val = st.text_input("Nouveau nom", key="new_personne_input", placeholder="Ex: DUPONT")
+            else:
+                personne_val = username.upper()
+                st.text_input("Personne", value=personne_val, disabled=True, key="sa_pers_display")
             type_trans = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"])
         with c2:
-            lot_val = st.selectbox("Lot", options=lots_existants, index=None,
-                placeholder="Sélectionner ou taper un lot...", key="sel_lot")
-            if lot_val is None:
-                lot_val = st.text_input("Nouveau lot", key="new_lot_input", placeholder="Ex: LOT-001")
+            if is_admin:
+                lot_val = st.selectbox("Lot", options=lots_existants, index=None,
+                    placeholder="Sélectionner ou taper un lot...", key="sel_lot")
+                if lot_val is None:
+                    lot_val = st.text_input("Nouveau lot", key="new_lot_input", placeholder="Ex: LOT-001")
+            else:
+                lots_sa_options = lots_autorises if lots_autorises else []
+                lot_sel_sa = st.selectbox("Lot (autorisés)", options=lots_sa_options, index=None,
+                    placeholder="Choisir un lot existant..." if lots_sa_options else "Aucun lot autorisé", key="sa_lot_sel")
+                nouveau_lot_sa = st.text_input("Ou créer un nouveau lot", key="sa_new_lot", placeholder="Ex: LOT-007")
+                lot_val = sanitize_text(nouveau_lot_sa).upper() if nouveau_lot_sa.strip() else (lot_sel_sa or None)
             description = st.text_input("Description")
             montant = st.number_input("Montant (MAD)", min_value=0.0, step=0.01)
         with c3:
@@ -1186,18 +1305,22 @@ if is_admin:
             statut_lot = st.selectbox("Statut du lot", ["Actif","Fermé"])
         remarque = st.text_input("Remarque")
         if st.button("Enregistrer"):
-            row = {'Date': str(date), 'Personne': sanitize_text(personne_val.upper()),
-                   'Type (Achat/Vente/Dépense)': type_trans, 'Description': sanitize_text(description),
-                   'Lot': sanitize_text(lot_val.upper()), 'Montant (MAD)': montant,
-                   'Quantité (pièces)': quantite, 'Mode de paiement': sanitize_text(mode_paiement),
-                   'Remarque': sanitize_text(remarque), 'Statut du lot': statut_lot}
-            try:
-                append_row(row, "Gestion globale")
-                st.success("Transaction enregistrée.")
-                clear_data_cache()
-            except Exception as e: st.error(f"Erreur : {e}")
+            if not lot_val:
+                st.error("Sélectionne ou crée un lot.")
+            else:
+                row = {'Date': str(date), 'Personne': sanitize_text(personne_val.upper()),
+                       'Type (Achat/Vente/Dépense)': type_trans, 'Description': sanitize_text(description),
+                       'Lot': sanitize_text(lot_val.upper()), 'Montant (MAD)': montant,
+                       'Quantité (pièces)': quantite, 'Mode de paiement': sanitize_text(mode_paiement),
+                       'Remarque': sanitize_text(remarque), 'Statut du lot': statut_lot}
+                try:
+                    append_row(row, "Gestion globale")
+                    st.success("Transaction enregistrée.")
+                    clear_data_cache()
+                except Exception as e: st.error(f"Erreur : {e}")
 
-    with tab2:
+    # ── RECHERCHE ─────────────────────────────────────────────────────────────
+    elif page == "recherche":
         st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
         cs1, cs2, cs3 = st.columns([2,1,1], gap="large")
         with cs1: query = st.text_input("Rechercher", placeholder="Nom, lot, description...")
@@ -1207,17 +1330,22 @@ if is_admin:
             filtre_lot = st.selectbox("Lot", lots_dispo)
         df_f = transactions.copy()
         if query:
-            mask = (df_f['Personne'].astype(str).str.contains(query,case=False,na=False)|
-                    df_f['Lot'].astype(str).str.contains(query,case=False,na=False)|
-                    df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
-                    df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
+            if is_admin:
+                mask = (df_f['Personne'].astype(str).str.contains(query,case=False,na=False)|
+                        df_f['Lot'].astype(str).str.contains(query,case=False,na=False)|
+                        df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
+                        df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
+            else:
+                mask = (df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
+                        df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
             df_f = df_f[mask]
         if filtre_type != "Tous": df_f = df_f[df_f['Type (Achat/Vente/Dépense)']==filtre_type]
         if filtre_lot  != "Tous": df_f = df_f[df_f['Lot']==filtre_lot]
         st.markdown(f'<div class="info-count">{len(df_f)} transaction(s)</div>', unsafe_allow_html=True)
         st.dataframe(df_f, width='stretch', hide_index=True)
 
-    with tab3:
+    # ── GRAPHIQUES ────────────────────────────────────────────────────────────
+    elif page == "graphiques":
         st.markdown('<div class="section-title">Graphiques</div>', unsafe_allow_html=True)
         COLORS = {'ACHAT':'#5C85D6','VENTE':'#2D7A3A','DÉPENSE':'#C0864A'}
         PL = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
@@ -1254,24 +1382,33 @@ if is_admin:
         fig3.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'),
             legend=dict(orientation='h',y=-0.2,x=0.5,xanchor='center'))
         st.plotly_chart(fig3,use_container_width=True)
-        st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par personne</div>', unsafe_allow_html=True)
-        rp = compute_resume_personne(transactions)
-        if not rp.empty:
-            fig4 = go.Figure(go.Bar(x=rp['Personne'],y=rp['Résultat'],
-                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in rp['Résultat']],
-                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-            fig4.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-            st.plotly_chart(fig4,use_container_width=True)
+        if is_admin:
+            st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par personne</div>', unsafe_allow_html=True)
+            rp = compute_resume_personne(transactions)
+            if not rp.empty:
+                fig4 = go.Figure(go.Bar(x=rp['Personne'],y=rp['Résultat'],
+                    marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in rp['Résultat']],
+                    hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
+                fig4.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
+                st.plotly_chart(fig4,use_container_width=True)
 
-    with tab4:
-        st.markdown('<div class="section-title">Catalogue des lots</div>', unsafe_allow_html=True)
+    # ── MES LOTS / CATALOGUE LOTS ─────────────────────────────────────────────
+    elif page in ("mes_lots", "catalogue_lots"):
+        title = "Catalogue des lots" if page == "catalogue_lots" else "Mes lots autorisés"
+        st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
+        if page == "mes_lots" and lots_autorises:
+            st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
+        elif page == "mes_lots" and not lots_autorises:
+            warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
         st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
 
-    with tab5:
+    # ── RÉSUMÉ PAR PERSONNE ───────────────────────────────────────────────────
+    elif page == "resume_personne":
         st.markdown('<div class="section-title">Résumé par personne</div>', unsafe_allow_html=True)
         st.dataframe(compute_resume_personne(transactions), width='stretch', hide_index=True)
 
-    with tab6:
+    # ── HISTORIQUE DES LOTS ───────────────────────────────────────────────────
+    elif page == "historique_lots":
         st.markdown('<div class="section-title">Historique des lots</div>', unsafe_allow_html=True)
         filtre_lot_hist = st.selectbox("Filtrer par lot", ["Tous"]+lots_existants, key="hist_filtre")
         hist_df = compute_historique_lot(transactions)
@@ -1295,8 +1432,11 @@ if is_admin:
         else:
             st.warning("Aucune transaction pour ce lot.")
 
-    with tab7:
+    # ── SUIVI DES AVANCES ─────────────────────────────────────────────────────
+    elif page == "suivi_avances":
         st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
+        st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
+
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
         st.caption("Cliquez sur une cellule pour la modifier directement.")
         ef1, ef2, ef3 = st.columns(3, gap="large")
@@ -1381,8 +1521,8 @@ if is_admin:
                 if st.button("Supprimer cette transaction", key="btn_del_single"):
                     if not c_single: st.warning("Coche la case de confirmation.")
                     else:
-                        transactions = transactions.drop(index=oi).reset_index(drop=True)
-                        save_sheet(transactions, "Gestion globale")
+                        transactions_upd = transactions.drop(index=oi).reset_index(drop=True)
+                        save_sheet(transactions_upd, "Gestion globale")
                         st.success("Transaction supprimée.")
                         clear_data_cache(); st.rerun()
         else:
@@ -1401,8 +1541,8 @@ if is_admin:
                 if lot_sup == "— sélectionner —": st.warning("Sélectionne un lot.")
                 elif not c_lot: st.warning("Coche la case de confirmation.")
                 else:
-                    transactions = transactions[transactions['Lot']!=lot_sup]
-                    save_sheet(transactions,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
+                    transactions_upd = transactions[transactions['Lot']!=lot_sup]
+                    save_sheet(transactions_upd,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
         with dc2:
             st.markdown("**Toutes les transactions d'une personne**")
             pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
@@ -1414,16 +1554,66 @@ if is_admin:
                 if pers_sup == "— sélectionner —": st.warning("Sélectionne une personne.")
                 elif not c_pers: st.warning("Coche la case de confirmation.")
                 else:
-                    transactions = transactions[transactions['Personne']!=pers_sup]
-                    save_sheet(transactions,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
+                    transactions_upd = transactions[transactions['Personne']!=pers_sup]
+                    save_sheet(transactions_upd,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
 
-    with tab_fin:
+    # ── FINANCE ───────────────────────────────────────────────────────────────
+    elif page == "finance":
         st.markdown('<div class="page-title" style="font-size:2rem">Finance</div>', unsafe_allow_html=True)
         st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement</div>', unsafe_allow_html=True)
         render_finance_tab(lots_existants)
 
+    # ── MODIFIER TRANSACTION (sous-admin) ─────────────────────────────────────
+    elif page == "modifier_transaction":
+        st.markdown('<div class="section-title">Modifier mes transactions</div>', unsafe_allow_html=True)
+        df_sa_edit = transactions_all.copy()
+        df_sa_edit.index = range(len(df_sa_edit))
+        df_sa_edit["_orig_idx"] = df_sa_edit.index
+        mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
+        if lots_autorises:
+            mask_sa &= df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
+        df_sa_view = df_sa_edit[mask_sa].copy()
+        if df_sa_view.empty:
+            st.info("Aucune transaction à afficher pour votre compte.")
+        else:
+            lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
+            fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
+            if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
+            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot','Description',
+                                         'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
+            all_lots_sa = sorted(set(lots_autorises or [])|set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
+            col_cfg_sa = {
+                "Date": st.column_config.TextColumn("Date"),
+                "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
+                "Lot": st.column_config.SelectboxColumn("Lot", options=all_lots_sa, required=True),
+                "Description": st.column_config.TextColumn("Description"),
+                "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
+                "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
+                "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
+                "Remarque": st.column_config.TextColumn("Remarque"),
+                "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
+            }
+            st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>', unsafe_allow_html=True)
+            edited_sa = st.data_editor(df_sa_view[cols_sa_show+["_orig_idx"]], column_config=col_cfg_sa,
+                hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_sa_show, key="sa_inline_editor")
+            if st.button("💾 Sauvegarder les modifications", key="sa_btn_save_inline"):
+                try:
+                    for _, row_edit in edited_sa.iterrows():
+                        oi = int(row_edit["_orig_idx"])
+                        for col in cols_sa_show:
+                            if col in transactions_all.columns:
+                                val = row_edit[col]
+                                if col in ['Lot','Description','Remarque','Mode de paiement']:
+                                    val = sanitize_text(str(val))
+                                if col == 'Lot': val = val.upper()
+                                transactions_all.at[oi, col] = val
+                    save_sheet(transactions_all, "Gestion globale")
+                    st.success("✅ Modifications enregistrées.")
+                    clear_data_cache(); st.rerun()
+                except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
 
-    with tab8:
+    # ── UTILISATEURS ──────────────────────────────────────────────────────────
+    elif page == "utilisateurs":
         st.markdown('<div class="section-title">Gestion des utilisateurs</div>', unsafe_allow_html=True)
         users_df = get_users()
         lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
@@ -1506,204 +1696,5 @@ if is_admin:
                             save_users(users_df)
                         st.rerun()
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# SOUS-ADMIN
-# ═══════════════════════════════════════════════════════════════════════════════
-elif is_sous_admin:
-
-    with tab1:
-        st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="info-count">Transaction enregistrée sous le nom : <strong>{h(username.upper())}</strong></div>', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3, gap="large")
-        with c1:
-            date_sa = st.date_input("Date", datetime.now(), key="sa_date")
-            st.text_input("Personne", value=username.upper(), disabled=True, key="sa_pers_display")
-            type_trans_sa = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"], key="sa_type")
-        with c2:
-            lots_sa_options = lots_autorises if lots_autorises else []
-            lot_sel_sa = st.selectbox("Lot (autorisés)", options=lots_sa_options, index=None,
-                placeholder="Choisir un lot existant..." if lots_sa_options else "Aucun lot autorisé", key="sa_lot_sel")
-            nouveau_lot_sa = st.text_input("Ou créer un nouveau lot", key="sa_new_lot", placeholder="Ex: LOT-007")
-            lot_val_sa = sanitize_text(nouveau_lot_sa).upper() if nouveau_lot_sa.strip() else (lot_sel_sa or None)
-            description_sa = st.text_input("Description", key="sa_desc")
-            montant_sa = st.number_input("Montant (MAD)", min_value=0.0, step=0.01, key="sa_montant")
-        with c3:
-            quantite_sa = st.number_input("Quantité (pièces)", min_value=1, step=1, key="sa_qty")
-            mode_paiement_sa = st.text_input("Mode de paiement", key="sa_mode")
-            statut_lot_sa = st.selectbox("Statut du lot", ["Actif","Fermé"], key="sa_statut")
-        remarque_sa = st.text_input("Remarque", key="sa_remarque")
-        if st.button("Enregistrer", key="sa_btn_save"):
-            if not lot_val_sa: st.error("Sélectionne ou crée un lot.")
-            else:
-                row_sa = {'Date': str(date_sa), 'Personne': sanitize_text(username.upper()),
-                          'Type (Achat/Vente/Dépense)': type_trans_sa, 'Description': sanitize_text(description_sa),
-                          'Lot': lot_val_sa, 'Montant (MAD)': montant_sa, 'Quantité (pièces)': quantite_sa,
-                          'Mode de paiement': sanitize_text(mode_paiement_sa), 'Remarque': sanitize_text(remarque_sa),
-                          'Statut du lot': statut_lot_sa}
-                try:
-                    append_row(row_sa, "Gestion globale")
-                    st.success(f"Transaction enregistrée sur le lot {lot_val_sa}.")
-                    clear_data_cache()
-                except Exception as e: st.error(f"Erreur : {e}")
-
-    with tab2:
-        st.markdown('<div class="section-title">Mes lots autorisés</div>', unsafe_allow_html=True)
-        if lots_autorises:
-            st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
-        else: warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
-        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
-
-    with tab3:
-        st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        query_sa = st.text_input("Rechercher", placeholder="Nom, lot, description...", key="sa_search")
-        filtre_type_sa = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sa_ftype")
-        df_sa = transactions.copy()
-        if query_sa:
-            mask = (df_sa['Personne'].astype(str).str.contains(query_sa,case=False,na=False)|
-                    df_sa['Lot'].astype(str).str.contains(query_sa,case=False,na=False)|
-                    df_sa['Description'].astype(str).str.contains(query_sa,case=False,na=False)|
-                    df_sa['Remarque'].astype(str).str.contains(query_sa,case=False,na=False))
-            df_sa = df_sa[mask]
-        if filtre_type_sa != "Tous": df_sa = df_sa[df_sa['Type (Achat/Vente/Dépense)']==filtre_type_sa]
-        st.markdown(f'<div class="info-count">{len(df_sa)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_sa, width='stretch', hide_index=True)
-
-    with tab4:
-        st.markdown('<div class="section-title">Graphiques de mes lots</div>', unsafe_allow_html=True)
-        PL_sa = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
-        sl_sa = compute_suivi_lot(transactions)
-        if not sl_sa.empty:
-            fig_sa = go.Figure(go.Bar(x=sl_sa['Lot'],y=sl_sa['Résultat'],
-                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl_sa['Résultat']],
-                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-            fig_sa.update_layout(**PL_sa,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-            st.plotly_chart(fig_sa,use_container_width=True)
-        else: warn("Aucune donnée à afficher.")
-
-    with tab5:
-        st.markdown('<div class="section-title">Modifier mes transactions</div>', unsafe_allow_html=True)
-        df_sa_edit = transactions_all.copy()
-        df_sa_edit.index = range(len(df_sa_edit))
-        df_sa_edit["_orig_idx"] = df_sa_edit.index
-        mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
-        if lots_autorises:
-            mask_sa &= df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
-        df_sa_view = df_sa_edit[mask_sa].copy()
-        if df_sa_view.empty:
-            st.info("Aucune transaction à afficher pour votre compte.")
-        else:
-            lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
-            fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
-            if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
-            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot','Description',
-                                         'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
-            all_lots_sa = sorted(set(lots_autorises or [])|set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
-            col_cfg_sa = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
-                "Lot": st.column_config.SelectboxColumn("Lot", options=all_lots_sa, required=True),
-                "Description": st.column_config.TextColumn("Description"),
-                "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
-                "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
-                "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-                "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
-            }
-            st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>', unsafe_allow_html=True)
-            edited_sa = st.data_editor(df_sa_view[cols_sa_show+["_orig_idx"]], column_config=col_cfg_sa,
-                hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_sa_show, key="sa_inline_editor")
-            if st.button("💾 Sauvegarder les modifications", key="sa_btn_save_inline"):
-                try:
-                    for _, row_edit in edited_sa.iterrows():
-                        oi = int(row_edit["_orig_idx"])
-                        for col in cols_sa_show:
-                            if col in transactions_all.columns:
-                                val = row_edit[col]
-                                if col in ['Lot','Description','Remarque','Mode de paiement']:
-                                    val = sanitize_text(str(val))
-                                if col == 'Lot': val = val.upper()
-                                transactions_all.at[oi, col] = val
-                    save_sheet(transactions_all, "Gestion globale")
-                    st.success("✅ Modifications enregistrées.")
-                    clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# VISITEUR
-# ═══════════════════════════════════════════════════════════════════════════════
-else:
-    with tab1:
-        st.markdown('<div class="section-title">Mes lots autorisés</div>', unsafe_allow_html=True)
-        if lots_autorises:
-            st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
-        else: warn("Aucun lot ne t\'a été attribué. Contacte l\'administrateur.")
-        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
-    with tab2:
-        st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        query_v = st.text_input("Rechercher", placeholder="Description, remarque...")
-        df_v = transactions.copy()
-        if query_v:
-            mask = (df_v['Description'].astype(str).str.contains(query_v,case=False,na=False)|
-                    df_v['Remarque'].astype(str).str.contains(query_v,case=False,na=False))
-            df_v = df_v[mask]
-        st.markdown(f'<div class="info-count">{len(df_v)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_v, width='stretch', hide_index=True)
-    with tab3:
-        st.markdown('<div class="section-title">Graphiques de mes lots</div>', unsafe_allow_html=True)
-        PL_v = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
-        sl_v = compute_suivi_lot(transactions)
-        if not sl_v.empty:
-            fig_v = go.Figure(go.Bar(x=sl_v['Lot'],y=sl_v['Résultat'],
-                marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl_v['Résultat']],
-                hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-            fig_v.update_layout(**PL_v,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-            st.plotly_chart(fig_v,use_container_width=True)
-        else: warn("Aucune donnée à afficher.")
-
-
-# ─── Script pour le menu coulissant ────────────────────────────────────────────
-st.markdown("""
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const menuToggle = document.getElementById('menuToggle');
-  const menuPanel = document.getElementById('menuPanel');
-  const menuOverlay = document.getElementById('menuOverlay');
-  const menuClose = document.getElementById('menuClose');
-
-  function openMenu() {
-    menuPanel.classList.add('open');
-    menuOverlay.classList.add('open');
-  }
-  function closeMenu() {
-    menuPanel.classList.remove('open');
-    menuOverlay.classList.remove('open');
-  }
-
-  if (menuToggle) menuToggle.addEventListener('click', openMenu);
-  if (menuClose) menuClose.addEventListener('click', closeMenu);
-  if (menuOverlay) menuOverlay.addEventListener('click', closeMenu);
-
-  // Clic sur un élément du menu : activer l'onglet correspondant
-  document.querySelectorAll('.menu-item').forEach(item => {
-    item.addEventListener('click', function() {
-      const tabIndex = this.dataset.tabIndex;
-      if (tabIndex !== undefined) {
-        // Chercher la liste des onglets (role="tablist") et cliquer sur l'onglet d'indice tabIndex
-        const tabList = document.querySelector('[role="tablist"]');
-        if (tabList) {
-          const tabs = tabList.querySelectorAll('[role="tab"]');
-          if (tabs[tabIndex]) {
-            tabs[tabIndex].click();
-          }
-        }
-      }
-      closeMenu();
-    });
-  });
-});
-</script>
-""", unsafe_allow_html=True)
+# ─── Render active page ────────────────────────────────────────────────────────
+render_page()
