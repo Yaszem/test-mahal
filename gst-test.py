@@ -1181,8 +1181,8 @@ _html_parts = [
     '})();</script></body></html>',
 ]
 
-_html = "\n".join(_html_parts)
-components.html(_html, height=0, scrolling=False)
+_drawer_html = "\n".join(_html_parts)
+components.html(_drawer_html, height=0, scrolling=False)
 
 # drawer navigation handled via anchor click in iframe
 
