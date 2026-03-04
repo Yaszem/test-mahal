@@ -112,65 +112,6 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
 [data-testid="stDataEditor"] input,[data-testid="stDataEditor"] textarea{color:#1C1C1C !important;-webkit-text-fill-color:#1C1C1C !important;background:#FFFFFF !important;caret-color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
-
-/* ═══════════════════════════════════════════════════════════
-   FINANCE — Design system
-═══════════════════════════════════════════════════════════ */
-.fin-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#E8E5DE;border:1px solid #E8E5DE;border-radius:14px;overflow:hidden;margin-bottom:2rem}
-.fin-kpi-card{background:#FFFFFF;padding:1.4rem 1.6rem;position:relative;transition:background 0.2s}
-.fin-kpi-card:hover{background:#FAFAF8}
-.fin-kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%}
-.fin-kpi-accent.red{background:#B03A2E}
-.fin-kpi-accent.orange{background:#E07A1A}
-.fin-kpi-accent.green{background:#2D7A3A}
-.fin-kpi-accent.blue{background:#1565C0}
-.fin-kpi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.95rem;margin-bottom:0.9rem}
-.fin-kpi-icon.icon-red{background:#FDE8E8}
-.fin-kpi-icon.icon-orange{background:#FEF3E8}
-.fin-kpi-icon.icon-green{background:#EAF4EA}
-.fin-kpi-icon.icon-blue{background:#E8F0FE}
-.fin-kpi-label{font-size:0.67rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#BBBBBB;margin-bottom:0.45rem}
-.fin-kpi-value{font-family:'DM Serif Display',serif;font-size:1.55rem;line-height:1;margin-bottom:0.3rem}
-.fin-kpi-value.red{color:#B03A2E}
-.fin-kpi-value.orange{color:#7A4100}
-.fin-kpi-value.green{color:#2D7A3A}
-.fin-kpi-value.blue{color:#1565C0}
-.fin-kpi-sub{font-size:0.7rem;color:#CCCCCC;letter-spacing:0.03em}
-.fin-kpi-unit{font-size:0.78rem;opacity:0.4;font-family:'DM Sans',sans-serif}
-
-.fin-section-header{display:flex;align-items:center;gap:0.9rem;margin-bottom:1.5rem;margin-top:0.5rem;padding-bottom:0.8rem;border-bottom:1px solid #EEEBE4}
-.fin-section-badge{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.fin-section-title-text{font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1C1C1C;line-height:1.1}
-.fin-section-desc{font-size:0.73rem;color:#AAAAAA;margin-top:0.15rem;letter-spacing:0.02em}
-
-.fin-form-card{background:#FFFFFF;border:1px solid #E8E5DE;border-radius:12px;padding:1.6rem 1.8rem;margin-bottom:1.2rem;position:relative;overflow:hidden}
-.fin-form-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:0}
-.fin-form-card.card-red::before{background:linear-gradient(90deg,#B03A2E,#E07A6A)}
-.fin-form-card.card-orange::before{background:linear-gradient(90deg,#E07A1A,#F0A855)}
-.fin-form-card.card-teal::before{background:linear-gradient(90deg,#1C7A6A,#45B8A0)}
-.fin-form-card.card-blue::before{background:linear-gradient(90deg,#1565C0,#4A90D9)}
-
-.fin-table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;margin-top:0.8rem}
-.fin-table-title{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;color:#999}
-.fin-table-count{display:inline-flex;align-items:center;background:#F0EDE5;color:#888;font-size:0.68rem;font-weight:600;padding:0.2rem 0.7rem;border-radius:20px;letter-spacing:0.04em}
-
-.fin-chart-block{background:#FFFFFF;border:1px solid #E8E5DE;border-radius:12px;padding:1.2rem 1.4rem;margin-top:1.2rem}
-.fin-chart-label{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#BBBBBB;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem}
-.fin-chart-label::before{content:'';width:14px;height:2px;background:#DDDAD2;border-radius:1px;flex-shrink:0}
-
-.fin-summary-block{background:#F7F6F2;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.4rem;margin-top:1rem}
-.fin-summary-title{font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#BBBBBB;margin-bottom:0.8rem}
-
-.fin-subsection{border-top:1px solid #EEEBE4;margin-top:1.8rem;padding-top:1.4rem}
-.fin-subsection-title{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#999;margin-bottom:1rem;display:flex;align-items:center;gap:0.6rem}
-.fin-subsection-title::before{content:'';display:inline-block;width:3px;height:14px;background:#DDDAD2;border-radius:2px;flex-shrink:0}
-
-.fin-mini-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#E8E5DE;border:1px solid #E8E5DE;border-radius:12px;overflow:hidden;margin-bottom:1.5rem}
-.fin-mini-kpi{background:#FFFFFF;padding:1.1rem 1.3rem;position:relative}
-.fin-mini-kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%}
-.fin-mini-kpi-label{font-size:0.67rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#BBBBBB;margin-bottom:0.35rem}
-.fin-mini-kpi-val{font-family:'DM Serif Display',serif;font-size:1.35rem;line-height:1}
-
 @media screen and (max-width:768px){
   .block-container{padding:1rem 1rem 2rem 1rem !important;max-width:100% !important}
   .auth-left{display:none !important}
@@ -183,18 +124,15 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
   .stTabs [data-baseweb="tab"]{font-size:0.78rem !important;padding:0.5rem 0.85rem !important;white-space:nowrap !important;flex-shrink:0 !important}
   .stButton>button{width:100% !important;padding:0.8rem 1rem !important;font-size:0.95rem !important;min-height:44px !important}
   .stDataFrame{overflow-x:auto !important}
-  .fin-kpi-grid{grid-template-columns:1fr 1fr !important}
-  .fin-mini-kpi-row{grid-template-columns:1fr !important}
-  .fin-form-card{padding:1rem !important}
 }
 @media screen and (max-width:480px){
   .block-container{padding:0.7rem 0.6rem 1.5rem 0.6rem !important}
   .page-title{font-size:1.5rem !important}
   .metric-value{font-size:1rem !important}
-  .fin-kpi-grid{grid-template-columns:1fr !important}
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # ─── Google Sheets ─────────────────────────────────────────────────────────────
@@ -391,6 +329,7 @@ def err(m):  st.error(m)
 def ok(m):   st.success(m)
 
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGIN
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -448,7 +387,6 @@ def page_login():
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
             st.session_state.auth_page = "register"; st.rerun()
         st.markdown('<div class="auth-switch-text">Accès réservé aux membres autorisés.</div>', unsafe_allow_html=True)
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # INSCRIPTION
@@ -528,6 +466,7 @@ if not st.session_state.authenticated:
     st.stop()
 
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # APP PRINCIPALE
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -599,8 +538,9 @@ def compute_suivi_avances(t):
     g['Solde'] = g['Total Encaissé'] - g['Total Avancé']; return g
 
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# FINANCE TAB RENDERER — REDESIGNÉ
+# FINANCE TAB RENDERER
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_finance_tab(lots_list):
     try: ensure_finance_sheets()
@@ -622,75 +562,51 @@ def render_finance_tab(lots_list):
     kpi_out  = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
     kpi_sol  = kpi_in - kpi_out
     kpi_enc  = df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0
-    sol_class = "green" if kpi_sol >= 0 else "red"
-    sol_sign  = "+" if kpi_sol >= 0 else ""
+    c_sol    = "#2D7A3A" if kpi_sol >= 0 else "#B03A2E"
 
-    PL = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-              font=dict(family="DM Sans", color="#555", size=12), margin=dict(l=10,r=10,t=30,b=10))
-
-    # ── KPI PANORAMA ──────────────────────────────────────────────────────────
     st.markdown(f"""
-    <div class="fin-kpi-grid">
-      <div class="fin-kpi-card">
-        <div class="fin-kpi-accent red"></div>
-        <div class="fin-kpi-icon icon-red">🏦</div>
-        <div class="fin-kpi-label">Dette financière</div>
-        <div class="fin-kpi-value red">{kpi_df:,.0f} <span class="fin-kpi-unit">MAD</span></div>
-        <div class="fin-kpi-sub">Solde restant à rembourser</div>
+    <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Dette financiere restante</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#B03A2E">{kpi_df:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
       </div>
-      <div class="fin-kpi-card">
-        <div class="fin-kpi-accent orange"></div>
-        <div class="fin-kpi-icon icon-orange">📦</div>
-        <div class="fin-kpi-label">Dette fournisseur</div>
-        <div class="fin-kpi-value orange">{kpi_dfo:,.0f} <span class="fin-kpi-unit">MAD</span></div>
-        <div class="fin-kpi-sub">Fournisseurs non réglés</div>
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Dette fournisseur restante</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{kpi_dfo:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
       </div>
-      <div class="fin-kpi-card">
-        <div class="fin-kpi-accent {sol_class}"></div>
-        <div class="fin-kpi-icon icon-{'green' if kpi_sol >= 0 else 'red'}">💵</div>
-        <div class="fin-kpi-label">Solde caisse</div>
-        <div class="fin-kpi-value {sol_class}">{sol_sign}{kpi_sol:,.0f} <span class="fin-kpi-unit">MAD</span></div>
-        <div class="fin-kpi-sub">Entrées − Sorties cumulées</div>
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Solde caisse</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_sol}">{kpi_sol:+,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
       </div>
-      <div class="fin-kpi-card">
-        <div class="fin-kpi-accent blue"></div>
-        <div class="fin-kpi-icon icon-blue">✅</div>
-        <div class="fin-kpi-label">Total encaissé</div>
-        <div class="fin-kpi-value blue">{kpi_enc:,.0f} <span class="fin-kpi-unit">MAD</span></div>
-        <div class="fin-kpi-sub">Paiements clients reçus</div>
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Total encaisse</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1565C0">{kpi_enc:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    ftab1, ftab2, ftab3, ftab4 = st.tabs(["🏦 Dette financière","📦 Dette fournisseur","💵 Caisse","✅ Encaissement"])
+    PL = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+              font=dict(family="DM Sans", color="#555", size=12), margin=dict(l=10,r=10,t=40,b=10))
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # DETTE FINANCIÈRE
-    # ══════════════════════════════════════════════════════════════════════════
+    ftab1, ftab2, ftab3, ftab4 = st.tabs(["🏦 Dette financiere","📦 Dette fournisseur","💵 Caisse","✅ Encaissement"])
+
+    # ── DETTE FINANCIERE ─────────────────────────────────────────────────────
     with ftab1:
-        st.markdown("""
-        <div class="fin-section-header">
-          <div class="fin-section-badge" style="background:#FDE8E8">🏦</div>
-          <div>
-            <div class="fin-section-title-text">Dette financière</div>
-            <div class="fin-section-desc">Emprunts bancaires, crédits et dettes envers des personnes physiques ou morales</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
-        with st.expander("➕ Ajouter une dette financière", expanded=False):
-            st.markdown('<div class="fin-form-card card-red">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Dette financiere</div>', unsafe_allow_html=True)
+        st.caption("Emprunts bancaires, credits, dettes envers des personnes physiques ou morales.")
+        with st.expander("➕ Ajouter une dette financiere", expanded=False):
             fc1, fc2, fc3 = st.columns(3, gap="large")
             with fc1:
                 df_date = st.date_input("Date", datetime.now(), key="df_date")
-                df_crea = st.text_input("Créancier / Banque", key="df_crea", placeholder="Ex: BMCE, Ali Hassan…")
-                df_type = st.selectbox("Type de dette", ["Emprunt bancaire","Crédit fournisseur","Prêt personnel","Autre"], key="df_type")
+                df_crea = st.text_input("Creancier / Banque", key="df_crea", placeholder="Ex: BMCE, Ali Hassan...")
+                df_type = st.selectbox("Type de dette", ["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], key="df_type")
             with fc2:
                 df_mi   = st.number_input("Montant initial (MAD)", min_value=0.0, step=100.0, key="df_mi")
-                df_mr   = st.number_input("Déjà remboursé (MAD)", min_value=0.0, step=100.0, key="df_mr")
-                df_taux = st.number_input("Taux intérêt (%)", min_value=0.0, step=0.1, key="df_taux")
+                df_mr   = st.number_input("Deja rembourse (MAD)", min_value=0.0, step=100.0, key="df_mr")
+                df_taux = st.number_input("Taux interet (%)", min_value=0.0, step=0.1, key="df_taux")
             with fc3:
-                df_ech  = st.date_input("Date échéance", key="df_ech")
-                df_stat = st.selectbox("Statut", ["En cours","Remboursé","En retard","Renégocié"], key="df_stat")
+                df_ech  = st.date_input("Date echeance", key="df_ech")
+                df_stat = st.selectbox("Statut", ["En cours","Rembourse","En retard","Renegocie"], key="df_stat")
                 df_rem  = st.text_input("Remarque", key="df_rem")
             if st.button("Enregistrer la dette", key="btn_df_save"):
                 row = {"Date": str(df_date), "Creancier": sanitize_text(df_crea), "Type de dette": df_type,
@@ -698,80 +614,58 @@ def render_finance_tab(lots_list):
                        "Date echeance": str(df_ech), "Statut": df_stat, "Remarque": sanitize_text(df_rem)}
                 try:
                     append_row(row, "Dette financiere")
-                    st.success("Dette financière enregistrée.")
+                    st.success("Dette financiere enregistree.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-            st.markdown('</div>', unsafe_allow_html=True)
 
         if not df_df.empty:
             df_df_d = df_df.copy()
             df_df_d["Restant (MAD)"] = (df_df_d["Montant initial (MAD)"] - df_df_d["Montant rembourse (MAD)"]).clip(lower=0)
             sf_s = st.selectbox("Filtrer par statut", ["Tous"]+sorted(df_df_d["Statut"].dropna().unique().tolist()), key="sf_dfstat")
             if sf_s != "Tous": df_df_d = df_df_d[df_df_d["Statut"]==sf_s]
-            st.markdown(f"""
-            <div class="fin-table-header">
-              <span class="fin-table-title">Tableau des dettes</span>
-              <span class="fin-table-count">{len(df_df_d)} enregistrement(s)</span>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f'<div class="info-count">{len(df_df_d)} dette(s)</div>', unsafe_allow_html=True)
             st.dataframe(df_df_d, hide_index=True, use_container_width=True)
             if len(df_df_d) > 0:
-                st.markdown('<div class="fin-chart-block">', unsafe_allow_html=True)
-                st.markdown('<div class="fin-chart-label">Montant initial vs remboursé par créancier</div>', unsafe_allow_html=True)
                 fig = go.Figure()
                 fig.add_trace(go.Bar(name="Initial", x=df_df_d["Creancier"], y=df_df_d["Montant initial (MAD)"], marker_color="#E8B4B0"))
-                fig.add_trace(go.Bar(name="Remboursé", x=df_df_d["Creancier"], y=df_df_d["Montant rembourse (MAD)"], marker_color="#2D7A3A"))
-                fig.update_layout(**PL, barmode="overlay", legend=dict(orientation="h",y=-0.25,x=0.5,xanchor="center"),
-                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
+                fig.add_trace(go.Bar(name="Rembourse", x=df_df_d["Creancier"], y=df_df_d["Montant rembourse (MAD)"], marker_color="#2D7A3A"))
+                fig.update_layout(**PL, barmode="overlay", legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"))
                 st.plotly_chart(fig, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("Aucune dette financière enregistrée.")
+            st.info("Aucune dette financiere enregistree.")
 
-        st.markdown("""
-        <div class="fin-subsection">
-          <div class="fin-subsection-title">Enregistrer un remboursement</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un remboursement</div>', unsafe_allow_html=True)
         if not df_df.empty:
             creas = df_df["Creancier"].dropna().unique().tolist()
-            rc = st.selectbox("Créancier", ["— sélectionner —"]+creas, key="rc_crea")
-            if rc != "— sélectionner —":
-                rm = st.number_input("Montant remboursé ce jour (MAD)", min_value=0.0, step=100.0, key="rc_montant")
-                if st.button("Enregistrer le remboursement", key="btn_rc"):
+            rc = st.selectbox("Creancier", ["— selectionner —"]+creas, key="rc_crea")
+            if rc != "— selectionner —":
+                rm = st.number_input("Montant rembourse ce jour (MAD)", min_value=0.0, step=100.0, key="rc_montant")
+                if st.button("Enregistrer remboursement", key="btn_rc"):
                     df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] = (
                         df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] + rm)
                     try:
                         save_sheet(df_df, "Dette financiere")
-                        st.success(f"Remboursement de {rm:,.0f} MAD enregistré.")
+                        st.success(f"Remboursement de {rm:,.0f} MAD enregistre.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # DETTE FOURNISSEUR
-    # ══════════════════════════════════════════════════════════════════════════
+    # ── DETTE FOURNISSEUR ─────────────────────────────────────────────────────
     with ftab2:
-        st.markdown("""
-        <div class="fin-section-header">
-          <div class="fin-section-badge" style="background:#FEF3E8">📦</div>
-          <div>
-            <div class="fin-section-title-text">Dette fournisseur</div>
-            <div class="fin-section-desc">Achats non encore réglés auprès de vos fournisseurs</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
+        st.markdown('<div class="section-title">Dette fournisseur</div>', unsafe_allow_html=True)
+        st.caption("Ce que vous devez a vos fournisseurs pour des achats non encore regles.")
         with st.expander("➕ Ajouter une dette fournisseur", expanded=False):
-            st.markdown('<div class="fin-form-card card-orange">', unsafe_allow_html=True)
             ff1, ff2, ff3 = st.columns(3, gap="large")
             with ff1:
                 dfo_date = st.date_input("Date", datetime.now(), key="dfo_date")
                 dfo_four = st.text_input("Fournisseur", key="dfo_four", placeholder="Nom du fournisseur")
-                dfo_lot  = st.selectbox("Lot associé", ["—"]+lots_list, key="dfo_lot")
+                dfo_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="dfo_lot")
             with ff2:
                 dfo_desc = st.text_input("Description", key="dfo_desc")
-                dfo_du   = st.number_input("Montant dû (MAD)", min_value=0.0, step=100.0, key="dfo_du")
-                dfo_pay  = st.number_input("Déjà payé (MAD)", min_value=0.0, step=100.0, key="dfo_pay")
+                dfo_du   = st.number_input("Montant du (MAD)", min_value=0.0, step=100.0, key="dfo_du")
+                dfo_pay  = st.number_input("Deja paye (MAD)", min_value=0.0, step=100.0, key="dfo_pay")
             with ff3:
-                dfo_ech  = st.date_input("Date échéance", key="dfo_ech")
-                dfo_stat = st.selectbox("Statut", ["À payer","Partiellement payé","Soldé","En litige"], key="dfo_stat")
+                dfo_ech  = st.date_input("Date echeance", key="dfo_ech")
+                dfo_stat = st.selectbox("Statut", ["A payer","Partiellement paye","Solde","En litige"], key="dfo_stat")
                 dfo_rem  = st.text_input("Remarque", key="dfo_rem")
             if st.button("Enregistrer la dette fournisseur", key="btn_dfo_save"):
                 row = {"Date": str(dfo_date), "Fournisseur": sanitize_text(dfo_four),
@@ -780,10 +674,9 @@ def render_finance_tab(lots_list):
                        "Date echeance": str(dfo_ech), "Statut": dfo_stat, "Remarque": sanitize_text(dfo_rem)}
                 try:
                     append_row(row, "Dette fournisseur")
-                    st.success("Dette fournisseur enregistrée.")
+                    st.success("Dette fournisseur enregistree.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-            st.markdown('</div>', unsafe_allow_html=True)
 
         if not df_dfo.empty:
             df_dfo_d = df_dfo.copy()
@@ -793,117 +686,91 @@ def render_finance_tab(lots_list):
             with col_f2: fl = st.selectbox("Lot", ["Tous"]+sorted(df_dfo_d["Lot"].dropna().astype(str).unique().tolist()), key="ffo_l")
             if fs != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Statut"]==fs]
             if fl != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Lot"]==fl]
-            st.markdown(f"""
-            <div class="fin-table-header">
-              <span class="fin-table-title">Dettes fournisseurs</span>
-              <span class="fin-table-count">{len(df_dfo_d)} enregistrement(s)</span>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f'<div class="info-count">{len(df_dfo_d)} dette(s) fournisseur</div>', unsafe_allow_html=True)
             st.dataframe(df_dfo_d, hide_index=True, use_container_width=True)
-            st.markdown('<div class="fin-summary-block">', unsafe_allow_html=True)
-            st.markdown('<div class="fin-summary-title">Résumé par fournisseur</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title" style="font-size:1rem">Resume par fournisseur</div>', unsafe_allow_html=True)
             res = df_dfo.groupby("Fournisseur").apply(lambda x: pd.Series({
-                "Total dû": x["Montant du (MAD)"].sum(),
-                "Total payé": x["Montant paye (MAD)"].sum(),
+                "Total du": x["Montant du (MAD)"].sum(), "Total paye": x["Montant paye (MAD)"].sum(),
                 "Restant": (x["Montant du (MAD)"] - x["Montant paye (MAD)"]).clip(lower=0).sum(),
             }), include_groups=False).reset_index()
             st.dataframe(res, hide_index=True, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("Aucune dette fournisseur enregistrée.")
+            st.info("Aucune dette fournisseur enregistree.")
 
-        st.markdown("""
-        <div class="fin-subsection">
-          <div class="fin-subsection-title">Enregistrer un paiement fournisseur</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un paiement fournisseur</div>', unsafe_allow_html=True)
         if not df_dfo.empty:
             fours = df_dfo["Fournisseur"].dropna().unique().tolist()
-            pf = st.selectbox("Fournisseur", ["— sélectionner —"]+fours, key="pf_four")
-            if pf != "— sélectionner —":
-                pm = st.number_input("Montant payé ce jour (MAD)", min_value=0.0, step=100.0, key="pf_montant")
+            pf = st.selectbox("Fournisseur", ["— selectionner —"]+fours, key="pf_four")
+            if pf != "— selectionner —":
+                pm = st.number_input("Montant paye ce jour (MAD)", min_value=0.0, step=100.0, key="pf_montant")
                 if st.button("Enregistrer le paiement", key="btn_pf"):
                     mask = df_dfo["Fournisseur"] == pf
                     df_dfo.loc[mask, "Montant paye (MAD)"] = df_dfo.loc[mask, "Montant paye (MAD)"] + pm
                     for i in df_dfo[mask].index:
                         r = df_dfo.at[i,"Montant du (MAD)"] - df_dfo.at[i,"Montant paye (MAD)"]
-                        if r <= 0: df_dfo.at[i,"Statut"] = "Soldé"
-                        elif df_dfo.at[i,"Montant paye (MAD)"] > 0: df_dfo.at[i,"Statut"] = "Partiellement payé"
+                        if r <= 0: df_dfo.at[i,"Statut"] = "Solde"
+                        elif df_dfo.at[i,"Montant paye (MAD)"] > 0: df_dfo.at[i,"Statut"] = "Partiellement paye"
                     try:
                         save_sheet(df_dfo, "Dette fournisseur")
-                        st.success(f"Paiement de {pm:,.0f} MAD enregistré.")
+                        st.success(f"Paiement de {pm:,.0f} MAD enregistre.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # CAISSE
-    # ══════════════════════════════════════════════════════════════════════════
+    # ── CAISSE ────────────────────────────────────────────────────────────────
     with ftab3:
-        st.markdown("""
-        <div class="fin-section-header">
-          <div class="fin-section-badge" style="background:#EAF4EA">💵</div>
-          <div>
-            <div class="fin-section-title-text">Caisse</div>
-            <div class="fin-section-desc">Suivi de toutes les entrées et sorties d'argent en caisse</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
+        st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
+        st.caption("Suivi de toutes les entrees et sorties d\'argent en caisse.")
         c_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_sol = c_in - c_out
         c_col = "#2D7A3A" if c_sol >= 0 else "#B03A2E"
-        c_sign = "+" if c_sol >= 0 else ""
-
         st.markdown(f"""
-        <div class="fin-mini-kpi-row">
-          <div class="fin-mini-kpi">
-            <div class="fin-mini-kpi-accent" style="background:#2D7A3A"></div>
-            <div class="fin-mini-kpi-label">Entrées</div>
-            <div class="fin-mini-kpi-val" style="color:#2D7A3A">{c_in:,.0f} <span class="fin-kpi-unit">MAD</span></div>
+        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Entrees</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#2D7A3A">{c_in:,.0f} MAD</div>
           </div>
-          <div class="fin-mini-kpi">
-            <div class="fin-mini-kpi-accent" style="background:#B03A2E"></div>
-            <div class="fin-mini-kpi-label">Sorties</div>
-            <div class="fin-mini-kpi-val" style="color:#B03A2E">{c_out:,.0f} <span class="fin-kpi-unit">MAD</span></div>
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Sorties</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#B03A2E">{c_out:,.0f} MAD</div>
           </div>
-          <div class="fin-mini-kpi">
-            <div class="fin-mini-kpi-accent" style="background:{c_col}"></div>
-            <div class="fin-mini-kpi-label">Solde caisse</div>
-            <div class="fin-mini-kpi-val" style="color:{c_col}">{c_sign}{c_sol:,.0f} <span class="fin-kpi-unit">MAD</span></div>
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Solde caisse</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_col}">{c_sol:+,.0f} MAD</div>
           </div>
         </div>""", unsafe_allow_html=True)
 
-        with st.expander("➕ Nouvelle opération de caisse", expanded=False):
-            st.markdown('<div class="fin-form-card card-teal">', unsafe_allow_html=True)
+        with st.expander("➕ Nouvelle operation de caisse", expanded=False):
             cc1, cc2, cc3 = st.columns(3, gap="large")
             with cc1:
                 ca_date = st.date_input("Date", datetime.now(), key="ca_date")
-                ca_type = st.selectbox("Type opération", ["ENTREE","SORTIE"], key="ca_type")
-                ca_cat  = st.selectbox("Catégorie", ["Vente marchandise","Achat marchandise","Loyer","Salaire",
+                ca_type = st.selectbox("Type operation", ["ENTREE","SORTIE"], key="ca_type")
+                ca_cat  = st.selectbox("Categorie", ["Vente marchandise","Achat marchandise","Loyer","Salaire",
                                                       "Transport","Frais bancaires","Remboursement dette",
                                                       "Encaissement client","Paiement fournisseur","Divers"], key="ca_cat")
             with cc2:
                 ca_desc = st.text_input("Description", key="ca_desc")
                 ca_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="ca_mont")
-                ca_mode = st.selectbox("Mode", ["Espèces","Virement","Chèque","Mobile Payment","Autre"], key="ca_mode")
+                ca_mode = st.selectbox("Mode", ["Especes","Virement","Cheque","Mobile Payment","Autre"], key="ca_mode")
             with cc3:
-                ca_lot  = st.selectbox("Lot associé (optionnel)", ["—"]+lots_list, key="ca_lot")
+                ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
                 ca_rem  = st.text_input("Remarque", key="ca_rem")
-            if st.button("Enregistrer l'opération", key="btn_ca_save"):
+            if st.button("Enregistrer l\'operation", key="btn_ca_save"):
                 row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
                        "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
                        "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
                 try:
                     append_row(row, "Caisse")
-                    st.success("Opération de caisse enregistrée.")
+                    st.success("Operation de caisse enregistree.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-            st.markdown('</div>', unsafe_allow_html=True)
 
         if not df_ca.empty:
             ca1, ca2, ca3 = st.columns(3)
             with ca1: fca_t = st.selectbox("Type", ["Tous","ENTREE","SORTIE"], key="fca_t")
             with ca2:
                 cats = ["Toutes"]+sorted(df_ca["Categorie"].dropna().unique().tolist())
-                fca_c = st.selectbox("Catégorie", cats, key="fca_c")
+                fca_c = st.selectbox("Categorie", cats, key="fca_c")
             with ca3:
                 lots_ca = ["Tous"]+sorted([x for x in df_ca["Lot"].dropna().astype(str).unique() if x and x!="—"])
                 fca_l = st.selectbox("Lot", lots_ca, key="fca_l")
@@ -911,102 +778,77 @@ def render_finance_tab(lots_list):
             if fca_t != "Tous": df_ca_d = df_ca_d[df_ca_d["Type operation"]==fca_t]
             if fca_c != "Toutes": df_ca_d = df_ca_d[df_ca_d["Categorie"]==fca_c]
             if fca_l != "Tous": df_ca_d = df_ca_d[df_ca_d["Lot"]==fca_l]
-            st.markdown(f"""
-            <div class="fin-table-header">
-              <span class="fin-table-title">Opérations de caisse</span>
-              <span class="fin-table-count">{len(df_ca_d)} opération(s)</span>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f'<div class="info-count">{len(df_ca_d)} operation(s)</div>', unsafe_allow_html=True)
             st.dataframe(df_ca_d, hide_index=True, use_container_width=True)
-
-            st.markdown('<div class="fin-chart-block">', unsafe_allow_html=True)
-            st.markdown('<div class="fin-chart-label">Évolution du solde cumulé</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title" style="font-size:1rem">Evolution de la caisse</div>', unsafe_allow_html=True)
             df_ca_t = df_ca.copy()
             df_ca_t["Date"] = pd.to_datetime(df_ca_t["Date"], errors="coerce")
             df_ca_t = df_ca_t.dropna(subset=["Date"]).sort_values("Date")
             df_ca_t["Flux"] = df_ca_t.apply(lambda r: r["Montant (MAD)"] if r["Type operation"]=="ENTREE" else -r["Montant (MAD)"], axis=1)
-            df_ca_t["Solde cumulé"] = df_ca_t["Flux"].cumsum()
+            df_ca_t["Solde cumule"] = df_ca_t["Flux"].cumsum()
             if not df_ca_t.empty:
                 fig_ca = go.Figure()
-                fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumulé"],
-                    mode="lines+markers", name="Solde cumulé",
+                fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumule"],
+                    mode="lines+markers", name="Solde cumule",
                     line=dict(color="#1565C0",width=2), fill="tozeroy", fillcolor="rgba(21,101,192,0.08)"))
                 fig_ca.add_trace(go.Bar(x=df_ca_t["Date"], y=df_ca_t["Flux"], name="Flux",
                     marker_color=["#2D7A3A" if v>=0 else "#B03A2E" for v in df_ca_t["Flux"]], opacity=0.5))
-                fig_ca.update_layout(**PL, legend=dict(orientation="h",y=-0.25,x=0.5,xanchor="center"),
+                fig_ca.update_layout(**PL, legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"),
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
                 st.plotly_chart(fig_ca, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown('<div class="fin-summary-block">', unsafe_allow_html=True)
-            st.markdown('<div class="fin-summary-title">Résumé par catégorie</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title" style="font-size:1rem">Resume par categorie</div>', unsafe_allow_html=True)
             res_ca = df_ca.groupby(["Categorie","Type operation"])["Montant (MAD)"].sum().reset_index()
             st.dataframe(res_ca, hide_index=True, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("Aucune opération de caisse enregistrée.")
+            st.info("Aucune operation de caisse enregistree.")
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # ENCAISSEMENT
-    # ══════════════════════════════════════════════════════════════════════════
+    # ── ENCAISSEMENT ──────────────────────────────────────────────────────────
     with ftab4:
-        st.markdown("""
-        <div class="fin-section-header">
-          <div class="fin-section-badge" style="background:#E8F0FE">✅</div>
-          <div>
-            <div class="fin-section-title-text">Encaissement</div>
-            <div class="fin-section-desc">Paiements reçus de vos clients et partenaires commerciaux</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
+        st.markdown('<div class="section-title">Encaissement</div>', unsafe_allow_html=True)
+        st.caption("Suivi de tous les paiements recus de vos clients et partenaires.")
         enc_tot  = df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0
         enc_att  = df_enc[df_enc["Statut"]=="En attente"]["Montant (MAD)"].sum() if not df_enc.empty else 0
         enc_recu = df_enc[df_enc["Statut"]=="Recu"]["Montant (MAD)"].sum() if not df_enc.empty else 0
-
         st.markdown(f"""
-        <div class="fin-mini-kpi-row">
-          <div class="fin-mini-kpi">
-            <div class="fin-mini-kpi-accent" style="background:#1565C0"></div>
-            <div class="fin-mini-kpi-label">Total encaissé</div>
-            <div class="fin-mini-kpi-val" style="color:#1565C0">{enc_tot:,.0f} <span class="fin-kpi-unit">MAD</span></div>
+        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Total encaisse</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1565C0">{enc_tot:,.0f} MAD</div>
           </div>
-          <div class="fin-mini-kpi">
-            <div class="fin-mini-kpi-accent" style="background:#2D7A3A"></div>
-            <div class="fin-mini-kpi-label">Confirmé reçu</div>
-            <div class="fin-mini-kpi-val" style="color:#2D7A3A">{enc_recu:,.0f} <span class="fin-kpi-unit">MAD</span></div>
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Confirme recu</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#2D7A3A">{enc_recu:,.0f} MAD</div>
           </div>
-          <div class="fin-mini-kpi">
-            <div class="fin-mini-kpi-accent" style="background:#E07A1A"></div>
-            <div class="fin-mini-kpi-label">En attente</div>
-            <div class="fin-mini-kpi-val" style="color:#7A4100">{enc_att:,.0f} <span class="fin-kpi-unit">MAD</span></div>
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
+            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">En attente</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{enc_att:,.0f} MAD</div>
           </div>
         </div>""", unsafe_allow_html=True)
 
         with st.expander("➕ Enregistrer un encaissement", expanded=False):
-            st.markdown('<div class="fin-form-card card-blue">', unsafe_allow_html=True)
             ec1, ec2, ec3 = st.columns(3, gap="large")
             with ec1:
                 en_date = st.date_input("Date", datetime.now(), key="en_date")
                 en_pay  = st.text_input("Payeur / Client", key="en_pay", placeholder="Nom du client")
-                en_lot  = st.selectbox("Lot associé", ["—"]+lots_list, key="en_lot")
+                en_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="en_lot")
             with ec2:
                 en_desc = st.text_input("Description", key="en_desc")
                 en_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="en_mont")
-                en_mode = st.selectbox("Mode de paiement", ["Espèces","Virement","Chèque","Mobile Payment","Carte bancaire","Autre"], key="en_mode")
+                en_mode = st.selectbox("Mode de paiement", ["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], key="en_mode")
             with ec3:
                 en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
                 en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
                 en_rem  = st.text_input("Remarque", key="en_rem")
-            if st.button("Enregistrer l'encaissement", key="btn_en_save"):
+            if st.button("Enregistrer l\'encaissement", key="btn_en_save"):
                 row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
                        "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
                        "Mode de paiement": en_mode, "Type encaissement": en_type,
                        "Statut": en_stat, "Remarque": sanitize_text(en_rem)}
                 try:
                     append_row(row, "Encaissement")
-                    st.success("Encaissement enregistré.")
+                    st.success("Encaissement enregistre.")
                     clear_data_cache(); st.rerun()
                 except Exception as e: st.error(f"Erreur : {e}")
-            st.markdown('</div>', unsafe_allow_html=True)
 
         if not df_enc.empty:
             ce1, ce2, ce3 = st.columns(3)
@@ -1021,32 +863,23 @@ def render_finance_tab(lots_list):
             if fes != "Tous": df_enc_d = df_enc_d[df_enc_d["Statut"]==fes]
             if fel != "Tous": df_enc_d = df_enc_d[df_enc_d["Lot"]==fel]
             if fet != "Tous": df_enc_d = df_enc_d[df_enc_d["Type encaissement"]==fet]
-            st.markdown(f"""
-            <div class="fin-table-header">
-              <span class="fin-table-title">Encaissements</span>
-              <span class="fin-table-count">{len(df_enc_d)} encaissement(s)</span>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f'<div class="info-count">{len(df_enc_d)} encaissement(s)</div>', unsafe_allow_html=True)
             st.dataframe(df_enc_d, hide_index=True, use_container_width=True)
-
             enc_lot = df_enc.groupby("Lot")["Montant (MAD)"].sum().reset_index()
             enc_lot = enc_lot[enc_lot["Lot"].astype(str) != "—"]
             if not enc_lot.empty:
-                st.markdown('<div class="fin-chart-block">', unsafe_allow_html=True)
-                st.markdown('<div class="fin-chart-label">Encaissement par lot</div>', unsafe_allow_html=True)
+                st.markdown('<div class="section-title" style="font-size:1rem">Encaissement par lot</div>', unsafe_allow_html=True)
                 fig_enc = go.Figure(go.Bar(x=enc_lot["Lot"], y=enc_lot["Montant (MAD)"],
                     marker_color="#1565C0", hovertemplate="%{x}<br>%{y:,.0f} MAD<extra></extra>"))
                 fig_enc.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
                 st.plotly_chart(fig_enc, use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown('<div class="fin-summary-block">', unsafe_allow_html=True)
-            st.markdown('<div class="fin-summary-title">Résumé par client / payeur</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title" style="font-size:1rem">Resume par client / payeur</div>', unsafe_allow_html=True)
             res_enc = df_enc.groupby("Payeur").agg(Total=("Montant (MAD)","sum"), Nb=("Montant (MAD)","count")
                 ).reset_index().sort_values("Total", ascending=False)
             st.dataframe(res_enc, hide_index=True, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("Aucun encaissement enregistré.")
+            st.info("Aucun encaissement enregistre.")
+
 
 
 # ─── Chargement données ────────────────────────────────────────────────────────
@@ -1131,6 +964,7 @@ elif is_sous_admin:
 else:
     tabs = st.tabs(["Mes lots","Recherche","Graphiques"])
     tab1,tab2,tab3 = tabs
+
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1487,6 +1321,7 @@ if is_admin:
         st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement</div>', unsafe_allow_html=True)
         render_finance_tab(lots_existants)
 
+
     with tab8:
         st.markdown('<div class="section-title">Gestion des utilisateurs</div>', unsafe_allow_html=True)
         users_df = get_users()
@@ -1703,7 +1538,7 @@ else:
         st.markdown('<div class="section-title">Mes lots autorisés</div>', unsafe_allow_html=True)
         if lots_autorises:
             st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
-        else: warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
+        else: warn("Aucun lot ne t\'a été attribué. Contacte l\'administrateur.")
         st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
     with tab2:
         st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
