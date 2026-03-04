@@ -1098,42 +1098,35 @@ for item in nav_items:
         sections_order.append(sec)
     sections_map[sec].append(item)
 
+import streamlit.components.v1 as components
+
 drawer_items_html = ""
-# Build JS nav map: key -> nav_key
-nav_keys_js = []
 for sec in sections_order:
     drawer_items_html += f'<div class="drawer-section-label">{sec}</div>'
     for item in sections_map[sec]:
         is_active = "active" if item["key"] == active_page else ""
         badge_html = f'<span class="drawer-notif">{item["badge"]}</span>' if item.get("badge", 0) > 0 else ""
-        # Use data-navkey attribute instead of onclick — React won't intercept data attrs
         drawer_items_html += f"""
         <button class="drawer-item {is_active}" data-navkey="{item['key']}" title="{item['label']}">
           <span class="drawer-item-icon">{item['icon']}</span>
           <span>{item['label']}</span>
           {badge_html}
         </button>"""
-        nav_keys_js.append(item['key'])
 
-# Get current token for nav URL
 current_token = st.session_state.get("_sess_token", "")
 
+# HTML structure injected into main page DOM
 st.markdown(f"""
-<!-- Hamburger button — NO onclick, id-based only -->
-<button id="mahal-menu-btn" title="Menu navigation">
+<button id="mahal-menu-btn" title="Ouvrir le menu">
   <span></span><span></span><span></span>
 </button>
-
-<!-- Overlay -->
 <div id="mahal-overlay"></div>
-
-<!-- Drawer -->
 <div id="mahal-drawer">
   <div class="drawer-header">
     <div class="drawer-brand">Mahal</div>
     <div class="drawer-close" id="mahal-drawer-close">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <path d="M1 1l10 10M11 1L1 11" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M1 1l10 10M11 1L1 11" stroke="#1C1C1C" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
   </div>
@@ -1142,95 +1135,83 @@ st.markdown(f"""
   </div>
   <div class="drawer-footer">© 2025 — Plateforme privée</div>
 </div>
+""", unsafe_allow_html=True)
 
-<script>
+# JS in a components.html iframe — uses window.parent to reach the real DOM
+# Streamlit strips <script> from st.markdown, but components.html runs JS freely
+components.html(f"""<!DOCTYPE html><html><body><script>
 (function() {{
   var TOKEN = '{current_token}';
+  var doc = window.parent.document;
 
   function openDrawer() {{
-    var d = document.getElementById('mahal-drawer');
-    var o = document.getElementById('mahal-overlay');
+    var d = doc.getElementById('mahal-drawer');
+    var o = doc.getElementById('mahal-overlay');
     if (d) d.classList.add('open');
     if (o) o.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    doc.body.style.overflow = 'hidden';
   }}
 
   function closeDrawer() {{
-    var d = document.getElementById('mahal-drawer');
-    var o = document.getElementById('mahal-overlay');
+    var d = doc.getElementById('mahal-drawer');
+    var o = doc.getElementById('mahal-overlay');
     if (d) d.classList.remove('open');
     if (o) o.classList.remove('open');
-    document.body.style.overflow = '';
+    doc.body.style.overflow = '';
   }}
 
   function navigateTo(pageKey) {{
     closeDrawer();
-    var url = window.location.pathname + '?nav=' + encodeURIComponent(pageKey);
+    var url = window.parent.location.pathname + '?nav=' + encodeURIComponent(pageKey);
     if (TOKEN) url += '&t=' + encodeURIComponent(TOKEN);
-    window.location.href = url;
+    window.parent.location.href = url;
   }}
 
-  function attachDrawerEvents() {{
-    var btn = document.getElementById('mahal-menu-btn');
-    var overlay = document.getElementById('mahal-overlay');
-    var closeBtn = document.getElementById('mahal-drawer-close');
-    var nav = document.getElementById('mahal-drawer-nav');
-    var pill = document.getElementById('mahal-tab-pill');
+  function bind() {{
+    var btn     = doc.getElementById('mahal-menu-btn');
+    var overlay = doc.getElementById('mahal-overlay');
+    var closeEl = doc.getElementById('mahal-drawer-close');
+    var nav     = doc.getElementById('mahal-drawer-nav');
+    var pill    = doc.getElementById('mahal-tab-pill');
 
-    if (btn && !btn._drawerBound) {{
+    if (btn && !btn._mb) {{
       btn.addEventListener('click', function(e) {{ e.stopPropagation(); openDrawer(); }});
-      btn._drawerBound = true;
+      btn._mb = true;
     }}
-    if (overlay && !overlay._drawerBound) {{
+    if (overlay && !overlay._mb) {{
       overlay.addEventListener('click', closeDrawer);
-      overlay._drawerBound = true;
+      overlay._mb = true;
     }}
-    if (closeBtn && !closeBtn._drawerBound) {{
-      closeBtn.addEventListener('click', closeDrawer);
-      closeBtn._drawerBound = true;
+    if (closeEl && !closeEl._mb) {{
+      closeEl.addEventListener('click', closeDrawer);
+      closeEl._mb = true;
     }}
-    if (pill && !pill._drawerBound) {{
+    if (pill && !pill._mb) {{
       pill.addEventListener('click', function(e) {{ e.stopPropagation(); openDrawer(); }});
-      pill._drawerBound = true;
+      pill._mb = true;
     }}
-    // Attach nav item clicks via event delegation on the nav container
-    if (nav && !nav._drawerBound) {{
+    if (nav && !nav._mb) {{
       nav.addEventListener('click', function(e) {{
-        var target = e.target;
-        // Walk up to find the button with data-navkey
-        while (target && target !== nav) {{
-          if (target.tagName === 'BUTTON' && target.dataset.navkey) {{
-            navigateTo(target.dataset.navkey);
-            return;
-          }}
-          target = target.parentElement;
+        var t = e.target;
+        while (t && t !== nav) {{
+          if (t.dataset && t.dataset.navkey) {{ navigateTo(t.dataset.navkey); return; }}
+          t = t.parentElement;
         }}
       }});
-      nav._drawerBound = true;
+      nav._mb = true;
     }}
+    doc.addEventListener('keydown', function(e) {{ if (e.key === 'Escape') closeDrawer(); }});
   }}
 
-  // Escape key to close
-  document.addEventListener('keydown', function(e) {{
-    if (e.key === 'Escape') closeDrawer();
-  }});
-
-  // Attach immediately + retry after DOM settles (Streamlit re-renders)
-  attachDrawerEvents();
-  setTimeout(attachDrawerEvents, 200);
-  setTimeout(attachDrawerEvents, 600);
-  setTimeout(attachDrawerEvents, 1500);
-
-  // Also observe DOM mutations in case Streamlit re-renders the nodes
-  if (typeof MutationObserver !== 'undefined') {{
-    var observer = new MutationObserver(function() {{
-      attachDrawerEvents();
-    }});
-    observer.observe(document.body, {{ childList: true, subtree: true }});
+  var attempts = 0;
+  function tryBind() {{
+    bind();
+    attempts++;
+    if (attempts < 25) setTimeout(tryBind, 200);
   }}
+  tryBind();
 }})();
-</script>
-""", unsafe_allow_html=True)
+</script></body></html>""", height=0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
