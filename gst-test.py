@@ -1010,16 +1010,20 @@ if "active_page" not in st.session_state:
     st.session_state.active_page = nav_items[0]["key"]
 
 # Apply pending navigation captured early (before auth check)
-_pnav = st.session_state.pop("_pending_nav", "") or st.query_params.get("nav", "")
+_pnav = st.session_state.pop("_pending_nav", None)
+if _pnav is None:
+    _pnav = st.query_params.get("nav", "")
 if _pnav:
     valid_keys = [item["key"] for item in nav_items]
+    _changed = (_pnav in valid_keys) and (st.session_state.active_page != _pnav)
     if _pnav in valid_keys:
         st.session_state.active_page = _pnav
-    # Clean nav param from URL, keep session token
     token_keep = st.query_params.get("t", "")
     st.query_params.clear()
     if token_keep:
         st.query_params["t"] = token_keep
+    if _changed:
+        st.rerun()
 
 active_page = st.session_state.active_page
 active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
