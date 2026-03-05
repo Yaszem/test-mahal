@@ -110,8 +110,53 @@ div[class*="stAlert"]{color:#1C1C1C !important}
 div[class*="stAlert"]*{color:#1C1C1C !important}
 [data-testid="stDataEditor"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:10px !important;overflow:hidden !important}
 [data-testid="stDataEditor"] input,[data-testid="stDataEditor"] textarea{color:#1C1C1C !important;-webkit-text-fill-color:#1C1C1C !important;background:#FFFFFF !important;caret-color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
+
+/* ── POPOVER / DROPDOWN BASE ── */
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
+
+/* ── DATA EDITOR SELECTBOX DROPDOWN FIX ── */
+/* Options dans le portail de dropdown du data editor */
+[data-testid="stDataEditor"] [role="option"],
+[data-testid="stDataEditor"] [role="listbox"],
+[data-testid="stDataEditor"] li {
+  color:#1C1C1C !important;
+  -webkit-text-fill-color:#1C1C1C !important;
+  background:#FFFFFF !important;
+}
+[data-testid="stDataEditor"] [role="option"]:hover,
+[data-testid="stDataEditor"] [role="option"][aria-selected="true"] {
+  background:#F0EDE5 !important;
+  color:#1C1C1C !important;
+  -webkit-text-fill-color:#1C1C1C !important;
+}
+/* Portail rendu en dehors du composant (data-popper-placement) */
+div[data-popper-placement] [role="option"],
+div[data-popper-placement] [role="listbox"],
+div[data-popper-placement] li,
+div[data-popper-placement] span,
+div[data-popper-placement] div {
+  color:#1C1C1C !important;
+  -webkit-text-fill-color:#1C1C1C !important;
+  background:#FFFFFF !important;
+}
+div[data-popper-placement] [role="option"]:hover {
+  background:#F0EDE5 !important;
+}
+/* Input et select à l'intérieur du data editor */
+[data-testid="stDataEditor"] input,
+[data-testid="stDataEditor"] select,
+[data-testid="stDataEditor"] [contenteditable] {
+  color:#1C1C1C !important;
+  -webkit-text-fill-color:#1C1C1C !important;
+  background:#FFFFFF !important;
+  caret-color:#1C1C1C !important;
+}
+/* Glide data grid — texte dans les cellules type select */
+[class*="gdg-"] span,
+[class*="gdg-"] div {
+  color:#1C1C1C !important;
+}
 
 /* ── DRAWER MENU ── */
 #mahal-overlay{
@@ -174,9 +219,6 @@ div[class*="stAlert"]*{color:#1C1C1C !important}
   padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;flex-shrink:0;
   font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase
 }
-/* hamburger handled inside components.html iframe */
-
-/* Active tab indicator in topbar */
 .active-tab-pill{
   display:inline-flex;align-items:center;gap:0.4rem;
   background:#F0EDE5;border:1px solid #DDDAD2;border-radius:20px;
@@ -383,7 +425,6 @@ for k, v in [("authenticated", False), ("username", ""), ("role", ""),
               ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
     if k not in st.session_state: st.session_state[k] = v
 
-# Capture ?nav= BEFORE auth check so it survives the full page load
 _early_nav = st.query_params.get("nav", "")
 if _early_nav:
     st.session_state["_pending_nav"] = _early_nav
@@ -623,10 +664,14 @@ def render_finance_tab(lots_list):
     try: ensure_finance_sheets()
     except Exception: pass
 
-    DF_COLS  = ["Date","Creancier","Type de dette","Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"]
-    DFO_COLS = ["Date","Fournisseur","Description","Lot","Montant du (MAD)","Montant paye (MAD)","Date echeance","Statut","Remarque"]
-    CA_COLS  = ["Date","Type operation","Categorie","Description","Montant (MAD)","Mode","Lot","Remarque"]
-    ENC_COLS = ["Date","Payeur","Lot","Description","Montant (MAD)","Mode de paiement","Type encaissement","Statut","Remarque"]
+    DF_COLS  = ["Date","Creancier","Type de dette","Montant initial (MAD)",
+                "Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"]
+    DFO_COLS = ["Date","Fournisseur","Description","Lot","Montant du (MAD)",
+                "Montant paye (MAD)","Date echeance","Statut","Remarque"]
+    CA_COLS  = ["Date","Type operation","Categorie","Description",
+                "Montant (MAD)","Mode","Lot","Remarque"]
+    ENC_COLS = ["Date","Payeur","Lot","Description","Montant (MAD)",
+                "Mode de paiement","Type encaissement","Statut","Remarque"]
 
     df_df  = to_numeric(_fin_load("Dette financiere",  DF_COLS),  ["Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)"])
     df_dfo = to_numeric(_fin_load("Dette fournisseur", DFO_COLS), ["Montant du (MAD)","Montant paye (MAD)"])
@@ -793,7 +838,7 @@ def render_finance_tab(lots_list):
 
     with ftab3:
         st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
-        st.caption("Suivi de toutes les entrees et sorties d\'argent en caisse.")
+        st.caption("Suivi de toutes les entrees et sorties d'argent en caisse.")
         c_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_sol = c_in - c_out
@@ -829,7 +874,7 @@ def render_finance_tab(lots_list):
             with cc3:
                 ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
                 ca_rem  = st.text_input("Remarque", key="ca_rem")
-            if st.button("Enregistrer l\'operation", key="btn_ca_save"):
+            if st.button("Enregistrer l'operation", key="btn_ca_save"):
                 row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
                        "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
                        "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
@@ -912,7 +957,7 @@ def render_finance_tab(lots_list):
                 en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
                 en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
                 en_rem  = st.text_input("Remarque", key="en_rem")
-            if st.button("Enregistrer l\'encaissement", key="btn_en_save"):
+            if st.button("Enregistrer l'encaissement", key="btn_en_save"):
                 row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
                        "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
                        "Mode de paiement": en_mode, "Type encaissement": en_type,
@@ -977,7 +1022,6 @@ personnes_existantes = sorted([p for p in transactions['Personne'].dropna().asty
 pending_count = count_pending() if is_admin else 0
 
 # ─── DRAWER MENU SETUP ────────────────────────────────────────────────────────
-# Define navigation items per role
 if is_admin:
     nav_items = [
         {"key": "nouvelle_transaction", "label": "Nouvelle transaction", "icon": "✚", "section": "Saisie"},
@@ -1005,11 +1049,9 @@ else:
         {"key": "graphiques","label": "Graphiques", "icon": "◈", "section": "Analyse"},
     ]
 
-# Initialize active page
 if "active_page" not in st.session_state:
     st.session_state.active_page = nav_items[0]["key"]
 
-# Apply pending navigation captured early (before auth check)
 _pnav = st.session_state.pop("_pending_nav", None)
 if _pnav is None:
     _pnav = st.query_params.get("nav", "")
@@ -1058,7 +1100,6 @@ st.markdown(f"""
   </div>
 </div>""", unsafe_allow_html=True)
 
-# Logout button (small, positioned below topbar)
 dcol = st.columns([8, 1])[1]
 with dcol:
     if st.button("Déco.", key="btn_logout"):
@@ -1085,7 +1126,6 @@ st.markdown(f"""
 </div>""", unsafe_allow_html=True)
 
 # ─── BUILD DRAWER HTML ────────────────────────────────────────────────────────
-# Group items by section
 sections_order = []
 sections_map = {}
 for item in nav_items:
@@ -1094,7 +1134,6 @@ for item in nav_items:
         sections_map[sec] = []
         sections_order.append(sec)
     sections_map[sec].append(item)
-
 
 import streamlit.components.v1 as components
 
@@ -1132,10 +1171,7 @@ for _it in _nav_items_for_drawer:
         + _bdg + '</button>'
     )
 
-# Escape nav html for JS template literal
 _dih_js = _dih.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-
-# Safe token escaping
 _tok_js = current_token.replace("\\", "\\\\").replace('"', '\\"')
 
 _html_parts = [
@@ -1146,29 +1182,24 @@ _html_parts = [
     'var nav_html=`' + _dih_js + '`;',
     'var pdoc=window.parent.document;',
     '["__mahal_btn","__mahal_overlay","__mahal_drawer"].forEach(function(id){var el=pdoc.getElementById(id);if(el)el.remove();});',
-    # Hamburger button
     'var btn=pdoc.createElement("button");',
     'btn.id="__mahal_btn";',
     'btn.style.cssText="position:fixed;top:1.4rem;right:1.6rem;z-index:99999;width:38px;height:38px;border-radius:10px;background:#1C1C1C;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(28,28,28,0.18)";',
     'btn.innerHTML=\'<span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span><span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span><span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span>\';',
     'pdoc.body.appendChild(btn);',
-    # Overlay
     'var ov=pdoc.createElement("div");',
     'ov.id="__mahal_overlay";',
     'ov.style.cssText="display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:99997;cursor:pointer";',
     'pdoc.body.appendChild(ov);',
-    # Drawer
     'var dr=pdoc.createElement("div");',
     'dr.id="__mahal_drawer";',
     'dr.style.cssText="position:fixed;top:0;right:-320px;width:300px;height:100vh;background:#FFFFFF;border-left:1px solid #E0DDD5;z-index:99998;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-8px 0 32px rgba(28,28,28,0.08)";',
     'var hdr=\'<div style="padding:2rem 1.8rem 1.4rem;border-bottom:1px solid #F0EDE5;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0"><div style="font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em">Mahal</div><button id=\\"__mahal_close\\" style=\\"width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;background:#F7F6F2;cursor:pointer;display:flex;align-items:center;justify-content:center\\"><svg width=\\"12\\" height=\\"12\\" viewBox=\\"0 0 12 12\\" fill=\\"none\\"><path d=\\"M1 1l10 10M11 1L1 11\\" stroke=\\"#1C1C1C\\" stroke-width=\\"1.5\\" stroke-linecap=\\"round\\"/></svg></button></div>\';',
     'dr.innerHTML=hdr+\'<div id=\\"__mahal_nav\\" style=\\"flex:1;overflow-y:auto;padding-bottom:1.5rem\\">\'+nav_html+\'</div><div style=\\"padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase\\">2025 Plateforme</div>\';',
     'pdoc.body.appendChild(dr);',
-    # Functions
     'function openDrawer(){dr.style.right="0";ov.style.display="block";pdoc.body.style.overflow="hidden";}',
     'function closeDrawer(){dr.style.right="-320px";ov.style.display="none";pdoc.body.style.overflow="";}',
     'function navTo(key){closeDrawer();var a=pdoc.createElement("a");var url=pdoc.location.pathname+"?nav="+encodeURIComponent(key);if(TOKEN)url+="&t="+encodeURIComponent(TOKEN);a.href=url;a.style.display="none";pdoc.body.appendChild(a);a.click();a.remove();}',
-    # Events
     'btn.addEventListener("click",function(e){e.stopPropagation();openDrawer();});',
     'ov.addEventListener("click",closeDrawer);',
     'setTimeout(function(){',
@@ -1183,10 +1214,6 @@ _html_parts = [
 
 _drawer_html = "\n".join(_html_parts)
 components.html(_drawer_html, height=0, scrolling=False)
-
-# drawer navigation handled via anchor click in iframe
-
-
 
 
 
@@ -1281,7 +1308,7 @@ def render_edit_transaction_form(transactions_df, lots_filter=None, personne_fil
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# PAGE RENDERER — switches on active_page
+# PAGE RENDERER
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_page():
     page = st.session_state.active_page
