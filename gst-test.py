@@ -108,55 +108,63 @@ div[data-testid="stAlert"][data-alert-type="warning"],div[data-testid="stAlert"]
 .stWarning>div,.stInfo>div{background:#F5F3EE !important;border:1px solid #DDDAD2 !important;color:#1C1C1C !important;border-radius:8px !important}
 div[class*="stAlert"]{color:#1C1C1C !important}
 div[class*="stAlert"]*{color:#1C1C1C !important}
+
+/* ── DATA EDITOR — correction visibilité dropdown ── */
 [data-testid="stDataEditor"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:10px !important;overflow:hidden !important}
 [data-testid="stDataEditor"] input,[data-testid="stDataEditor"] textarea{color:#1C1C1C !important;-webkit-text-fill-color:#1C1C1C !important;background:#FFFFFF !important;caret-color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
-
-/* ── POPOVER / DROPDOWN BASE ── */
+/* Cellules du tableau éditables */
+[data-testid="stDataEditor"] [role="gridcell"]{color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.85rem !important}
+/* Dropdown des colonnes SelectboxColumn dans data_editor */
+[data-testid="stDataEditor"] [role="option"],
+[data-testid="stDataEditor"] [role="listbox"] li,
+[data-testid="stDataEditor"] [role="listbox"] [role="option"]{
+  color:#1C1C1C !important;
+  background:#FFFFFF !important;
+  font-family:'DM Sans',sans-serif !important;
+  font-size:0.88rem !important;
+}
+[data-testid="stDataEditor"] [role="listbox"]{
+  background:#FFFFFF !important;
+  border:1px solid #E0DDD5 !important;
+  border-radius:8px !important;
+  box-shadow:0 4px 16px rgba(28,28,28,0.12) !important;
+}
+/* Glide-data-grid: overlay portals pour les dropdowns */
+div[class*="gdg-"][role="listbox"],
+div[class*="gdg-"] [role="listbox"],
+div[class*="gdg-"] [role="option"]{
+  color:#1C1C1C !important;
+  background:#FFFFFF !important;
+  font-family:'DM Sans',sans-serif !important;
+}
+div[class*="gdg-"] [role="option"]:hover{background:#F0EDE5 !important}
+/* Portals montés à la racine du body */
+body > div[role="listbox"],
+body > div [role="listbox"]{
+  background:#FFFFFF !important;
+  border:1px solid #E0DDD5 !important;
+  border-radius:8px !important;
+  box-shadow:0 4px 16px rgba(28,28,28,0.14) !important;
+  z-index:99999 !important;
+}
+body > div[role="listbox"] [role="option"],
+body > div [role="listbox"] [role="option"]{
+  color:#1C1C1C !important;
+  background:#FFFFFF !important;
+  font-family:'DM Sans',sans-serif !important;
+  font-size:0.88rem !important;
+  padding:0.5rem 0.9rem !important;
+}
+body > div[role="listbox"] [role="option"]:hover,
+body > div [role="listbox"] [role="option"]:hover,
+body > div[role="listbox"] [role="option"][aria-selected="true"],
+body > div [role="listbox"] [role="option"][aria-selected="true"]{
+  background:#F0EDE5 !important;
+  color:#1C1C1C !important;
+}
+/* Overlay popover générique Streamlit */
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
-
-/* ── DATA EDITOR SELECTBOX DROPDOWN FIX ── */
-/* Options dans le portail de dropdown du data editor */
-[data-testid="stDataEditor"] [role="option"],
-[data-testid="stDataEditor"] [role="listbox"],
-[data-testid="stDataEditor"] li {
-  color:#1C1C1C !important;
-  -webkit-text-fill-color:#1C1C1C !important;
-  background:#FFFFFF !important;
-}
-[data-testid="stDataEditor"] [role="option"]:hover,
-[data-testid="stDataEditor"] [role="option"][aria-selected="true"] {
-  background:#F0EDE5 !important;
-  color:#1C1C1C !important;
-  -webkit-text-fill-color:#1C1C1C !important;
-}
-/* Portail rendu en dehors du composant (data-popper-placement) */
-div[data-popper-placement] [role="option"],
-div[data-popper-placement] [role="listbox"],
-div[data-popper-placement] li,
-div[data-popper-placement] span,
-div[data-popper-placement] div {
-  color:#1C1C1C !important;
-  -webkit-text-fill-color:#1C1C1C !important;
-  background:#FFFFFF !important;
-}
-div[data-popper-placement] [role="option"]:hover {
-  background:#F0EDE5 !important;
-}
-/* Input et select à l'intérieur du data editor */
-[data-testid="stDataEditor"] input,
-[data-testid="stDataEditor"] select,
-[data-testid="stDataEditor"] [contenteditable] {
-  color:#1C1C1C !important;
-  -webkit-text-fill-color:#1C1C1C !important;
-  background:#FFFFFF !important;
-  caret-color:#1C1C1C !important;
-}
-/* Glide data grid — texte dans les cellules type select */
-[class*="gdg-"] span,
-[class*="gdg-"] div {
-  color:#1C1C1C !important;
-}
 
 /* ── DRAWER MENU ── */
 #mahal-overlay{
@@ -664,14 +672,10 @@ def render_finance_tab(lots_list):
     try: ensure_finance_sheets()
     except Exception: pass
 
-    DF_COLS  = ["Date","Creancier","Type de dette","Montant initial (MAD)",
-                "Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"]
-    DFO_COLS = ["Date","Fournisseur","Description","Lot","Montant du (MAD)",
-                "Montant paye (MAD)","Date echeance","Statut","Remarque"]
-    CA_COLS  = ["Date","Type operation","Categorie","Description",
-                "Montant (MAD)","Mode","Lot","Remarque"]
-    ENC_COLS = ["Date","Payeur","Lot","Description","Montant (MAD)",
-                "Mode de paiement","Type encaissement","Statut","Remarque"]
+    DF_COLS  = ["Date","Creancier","Type de dette","Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"]
+    DFO_COLS = ["Date","Fournisseur","Description","Lot","Montant du (MAD)","Montant paye (MAD)","Date echeance","Statut","Remarque"]
+    CA_COLS  = ["Date","Type operation","Categorie","Description","Montant (MAD)","Mode","Lot","Remarque"]
+    ENC_COLS = ["Date","Payeur","Lot","Description","Montant (MAD)","Mode de paiement","Type encaissement","Statut","Remarque"]
 
     df_df  = to_numeric(_fin_load("Dette financiere",  DF_COLS),  ["Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)"])
     df_dfo = to_numeric(_fin_load("Dette fournisseur", DFO_COLS), ["Montant du (MAD)","Montant paye (MAD)"])
@@ -838,7 +842,7 @@ def render_finance_tab(lots_list):
 
     with ftab3:
         st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
-        st.caption("Suivi de toutes les entrees et sorties d'argent en caisse.")
+        st.caption("Suivi de toutes les entrees et sorties d\'argent en caisse.")
         c_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_sol = c_in - c_out
@@ -874,7 +878,7 @@ def render_finance_tab(lots_list):
             with cc3:
                 ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
                 ca_rem  = st.text_input("Remarque", key="ca_rem")
-            if st.button("Enregistrer l'operation", key="btn_ca_save"):
+            if st.button("Enregistrer l\'operation", key="btn_ca_save"):
                 row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
                        "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
                        "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
@@ -957,7 +961,7 @@ def render_finance_tab(lots_list):
                 en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
                 en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
                 en_rem  = st.text_input("Remarque", key="en_rem")
-            if st.button("Enregistrer l'encaissement", key="btn_en_save"):
+            if st.button("Enregistrer l\'encaissement", key="btn_en_save"):
                 row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
                        "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
                        "Mode de paiement": en_mode, "Type encaissement": en_type,
@@ -1135,6 +1139,7 @@ for item in nav_items:
         sections_order.append(sec)
     sections_map[sec].append(item)
 
+
 import streamlit.components.v1 as components
 
 _nav_items_for_drawer = []
@@ -1214,7 +1219,6 @@ _html_parts = [
 
 _drawer_html = "\n".join(_html_parts)
 components.html(_drawer_html, height=0, scrolling=False)
-
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1484,6 +1488,10 @@ def render_page():
 
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
         st.caption("Cliquez sur une cellule pour la modifier directement.")
+
+        # ── Info bulle pour aider l'utilisateur ──
+        st.info("💡 Pour modifier le Type ou le Statut : double-cliquez sur la cellule concernée pour faire apparaître le menu déroulant. Les options ACHAT / VENTE / DÉPENSE s'afficheront en noir sur fond blanc.")
+
         ef1, ef2, ef3 = st.columns(3, gap="large")
         with ef1:
             lots_edit_opts = ["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
@@ -1621,6 +1629,9 @@ def render_page():
         if df_sa_view.empty:
             st.info("Aucune transaction à afficher pour votre compte.")
         else:
+            # Info bulle pour aider l'utilisateur
+            st.info("💡 Pour modifier le Type ou le Statut : double-cliquez sur la cellule pour faire apparaître le menu déroulant.")
+
             lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
             fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
             if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
