@@ -1483,15 +1483,11 @@ def render_page():
 
     # ── SUIVI DES AVANCES ─────────────────────────────────────────────────────
     elif page == "suivi_avances":
-        st.markdown('<div class="section-title">Suivi des avances</div>', unsafe_allow_html=True)
-        st.dataframe(compute_suivi_avances(transactions), width='stretch', hide_index=True)
-
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
         st.caption("Cliquez sur une cellule pour la modifier directement.")
 
         # ── Info bulle pour aider l'utilisateur ──
-        st.info("💡 Pour modifier le Type ou le Statut : double-cliquez sur la cellule concernée pour faire apparaître le menu déroulant. Les options ACHAT / VENTE / DÉPENSE s'afficheront en noir sur fond blanc.")
-
+        
         ef1, ef2, ef3 = st.columns(3, gap="large")
         with ef1:
             lots_edit_opts = ["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
