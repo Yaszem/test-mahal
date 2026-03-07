@@ -1723,7 +1723,6 @@ def render_page():
                   <div style="display:flex;justify-content:space-between;align-items:flex-start">
                     <div><div class="user-card-name">{h(fn)}</div>
                     <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {rlu}</div></div>
-                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span>
                   </div></div>""", unsafe_allow_html=True)
                 ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
                 with ac2:
