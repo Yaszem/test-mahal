@@ -1629,9 +1629,7 @@ def render_page():
         if df_sa_view.empty:
             st.info("Aucune transaction à afficher pour votre compte.")
         else:
-            # Info bulle pour aider l'utilisateur
-            st.info("💡 Pour modifier le Type ou le Statut : double-cliquez sur la cellule pour faire apparaître le menu déroulant.")
-
+            # Info bulle pour aider l'utilisateu
             lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
             fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
             if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
