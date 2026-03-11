@@ -9,6 +9,13 @@ import time
 import secrets
 import html as _html
 import re
+import io
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 st.set_page_config(page_title="MAHAL — Gestion", layout="wide", initial_sidebar_state="collapsed")
 
@@ -108,153 +115,206 @@ div[data-testid="stAlert"][data-alert-type="warning"],div[data-testid="stAlert"]
 .stWarning>div,.stInfo>div{background:#F5F3EE !important;border:1px solid #DDDAD2 !important;color:#1C1C1C !important;border-radius:8px !important}
 div[class*="stAlert"]{color:#1C1C1C !important}
 div[class*="stAlert"]*{color:#1C1C1C !important}
-
-/* ── DATA EDITOR — correction visibilité dropdown ── */
 [data-testid="stDataEditor"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:10px !important;overflow:hidden !important}
 [data-testid="stDataEditor"] input,[data-testid="stDataEditor"] textarea{color:#1C1C1C !important;-webkit-text-fill-color:#1C1C1C !important;background:#FFFFFF !important;caret-color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
-/* Cellules du tableau éditables */
 [data-testid="stDataEditor"] [role="gridcell"]{color:#1C1C1C !important;font-family:'DM Sans',sans-serif !important;font-size:0.85rem !important}
-/* Dropdown des colonnes SelectboxColumn dans data_editor */
-[data-testid="stDataEditor"] [role="option"],
-[data-testid="stDataEditor"] [role="listbox"] li,
-[data-testid="stDataEditor"] [role="listbox"] [role="option"]{
-  color:#1C1C1C !important;
-  background:#FFFFFF !important;
-  font-family:'DM Sans',sans-serif !important;
-  font-size:0.88rem !important;
-}
-[data-testid="stDataEditor"] [role="listbox"]{
-  background:#FFFFFF !important;
-  border:1px solid #E0DDD5 !important;
-  border-radius:8px !important;
-  box-shadow:0 4px 16px rgba(28,28,28,0.12) !important;
-}
-/* Glide-data-grid: overlay portals pour les dropdowns */
-div[class*="gdg-"][role="listbox"],
-div[class*="gdg-"] [role="listbox"],
-div[class*="gdg-"] [role="option"]{
-  color:#1C1C1C !important;
-  background:#FFFFFF !important;
-  font-family:'DM Sans',sans-serif !important;
-}
+[data-testid="stDataEditor"] [role="option"],[data-testid="stDataEditor"] [role="listbox"] li,[data-testid="stDataEditor"] [role="listbox"] [role="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important}
+[data-testid="stDataEditor"] [role="listbox"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 16px rgba(28,28,28,0.12) !important}
+div[class*="gdg-"][role="listbox"],div[class*="gdg-"] [role="listbox"],div[class*="gdg-"] [role="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important}
 div[class*="gdg-"] [role="option"]:hover{background:#F0EDE5 !important}
-/* Portals montés à la racine du body */
-body > div[role="listbox"],
-body > div [role="listbox"]{
-  background:#FFFFFF !important;
-  border:1px solid #E0DDD5 !important;
-  border-radius:8px !important;
-  box-shadow:0 4px 16px rgba(28,28,28,0.14) !important;
-  z-index:99999 !important;
-}
-body > div[role="listbox"] [role="option"],
-body > div [role="listbox"] [role="option"]{
-  color:#1C1C1C !important;
-  background:#FFFFFF !important;
-  font-family:'DM Sans',sans-serif !important;
-  font-size:0.88rem !important;
-  padding:0.5rem 0.9rem !important;
-}
-body > div[role="listbox"] [role="option"]:hover,
-body > div [role="listbox"] [role="option"]:hover,
-body > div[role="listbox"] [role="option"][aria-selected="true"],
-body > div [role="listbox"] [role="option"][aria-selected="true"]{
-  background:#F0EDE5 !important;
-  color:#1C1C1C !important;
-}
-/* Overlay popover générique Streamlit */
+body > div[role="listbox"],body > div [role="listbox"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 16px rgba(28,28,28,0.14) !important;z-index:99999 !important}
+body > div[role="listbox"] [role="option"],body > div [role="listbox"] [role="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important;padding:0.5rem 0.9rem !important}
+body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [role="option"]:hover,body > div[role="listbox"] [role="option"][aria-selected="true"],body > div [role="listbox"] [role="option"][aria-selected="true"]{background:#F0EDE5 !important;color:#1C1C1C !important}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
-
-/* ── DRAWER MENU ── */
-#mahal-overlay{
-  display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);
-  z-index:9998;backdrop-filter:blur(2px);transition:opacity 0.3s ease
-}
+#mahal-overlay{display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:9998;backdrop-filter:blur(2px);transition:opacity 0.3s ease}
 #mahal-overlay.open{display:block}
-#mahal-drawer{
-  position:fixed;top:0;right:-340px;width:300px;height:100vh;
-  background:#FFFFFF;border-left:1px solid #E0DDD5;
-  z-index:9999;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
-  display:flex;flex-direction:column;overflow:hidden;
-  box-shadow:-8px 0 32px rgba(28,28,28,0.08)
-}
+#mahal-drawer{position:fixed;top:0;right:-340px;width:300px;height:100vh;background:#FFFFFF;border-left:1px solid #E0DDD5;z-index:9999;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-8px 0 32px rgba(28,28,28,0.08)}
 #mahal-drawer.open{right:0}
-.drawer-header{
-  padding:2rem 1.8rem 1.4rem 1.8rem;border-bottom:1px solid #F0EDE5;
-  display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0
-}
+.drawer-header{padding:2rem 1.8rem 1.4rem 1.8rem;border-bottom:1px solid #F0EDE5;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0}
 .drawer-brand{font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em}
-.drawer-close{
-  width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;
-  background:#F7F6F2;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all 0.2s ease;flex-shrink:0
-}
-.drawer-close:hover{background:#1C1C1C}
-.drawer-close:hover svg path{stroke:#F7F6F2}
-.drawer-close svg path{stroke:#1C1C1C;transition:stroke 0.2s ease}
-.drawer-section-label{
-  font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;
-  color:#BBBBBB;padding:1.2rem 1.8rem 0.5rem 1.8rem
-}
-.drawer-nav{flex:1;overflow-y:auto;padding-bottom:1.5rem}
-.drawer-item{
-  display:flex;align-items:center;gap:0.9rem;
-  padding:0.75rem 1.8rem;cursor:pointer;
-  transition:background 0.15s ease;border:none;
-  background:transparent;width:100%;text-align:left;
-  font-family:'DM Sans',sans-serif;font-size:0.88rem;color:#555;
-  letter-spacing:0.01em;position:relative
-}
-.drawer-item:hover{background:#F7F6F2;color:#1C1C1C}
-.drawer-item.active{background:#F7F6F2;color:#1C1C1C;font-weight:500}
-.drawer-item.active::before{
-  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
-  width:3px;height:60%;background:#1C1C1C;border-radius:0 2px 2px 0
-}
-.drawer-item-icon{
-  width:30px;height:30px;border-radius:7px;display:flex;align-items:center;
-  justify-content:center;font-size:0.9rem;flex-shrink:0;
-  background:#F0EDE5;transition:background 0.15s ease
-}
-.drawer-item.active .drawer-item-icon{background:#1C1C1C}
-.drawer-notif{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:#E53935;color:#FFF;font-size:0.6rem;font-weight:700;
-  width:16px;height:16px;border-radius:50%;margin-left:auto;flex-shrink:0
-}
-.drawer-footer{
-  padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;flex-shrink:0;
-  font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase
-}
-.active-tab-pill{
-  display:inline-flex;align-items:center;gap:0.4rem;
-  background:#F0EDE5;border:1px solid #DDDAD2;border-radius:20px;
-  padding:0.28rem 0.85rem;font-size:0.72rem;color:#555;
-  font-weight:500;letter-spacing:0.03em;cursor:pointer;
-  transition:all 0.2s ease;margin-left:0.8rem
-}
+.active-tab-pill{display:inline-flex;align-items:center;gap:0.4rem;background:#F0EDE5;border:1px solid #DDDAD2;border-radius:20px;padding:0.28rem 0.85rem;font-size:0.72rem;color:#555;font-weight:500;letter-spacing:0.03em;cursor:pointer;transition:all 0.2s ease;margin-left:0.8rem}
 .active-tab-pill:hover{background:#E8E5DE}
 .active-tab-pill-icon{font-size:0.78rem}
-
-@media screen and (max-width:768px){
-  .block-container{padding:1rem 1rem 2rem 1rem !important;max-width:100% !important}
-  .auth-left{display:none !important}
-  .page-title{font-size:1.8rem !important}
-  .page-subtitle{font-size:0.72rem !important;margin-bottom:1rem !important}
-  .metric-row{display:grid !important;grid-template-columns:1fr 1fr !important;gap:0.6rem !important;margin-bottom:1.2rem !important}
-  .section-title{font-size:1.1rem !important;margin-top:1.2rem !important;margin-bottom:0.8rem !important}
-  #mahal-drawer{width:280px}
-  #mahal-menu-btn{top:1rem;right:1rem}
-}
-@media screen and (max-width:480px){
-  .block-container{padding:0.7rem 0.6rem 1.5rem 0.6rem !important}
-  .page-title{font-size:1.5rem !important}
-  .metric-value{font-size:1rem !important}
-}
+@media screen and (max-width:768px){.block-container{padding:1rem 1rem 2rem 1rem !important;max-width:100% !important}.auth-left{display:none !important}.page-title{font-size:1.8rem !important}.page-subtitle{font-size:0.72rem !important;margin-bottom:1rem !important}.metric-row{display:grid !important;grid-template-columns:1fr 1fr !important;gap:0.6rem !important;margin-bottom:1.2rem !important}.section-title{font-size:1.1rem !important;margin-top:1.2rem !important;margin-bottom:0.8rem !important}#mahal-drawer{width:280px}}
+@media screen and (max-width:480px){.block-container{padding:0.7rem 0.6rem 1.5rem 0.6rem !important}.page-title{font-size:1.5rem !important}.metric-value{font-size:1rem !important}}
 </style>
 """, unsafe_allow_html=True)
 
+
+# ─── PDF Receipt Generator ──────────────────────────────────────────────────────
+def generate_receipt_pdf(data: dict) -> bytes:
+    """Generate a professional receipt PDF and return bytes."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+        rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+
+    styles = getSampleStyleSheet()
+    dark = colors.HexColor("#1C1C1C")
+    green = colors.HexColor("#2D7A3A")
+    beige = colors.HexColor("#F0EDE5")
+    border = colors.HexColor("#E0DDD5")
+    grey = colors.HexColor("#999999")
+
+    title_style = ParagraphStyle('Title', parent=styles['Normal'],
+        fontName='Helvetica-Bold', fontSize=26, textColor=dark,
+        leading=30, spaceAfter=2*mm)
+    sub_style = ParagraphStyle('Sub', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=9, textColor=grey,
+        leading=13, spaceAfter=1*mm)
+    label_style = ParagraphStyle('Label', parent=styles['Normal'],
+        fontName='Helvetica-Bold', fontSize=8, textColor=grey,
+        leading=11, spaceAfter=1*mm)
+    value_style = ParagraphStyle('Value', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=10, textColor=dark,
+        leading=14, spaceAfter=1*mm)
+    amount_style = ParagraphStyle('Amount', parent=styles['Normal'],
+        fontName='Helvetica-Bold', fontSize=22, textColor=green,
+        leading=28, alignment=TA_RIGHT)
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=7.5, textColor=grey,
+        leading=11, alignment=TA_CENTER)
+    note_style = ParagraphStyle('Note', parent=styles['Normal'],
+        fontName='Helvetica', fontSize=9, textColor=dark,
+        leading=13, spaceAfter=1*mm)
+
+    story = []
+
+    # Header bar
+    header_data = [[
+        Paragraph("MAHAL", title_style),
+        Paragraph(f"RECU N° {data.get('numero','—')}", ParagraphStyle('RNum',
+            parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11,
+            textColor=dark, alignment=TA_RIGHT))
+    ]]
+    header_table = Table(header_data, colWidths=[90*mm, 80*mm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4*mm),
+    ]))
+    story.append(header_table)
+    story.append(Paragraph("Gestion &amp; Transactions", sub_style))
+    story.append(HRFlowable(width="100%", thickness=1, color=border, spaceAfter=6*mm))
+
+    # Date + Type badge
+    type_rec = data.get('type_recu', 'ENCAISSEMENT')
+    type_colors_map = {
+        'ENCAISSEMENT': colors.HexColor("#1565C0"),
+        'PAIEMENT': colors.HexColor("#2D7A3A"),
+        'REMBOURSEMENT': colors.HexColor("#7A4100"),
+        'DETTE FINANCIERE': colors.HexColor("#B03A2E"),
+        'DETTE FOURNISSEUR': colors.HexColor("#7A4100"),
+        'CAISSE': colors.HexColor("#555555"),
+    }
+    type_color = type_colors_map.get(type_rec, dark)
+
+    badge_data = [[
+        Paragraph(f"Date : {data.get('date', datetime.now().strftime('%d/%m/%Y'))}", value_style),
+        Paragraph(f"  {type_rec}  ", ParagraphStyle('Badge',
+            parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8,
+            textColor=colors.white, backColor=type_color,
+            alignment=TA_RIGHT, leading=10))
+    ]]
+    badge_table = Table(badge_data, colWidths=[90*mm, 80*mm])
+    badge_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('RIGHTPADDING', (1,0), (1,0), 0),
+    ]))
+    story.append(badge_table)
+    story.append(Spacer(1, 5*mm))
+
+    # Info grid
+    info_rows = []
+    fields = [
+        ("Emetteur / Société", data.get('emetteur', 'MAHAL')),
+        ("Destinataire / Client", data.get('destinataire', '—')),
+        ("Lot", data.get('lot', '—')),
+        ("Description", data.get('description', '—')),
+        ("Mode de paiement", data.get('mode_paiement', '—')),
+        ("Référence", data.get('reference', '—')),
+    ]
+    for label, value in fields:
+        if value and value != '—' or label in ("Emetteur / Société", "Destinataire / Client"):
+            info_rows.append([
+                Paragraph(label, label_style),
+                Paragraph(str(value), value_style)
+            ])
+
+    if info_rows:
+        info_table = Table(info_rows, colWidths=[55*mm, 115*mm])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (0,-1), beige),
+            ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.white, colors.HexColor("#FAFAF8")]),
+            ('GRID', (0,0), (-1,-1), 0.5, border),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('TOPPADDING', (0,0), (-1,-1), 3*mm),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3*mm),
+            ('LEFTPADDING', (0,0), (-1,-1), 3*mm),
+            ('RIGHTPADDING', (0,0), (-1,-1), 3*mm),
+            ('ROUNDEDCORNERS', [4], ),
+        ]))
+        story.append(info_table)
+
+    story.append(Spacer(1, 8*mm))
+
+    # Amount box
+    montant_val = data.get('montant', 0)
+    try:
+        montant_float = float(montant_val)
+    except:
+        montant_float = 0.0
+
+    amount_data = [[
+        Paragraph("MONTANT TOTAL", ParagraphStyle('AmtLabel', parent=styles['Normal'],
+            fontName='Helvetica-Bold', fontSize=9, textColor=grey, leading=12)),
+        Paragraph(f"{montant_float:,.2f} MAD", amount_style)
+    ]]
+    amount_table = Table(amount_data, colWidths=[80*mm, 90*mm])
+    amount_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), beige),
+        ('BOX', (0,0), (-1,-1), 1, border),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 5*mm),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5*mm),
+        ('LEFTPADDING', (0,0), (-1,-1), 5*mm),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5*mm),
+    ]))
+    story.append(amount_table)
+    story.append(Spacer(1, 6*mm))
+
+    # Remarque
+    if data.get('remarque'):
+        story.append(Paragraph("Remarque :", label_style))
+        story.append(Paragraph(str(data['remarque']), note_style))
+        story.append(Spacer(1, 4*mm))
+
+    # Signature zone
+    sig_data = [[
+        Paragraph("Signature émetteur :", label_style),
+        Paragraph("Signature destinataire :", label_style),
+    ], [
+        Paragraph("\n\n\n_________________________", note_style),
+        Paragraph("\n\n\n_________________________", note_style),
+    ]]
+    sig_table = Table(sig_data, colWidths=[85*mm, 85*mm])
+    sig_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('TOPPADDING', (0,0), (-1,-1), 2*mm),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2*mm),
+        ('LINEABOVE', (0,0), (-1,0), 0.5, border),
+    ]))
+    story.append(sig_table)
+
+    # Footer
+    story.append(Spacer(1, 8*mm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=border, spaceAfter=3*mm))
+    story.append(Paragraph(
+        f"Document généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} — Plateforme MAHAL © 2025 — Document non contractuel",
+        footer_style))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 # ─── Google Sheets ─────────────────────────────────────────────────────────────
@@ -296,7 +356,6 @@ def ensure_users_sheet():
         ws = sh.add_worksheet("Utilisateurs", rows=500, cols=12)
         ws.update([["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"]])
 
-# ─── Finance Sheet Setup ────────────────────────────────────────────────────────
 def ensure_finance_sheets():
     sh = get_client().open_by_key(SPREADSHEET_ID)
     sheets_config = {
@@ -455,7 +514,6 @@ def err(m):  st.error(m)
 def ok(m):   st.success(m)
 
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGIN
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -592,7 +650,6 @@ if not st.session_state.authenticated:
     st.stop()
 
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # APP PRINCIPALE
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -664,15 +721,94 @@ def compute_suivi_avances(t):
     g['Solde'] = g['Total Encaissé'] - g['Total Avancé']; return g
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELPER: inline editor for finance sheets
+# ═══════════════════════════════════════════════════════════════════════════════
+def render_finance_inline_editor(df_source, sheet_name, cols_show, column_config, numeric_cols, key_prefix, filter_opts=None):
+    """Generic inline editor + delete for any finance sheet."""
+    df_work = to_numeric(df_source.copy(), numeric_cols)
+    df_work = df_work.reset_index(drop=True)
+    df_work["_orig_idx"] = df_work.index
+
+    # Optional filters
+    if filter_opts:
+        fcols = st.columns(len(filter_opts), gap="small")
+        filter_vals = {}
+        for i, (fname, fkey, fopts) in enumerate(filter_opts):
+            with fcols[i]:
+                filter_vals[fkey] = st.selectbox(fname, ["Tous"] + fopts, key=f"{key_prefix}_f_{fkey}")
+        for fkey, fval in filter_vals.items():
+            col_name = next((f[0] for f in filter_opts if f[1] == fkey), None)
+            if fval != "Tous" and col_name in df_work.columns:
+                df_work = df_work[df_work[col_name] == fval]
+
+    visible_cols = [c for c in cols_show if c in df_work.columns]
+    st.markdown(f'<div class="info-count">{len(df_work)} ligne(s)</div>', unsafe_allow_html=True)
+
+    edited = st.data_editor(
+        df_work[visible_cols + ["_orig_idx"]],
+        column_config=column_config,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="fixed",
+        column_order=visible_cols,
+        key=f"{key_prefix}_editor"
+    )
+
+    if st.button("💾 Sauvegarder les modifications", key=f"{key_prefix}_save_btn"):
+        try:
+            full_df = to_numeric(_fin_load(sheet_name, cols_show), numeric_cols).reset_index(drop=True)
+            for _, row_edit in edited.iterrows():
+                oi = int(row_edit["_orig_idx"])
+                for col in visible_cols:
+                    if col in full_df.columns:
+                        full_df.at[oi, col] = row_edit[col]
+            save_sheet(full_df, sheet_name)
+            st.success("✅ Modifications enregistrées.")
+            clear_data_cache(); st.rerun()
+        except Exception as e:
+            st.error(f"Erreur : {e}")
+
+    # Delete section
+    st.markdown('<div class="section-title" style="font-size:1rem;margin-top:1.5rem">Supprimer une ligne</div>', unsafe_allow_html=True)
+    full_df_del = to_numeric(_fin_load(sheet_name, cols_show), numeric_cols).reset_index(drop=True)
+
+    if not full_df_del.empty:
+        def make_del_label(r):
+            parts = []
+            for c in ['Date', 'Creancier', 'Fournisseur', 'Payeur', 'Type operation', 'Categorie', 'Description']:
+                if c in r and str(r[c]).strip():
+                    parts.append(str(r[c]))
+            # Always add amount
+            for c in ['Montant initial (MAD)', 'Montant du (MAD)', 'Montant (MAD)']:
+                if c in r:
+                    try: parts.append(f"{float(r[c]):,.0f} MAD"); break
+                    except: pass
+            return " | ".join(parts[:4]) if parts else f"Ligne {r.name}"
+
+        labels_del = [make_del_label(row) for _, row in full_df_del.iterrows()]
+        choix_del = st.selectbox("Choisir la ligne à supprimer", ["— sélectionner —"] + labels_del, key=f"{key_prefix}_del_sel")
+        if choix_del != "— sélectionner —":
+            del_idx = labels_del.index(choix_del)
+            confirm = st.checkbox("Confirmer la suppression", key=f"{key_prefix}_del_confirm")
+            if st.button("🗑 Supprimer cette ligne", key=f"{key_prefix}_del_btn"):
+                if not confirm:
+                    st.warning("Coche la case de confirmation.")
+                else:
+                    updated = full_df_del.drop(index=del_idx).reset_index(drop=True)
+                    try:
+                        save_sheet(updated, sheet_name)
+                        st.success("Ligne supprimée.")
+                        clear_data_cache(); st.rerun()
+                    except Exception as e:
+                        st.error(f"Erreur : {e}")
+    else:
+        st.info("Aucune donnée à supprimer.")
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FINANCE TAB RENDERER
-
 # ═══════════════════════════════════════════════════════════════════════════════
-# FINANCE TAB — VERSION COMPLÈTE AVEC ÉDITION, SUPPRESSION ET TICKET PDF
-# Remplace entièrement la fonction render_finance_tab dans app.py
-# ═══════════════════════════════════════════════════════════════════════════════
-
 def render_finance_tab(lots_list):
     try: ensure_finance_sheets()
     except Exception: pass
@@ -723,305 +859,193 @@ def render_finance_tab(lots_list):
     PL = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
               font=dict(family="DM Sans", color="#555", size=12), margin=dict(l=10,r=10,t=40,b=10))
 
-    ftab1, ftab2, ftab3, ftab4 = st.tabs(["🏦 Dette financiere","📦 Dette fournisseur","💵 Caisse","✅ Encaissement"])
+    ftab1, ftab2, ftab3, ftab4, ftab5 = st.tabs([
+        "🏦 Dette financiere",
+        "📦 Dette fournisseur",
+        "💵 Caisse",
+        "✅ Encaissement",
+        "🎫 Créer un ticket / Reçu PDF"
+    ])
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 1 — DETTE FINANCIERE
-    # ──────────────────────────────────────────────────────────────────────────
+    # ── TAB 1: DETTE FINANCIERE ────────────────────────────────────────────────
     with ftab1:
         st.markdown('<div class="section-title">Dette financiere</div>', unsafe_allow_html=True)
         st.caption("Emprunts bancaires, credits, dettes envers des personnes physiques ou morales.")
 
-        # ── AJOUT ──
-        with st.expander("➕ Ajouter une dette financiere", expanded=False):
-            fc1, fc2, fc3 = st.columns(3, gap="large")
-            with fc1:
-                df_date = st.date_input("Date", datetime.now(), key="df_date")
-                df_crea = st.text_input("Creancier / Banque", key="df_crea", placeholder="Ex: BMCE, Ali Hassan...")
-                df_type = st.selectbox("Type de dette", ["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], key="df_type")
-            with fc2:
-                df_mi   = st.number_input("Montant initial (MAD)", min_value=0.0, step=100.0, key="df_mi")
-                df_mr   = st.number_input("Deja rembourse (MAD)", min_value=0.0, step=100.0, key="df_mr")
-                df_taux = st.number_input("Taux interet (%)", min_value=0.0, step=0.1, key="df_taux")
-            with fc3:
-                df_ech  = st.date_input("Date echeance", key="df_ech")
-                df_stat = st.selectbox("Statut", ["En cours","Rembourse","En retard","Renegocie"], key="df_stat")
-                df_rem  = st.text_input("Remarque", key="df_rem")
-            if st.button("Enregistrer la dette", key="btn_df_save"):
-                row = {"Date": str(df_date), "Creancier": sanitize_text(df_crea), "Type de dette": df_type,
-                       "Montant initial (MAD)": df_mi, "Montant rembourse (MAD)": df_mr, "Taux interet (%)": df_taux,
-                       "Date echeance": str(df_ech), "Statut": df_stat, "Remarque": sanitize_text(df_rem)}
-                try:
-                    append_row(row, "Dette financiere")
-                    st.success("Dette financiere enregistree.")
-                    clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur : {e}")
+        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
 
-        # ── AFFICHAGE + FILTRE ──
-        if not df_df.empty:
-            df_df_d = df_df.copy()
-            df_df_d["Restant (MAD)"] = (df_df_d["Montant initial (MAD)"] - df_df_d["Montant rembourse (MAD)"]).clip(lower=0)
-            sf_s = st.selectbox("Filtrer par statut", ["Tous"]+sorted(df_df_d["Statut"].dropna().unique().tolist()), key="sf_dfstat")
-            if sf_s != "Tous": df_df_d = df_df_d[df_df_d["Statut"]==sf_s]
-            st.markdown(f'<div class="info-count">{len(df_df_d)} dette(s)</div>', unsafe_allow_html=True)
-
-            # ── EDITION INLINE ──
-            with st.expander("✏️ Modifier les dettes financieres", expanded=False):
-                st.caption("Cliquez sur une cellule pour modifier directement. Appuyez sur 💾 pour sauvegarder.")
-                df_df_edit = df_df.copy()
-                df_df_edit.index = range(len(df_df_edit))
-                df_df_edit["_orig_idx"] = df_df_edit.index
-                cols_df_show = [c for c in DF_COLS if c in df_df_edit.columns]
-                col_cfg_df = {
-                    "Date": st.column_config.TextColumn("Date"),
-                    "Creancier": st.column_config.TextColumn("Creancier"),
-                    "Type de dette": st.column_config.SelectboxColumn("Type",
-                        options=["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], required=True),
-                    "Montant initial (MAD)": st.column_config.NumberColumn("Montant initial", min_value=0.0, format="%.2f"),
-                    "Montant rembourse (MAD)": st.column_config.NumberColumn("Rembourse", min_value=0.0, format="%.2f"),
-                    "Taux interet (%)": st.column_config.NumberColumn("Taux %", min_value=0.0, format="%.2f"),
-                    "Date echeance": st.column_config.TextColumn("Echeance"),
-                    "Statut": st.column_config.SelectboxColumn("Statut",
-                        options=["En cours","Rembourse","En retard","Renegocie"], required=True),
-                    "Remarque": st.column_config.TextColumn("Remarque"),
-                }
-                edited_df_df = st.data_editor(
-                    df_df_edit[cols_df_show + ["_orig_idx"]],
-                    column_config=col_cfg_df,
-                    hide_index=True, use_container_width=True, num_rows="fixed",
-                    column_order=cols_df_show, key="editor_dette_fin"
-                )
-                if st.button("💾 Sauvegarder les modifications", key="btn_save_dette_fin"):
+        with sub1:
+            with st.expander("➕ Ajouter une dette financiere", expanded=False):
+                fc1, fc2, fc3 = st.columns(3, gap="large")
+                with fc1:
+                    df_date = st.date_input("Date", datetime.now(), key="df_date")
+                    df_crea = st.text_input("Creancier / Banque", key="df_crea", placeholder="Ex: BMCE, Ali Hassan...")
+                    df_type = st.selectbox("Type de dette", ["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], key="df_type")
+                with fc2:
+                    df_mi   = st.number_input("Montant initial (MAD)", min_value=0.0, step=100.0, key="df_mi")
+                    df_mr   = st.number_input("Deja rembourse (MAD)", min_value=0.0, step=100.0, key="df_mr")
+                    df_taux = st.number_input("Taux interet (%)", min_value=0.0, step=0.1, key="df_taux")
+                with fc3:
+                    df_ech  = st.date_input("Date echeance", key="df_ech")
+                    df_stat = st.selectbox("Statut", ["En cours","Rembourse","En retard","Renegocie"], key="df_stat")
+                    df_rem  = st.text_input("Remarque", key="df_rem")
+                if st.button("Enregistrer la dette", key="btn_df_save"):
+                    row = {"Date": str(df_date), "Creancier": sanitize_text(df_crea), "Type de dette": df_type,
+                           "Montant initial (MAD)": df_mi, "Montant rembourse (MAD)": df_mr, "Taux interet (%)": df_taux,
+                           "Date echeance": str(df_ech), "Statut": df_stat, "Remarque": sanitize_text(df_rem)}
                     try:
-                        new_df = edited_df_df[cols_df_show].copy()
-                        for col in ["Creancier","Remarque","Date","Date echeance"]:
-                            if col in new_df.columns:
-                                new_df[col] = new_df[col].apply(lambda x: sanitize_text(str(x)) if x else x)
-                        save_sheet(new_df, "Dette financiere")
-                        st.success("✅ Dettes financieres mises a jour.")
+                        append_row(row, "Dette financiere")
+                        st.success("Dette financiere enregistree.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-            # ── SUPPRESSION ──
-            with st.expander("🗑️ Supprimer une dette financiere", expanded=False):
-                if not df_df.empty:
-                    def label_df(r):
-                        return f"{r.get('Date','')} | {r.get('Creancier','')} | {float(r.get('Montant initial (MAD)',0)):,.0f} MAD | {r.get('Statut','')}"
-                    labels_df = [label_df(row) for _, row in df_df.iterrows()]
-                    choix_df_del = st.selectbox("Choisir la dette a supprimer", ["— selectionner —"]+labels_df, key="df_del_sel")
-                    if choix_df_del != "— selectionner —":
-                        idx_df_del = labels_df.index(choix_df_del)
-                        rs_df = df_df.iloc[idx_df_del]
-                        with st.container(border=True):
-                            st.markdown(f"**{h(str(rs_df.get('Creancier','')))}** — {float(rs_df.get('Montant initial (MAD)',0)):,.0f} MAD")
-                            st.caption(f"{rs_df.get('Date','')} · {rs_df.get('Statut','')}")
-                        confirm_df = st.checkbox("Je confirme la suppression", key="confirm_df_del")
-                        if st.button("Supprimer cette dette", key="btn_df_del"):
-                            if not confirm_df: st.warning("Coche la case de confirmation.")
-                            else:
-                                new_df_fin = df_df.drop(index=idx_df_del).reset_index(drop=True)
-                                try:
-                                    save_sheet(new_df_fin, "Dette financiere")
-                                    st.success("Dette supprimee.")
-                                    clear_data_cache(); st.rerun()
-                                except Exception as e: st.error(f"Erreur : {e}")
+            if not df_df.empty:
+                df_df_d = df_df.copy()
+                df_df_d["Restant (MAD)"] = (df_df_d["Montant initial (MAD)"] - df_df_d["Montant rembourse (MAD)"]).clip(lower=0)
+                sf_s = st.selectbox("Filtrer par statut", ["Tous"]+sorted(df_df_d["Statut"].dropna().unique().tolist()), key="sf_dfstat")
+                if sf_s != "Tous": df_df_d = df_df_d[df_df_d["Statut"]==sf_s]
+                st.markdown(f'<div class="info-count">{len(df_df_d)} dette(s)</div>', unsafe_allow_html=True)
+                st.dataframe(df_df_d, hide_index=True, use_container_width=True)
+                if len(df_df_d) > 0:
+                    fig = go.Figure()
+                    fig.add_trace(go.Bar(name="Initial", x=df_df_d["Creancier"], y=df_df_d["Montant initial (MAD)"], marker_color="#E8B4B0"))
+                    fig.add_trace(go.Bar(name="Rembourse", x=df_df_d["Creancier"], y=df_df_d["Montant rembourse (MAD)"], marker_color="#2D7A3A"))
+                    fig.update_layout(**PL, barmode="overlay", legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"))
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Aucune dette financiere enregistree.")
 
-            # ── TICKET PDF ──
-            with st.expander("🎫 Créer un ticket / Reçu PDF", expanded=False):
-                st.caption("Générez un reçu PDF pour une dette financière.")
-                if not df_df.empty:
-                    def label_df_ticket(r):
-                        return f"{r.get('Date','')} | {r.get('Creancier','')} | {float(r.get('Montant initial (MAD)',0)):,.0f} MAD"
-                    labels_ticket_df = [label_df_ticket(row) for _, row in df_df.iterrows()]
-                    sel_ticket_df = st.selectbox("Choisir la dette", ["— selectionner —"]+labels_ticket_df, key="ticket_df_sel")
-                    if sel_ticket_df != "— selectionner —":
-                        idx_tk = labels_ticket_df.index(sel_ticket_df)
-                        row_tk = df_df.iloc[idx_tk]
-                        ticket_num = f"DF-{str(idx_tk+1).zfill(4)}"
-                        ticket_data = {k: row_tk.get(k, "") for k in DF_COLS}
-                        restant = float(row_tk.get("Montant initial (MAD)",0)) - float(row_tk.get("Montant rembourse (MAD)",0))
-                        ticket_data["Restant (MAD)"] = f"{max(0, restant):,.2f}"
-                        ticket_download_button("Dette financiere", ticket_data, ticket_num, emis_par=username, key="dl_ticket_df")
-                else:
-                    st.info("Aucune dette financiere enregistree.")
+            st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un remboursement</div>', unsafe_allow_html=True)
+            if not df_df.empty:
+                creas = df_df["Creancier"].dropna().unique().tolist()
+                rc = st.selectbox("Creancier", ["— selectionner —"]+creas, key="rc_crea")
+                if rc != "— selectionner —":
+                    rm = st.number_input("Montant rembourse ce jour (MAD)", min_value=0.0, step=100.0, key="rc_montant")
+                    if st.button("Enregistrer remboursement", key="btn_rc"):
+                        df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] = (
+                            df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] + rm)
+                        try:
+                            save_sheet(df_df, "Dette financiere")
+                            st.success(f"Remboursement de {rm:,.0f} MAD enregistre.")
+                            clear_data_cache(); st.rerun()
+                        except Exception as e: st.error(f"Erreur : {e}")
 
-            st.dataframe(df_df_d, hide_index=True, use_container_width=True)
-            if len(df_df_d) > 0:
-                fig = go.Figure()
-                fig.add_trace(go.Bar(name="Initial", x=df_df_d["Creancier"], y=df_df_d["Montant initial (MAD)"], marker_color="#E8B4B0"))
-                fig.add_trace(go.Bar(name="Rembourse", x=df_df_d["Creancier"], y=df_df_d["Montant rembourse (MAD)"], marker_color="#2D7A3A"))
-                fig.update_layout(**PL, barmode="overlay", legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"))
-                st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("Aucune dette financiere enregistree.")
+        with sub2:
+            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Dette financiere</div>', unsafe_allow_html=True)
+            col_cfg_df = {
+                "Date": st.column_config.TextColumn("Date"),
+                "Creancier": st.column_config.TextColumn("Creancier"),
+                "Type de dette": st.column_config.SelectboxColumn("Type", options=["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], required=True),
+                "Montant initial (MAD)": st.column_config.NumberColumn("Montant initial", min_value=0.0, format="%.2f"),
+                "Montant rembourse (MAD)": st.column_config.NumberColumn("Rembourse", min_value=0.0, format="%.2f"),
+                "Taux interet (%)": st.column_config.NumberColumn("Taux (%)", min_value=0.0, format="%.2f"),
+                "Date echeance": st.column_config.TextColumn("Echeance"),
+                "Statut": st.column_config.SelectboxColumn("Statut", options=["En cours","Rembourse","En retard","Renegocie"], required=True),
+                "Remarque": st.column_config.TextColumn("Remarque"),
+            }
+            filter_df = [
+                ("Statut", "Statut", sorted(df_df["Statut"].dropna().unique().tolist()) if not df_df.empty else [])
+            ]
+            render_finance_inline_editor(df_df, "Dette financiere", DF_COLS, col_cfg_df,
+                ["Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)"],
+                "edit_df", filter_df)
 
-        st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un remboursement</div>', unsafe_allow_html=True)
-        if not df_df.empty:
-            creas = df_df["Creancier"].dropna().unique().tolist()
-            rc = st.selectbox("Creancier", ["— selectionner —"]+creas, key="rc_crea")
-            if rc != "— selectionner —":
-                rm = st.number_input("Montant rembourse ce jour (MAD)", min_value=0.0, step=100.0, key="rc_montant")
-                if st.button("Enregistrer remboursement", key="btn_rc"):
-                    df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] = (
-                        df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] + rm)
-                    try:
-                        save_sheet(df_df, "Dette financiere")
-                        st.success(f"Remboursement de {rm:,.0f} MAD enregistre.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e: st.error(f"Erreur : {e}")
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 2 — DETTE FOURNISSEUR
-    # ──────────────────────────────────────────────────────────────────────────
+    # ── TAB 2: DETTE FOURNISSEUR ───────────────────────────────────────────────
     with ftab2:
         st.markdown('<div class="section-title">Dette fournisseur</div>', unsafe_allow_html=True)
         st.caption("Ce que vous devez a vos fournisseurs pour des achats non encore regles.")
 
-        with st.expander("➕ Ajouter une dette fournisseur", expanded=False):
-            ff1, ff2, ff3 = st.columns(3, gap="large")
-            with ff1:
-                dfo_date = st.date_input("Date", datetime.now(), key="dfo_date")
-                dfo_four = st.text_input("Fournisseur", key="dfo_four", placeholder="Nom du fournisseur")
-                dfo_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="dfo_lot")
-            with ff2:
-                dfo_desc = st.text_input("Description", key="dfo_desc")
-                dfo_du   = st.number_input("Montant du (MAD)", min_value=0.0, step=100.0, key="dfo_du")
-                dfo_pay  = st.number_input("Deja paye (MAD)", min_value=0.0, step=100.0, key="dfo_pay")
-            with ff3:
-                dfo_ech  = st.date_input("Date echeance", key="dfo_ech")
-                dfo_stat = st.selectbox("Statut", ["A payer","Partiellement paye","Solde","En litige"], key="dfo_stat")
-                dfo_rem  = st.text_input("Remarque", key="dfo_rem")
-            if st.button("Enregistrer la dette fournisseur", key="btn_dfo_save"):
-                row = {"Date": str(dfo_date), "Fournisseur": sanitize_text(dfo_four),
-                       "Description": sanitize_text(dfo_desc), "Lot": sanitize_text(dfo_lot),
-                       "Montant du (MAD)": dfo_du, "Montant paye (MAD)": dfo_pay,
-                       "Date echeance": str(dfo_ech), "Statut": dfo_stat, "Remarque": sanitize_text(dfo_rem)}
-                try:
-                    append_row(row, "Dette fournisseur")
-                    st.success("Dette fournisseur enregistree.")
-                    clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur : {e}")
+        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
 
-        if not df_dfo.empty:
-            df_dfo_d = df_dfo.copy()
-            df_dfo_d["Restant (MAD)"] = (df_dfo_d["Montant du (MAD)"] - df_dfo_d["Montant paye (MAD)"]).clip(lower=0)
-            col_f1, col_f2 = st.columns(2)
-            with col_f1: fs = st.selectbox("Statut", ["Tous"]+sorted(df_dfo_d["Statut"].dropna().unique().tolist()), key="ffo_s")
-            with col_f2: fl = st.selectbox("Lot", ["Tous"]+sorted(df_dfo_d["Lot"].dropna().astype(str).unique().tolist()), key="ffo_l")
-            if fs != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Statut"]==fs]
-            if fl != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Lot"]==fl]
-            st.markdown(f'<div class="info-count">{len(df_dfo_d)} dette(s) fournisseur</div>', unsafe_allow_html=True)
-
-            # ── EDITION INLINE ──
-            with st.expander("✏️ Modifier les dettes fournisseurs", expanded=False):
-                st.caption("Cliquez sur une cellule pour modifier directement.")
-                df_dfo_edit = df_dfo.copy()
-                df_dfo_edit.index = range(len(df_dfo_edit))
-                df_dfo_edit["_orig_idx"] = df_dfo_edit.index
-                cols_dfo_show = [c for c in DFO_COLS if c in df_dfo_edit.columns]
-                col_cfg_dfo = {
-                    "Date": st.column_config.TextColumn("Date"),
-                    "Fournisseur": st.column_config.TextColumn("Fournisseur"),
-                    "Description": st.column_config.TextColumn("Description"),
-                    "Lot": st.column_config.TextColumn("Lot"),
-                    "Montant du (MAD)": st.column_config.NumberColumn("Montant du", min_value=0.0, format="%.2f"),
-                    "Montant paye (MAD)": st.column_config.NumberColumn("Montant paye", min_value=0.0, format="%.2f"),
-                    "Date echeance": st.column_config.TextColumn("Echeance"),
-                    "Statut": st.column_config.SelectboxColumn("Statut",
-                        options=["A payer","Partiellement paye","Solde","En litige"], required=True),
-                    "Remarque": st.column_config.TextColumn("Remarque"),
-                }
-                edited_dfo = st.data_editor(
-                    df_dfo_edit[cols_dfo_show + ["_orig_idx"]],
-                    column_config=col_cfg_dfo,
-                    hide_index=True, use_container_width=True, num_rows="fixed",
-                    column_order=cols_dfo_show, key="editor_dette_fourn"
-                )
-                if st.button("💾 Sauvegarder les modifications", key="btn_save_dette_fourn"):
+        with sub1:
+            with st.expander("➕ Ajouter une dette fournisseur", expanded=False):
+                ff1, ff2, ff3 = st.columns(3, gap="large")
+                with ff1:
+                    dfo_date = st.date_input("Date", datetime.now(), key="dfo_date")
+                    dfo_four = st.text_input("Fournisseur", key="dfo_four", placeholder="Nom du fournisseur")
+                    dfo_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="dfo_lot")
+                with ff2:
+                    dfo_desc = st.text_input("Description", key="dfo_desc")
+                    dfo_du   = st.number_input("Montant du (MAD)", min_value=0.0, step=100.0, key="dfo_du")
+                    dfo_pay  = st.number_input("Deja paye (MAD)", min_value=0.0, step=100.0, key="dfo_pay")
+                with ff3:
+                    dfo_ech  = st.date_input("Date echeance", key="dfo_ech")
+                    dfo_stat = st.selectbox("Statut", ["A payer","Partiellement paye","Solde","En litige"], key="dfo_stat")
+                    dfo_rem  = st.text_input("Remarque", key="dfo_rem")
+                if st.button("Enregistrer la dette fournisseur", key="btn_dfo_save"):
+                    row = {"Date": str(dfo_date), "Fournisseur": sanitize_text(dfo_four),
+                           "Description": sanitize_text(dfo_desc), "Lot": sanitize_text(dfo_lot),
+                           "Montant du (MAD)": dfo_du, "Montant paye (MAD)": dfo_pay,
+                           "Date echeance": str(dfo_ech), "Statut": dfo_stat, "Remarque": sanitize_text(dfo_rem)}
                     try:
-                        new_dfo = edited_dfo[cols_dfo_show].copy()
-                        for col in ["Fournisseur","Description","Lot","Remarque","Date","Date echeance"]:
-                            if col in new_dfo.columns:
-                                new_dfo[col] = new_dfo[col].apply(lambda x: sanitize_text(str(x)) if x else x)
-                        save_sheet(new_dfo, "Dette fournisseur")
-                        st.success("✅ Dettes fournisseurs mises a jour.")
+                        append_row(row, "Dette fournisseur")
+                        st.success("Dette fournisseur enregistree.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-            # ── SUPPRESSION ──
-            with st.expander("🗑️ Supprimer une dette fournisseur", expanded=False):
-                def label_dfo(r):
-                    return f"{r.get('Date','')} | {r.get('Fournisseur','')} | {float(r.get('Montant du (MAD)',0)):,.0f} MAD"
-                labels_dfo = [label_dfo(row) for _, row in df_dfo.iterrows()]
-                choix_dfo_del = st.selectbox("Choisir la dette a supprimer", ["— selectionner —"]+labels_dfo, key="dfo_del_sel")
-                if choix_dfo_del != "— selectionner —":
-                    idx_dfo_del = labels_dfo.index(choix_dfo_del)
-                    rs_dfo = df_dfo.iloc[idx_dfo_del]
-                    with st.container(border=True):
-                        st.markdown(f"**{h(str(rs_dfo.get('Fournisseur','')))}** — {float(rs_dfo.get('Montant du (MAD)',0)):,.0f} MAD")
-                        st.caption(f"{rs_dfo.get('Date','')} · {rs_dfo.get('Statut','')}")
-                    confirm_dfo = st.checkbox("Je confirme la suppression", key="confirm_dfo_del")
-                    if st.button("Supprimer cette dette", key="btn_dfo_del"):
-                        if not confirm_dfo: st.warning("Coche la case de confirmation.")
-                        else:
-                            new_dfo_del = df_dfo.drop(index=idx_dfo_del).reset_index(drop=True)
-                            try:
-                                save_sheet(new_dfo_del, "Dette fournisseur")
-                                st.success("Dette fournisseur supprimee.")
-                                clear_data_cache(); st.rerun()
-                            except Exception as e: st.error(f"Erreur : {e}")
+            if not df_dfo.empty:
+                df_dfo_d = df_dfo.copy()
+                df_dfo_d["Restant (MAD)"] = (df_dfo_d["Montant du (MAD)"] - df_dfo_d["Montant paye (MAD)"]).clip(lower=0)
+                col_f1, col_f2 = st.columns(2)
+                with col_f1: fs = st.selectbox("Statut", ["Tous"]+sorted(df_dfo_d["Statut"].dropna().unique().tolist()), key="ffo_s")
+                with col_f2: fl = st.selectbox("Lot", ["Tous"]+sorted(df_dfo_d["Lot"].dropna().astype(str).unique().tolist()), key="ffo_l")
+                if fs != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Statut"]==fs]
+                if fl != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Lot"]==fl]
+                st.markdown(f'<div class="info-count">{len(df_dfo_d)} dette(s) fournisseur</div>', unsafe_allow_html=True)
+                st.dataframe(df_dfo_d, hide_index=True, use_container_width=True)
+                st.markdown('<div class="section-title" style="font-size:1rem">Resume par fournisseur</div>', unsafe_allow_html=True)
+                res = df_dfo.groupby("Fournisseur").apply(lambda x: pd.Series({
+                    "Total du": x["Montant du (MAD)"].sum(), "Total paye": x["Montant paye (MAD)"].sum(),
+                    "Restant": (x["Montant du (MAD)"] - x["Montant paye (MAD)"]).clip(lower=0).sum(),
+                }), include_groups=False).reset_index()
+                st.dataframe(res, hide_index=True, use_container_width=True)
+            else:
+                st.info("Aucune dette fournisseur enregistree.")
 
-            # ── TICKET PDF ──
-            with st.expander("🎫 Créer un ticket / Reçu PDF", expanded=False):
-                st.caption("Générez un reçu PDF pour une dette fournisseur.")
-                def label_dfo_ticket(r):
-                    return f"{r.get('Date','')} | {r.get('Fournisseur','')} | {float(r.get('Montant du (MAD)',0)):,.0f} MAD"
-                labels_tk_dfo = [label_dfo_ticket(row) for _, row in df_dfo.iterrows()]
-                sel_tk_dfo = st.selectbox("Choisir la dette", ["— selectionner —"]+labels_tk_dfo, key="ticket_dfo_sel")
-                if sel_tk_dfo != "— selectionner —":
-                    idx_tk_dfo = labels_tk_dfo.index(sel_tk_dfo)
-                    row_tk_dfo = df_dfo.iloc[idx_tk_dfo]
-                    ticket_num_dfo = f"DFO-{str(idx_tk_dfo+1).zfill(4)}"
-                    ticket_data_dfo = {k: row_tk_dfo.get(k, "") for k in DFO_COLS}
-                    restant_dfo = float(row_tk_dfo.get("Montant du (MAD)",0)) - float(row_tk_dfo.get("Montant paye (MAD)",0))
-                    ticket_data_dfo["Restant (MAD)"] = f"{max(0, restant_dfo):,.2f}"
-                    ticket_download_button("Dette fournisseur", ticket_data_dfo, ticket_num_dfo, emis_par=username, key="dl_ticket_dfo")
+            st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un paiement fournisseur</div>', unsafe_allow_html=True)
+            if not df_dfo.empty:
+                fours = df_dfo["Fournisseur"].dropna().unique().tolist()
+                pf = st.selectbox("Fournisseur", ["— selectionner —"]+fours, key="pf_four")
+                if pf != "— selectionner —":
+                    pm = st.number_input("Montant paye ce jour (MAD)", min_value=0.0, step=100.0, key="pf_montant")
+                    if st.button("Enregistrer le paiement", key="btn_pf"):
+                        mask = df_dfo["Fournisseur"] == pf
+                        df_dfo.loc[mask, "Montant paye (MAD)"] = df_dfo.loc[mask, "Montant paye (MAD)"] + pm
+                        for i in df_dfo[mask].index:
+                            r = df_dfo.at[i,"Montant du (MAD)"] - df_dfo.at[i,"Montant paye (MAD)"]
+                            if r <= 0: df_dfo.at[i,"Statut"] = "Solde"
+                            elif df_dfo.at[i,"Montant paye (MAD)"] > 0: df_dfo.at[i,"Statut"] = "Partiellement paye"
+                        try:
+                            save_sheet(df_dfo, "Dette fournisseur")
+                            st.success(f"Paiement de {pm:,.0f} MAD enregistre.")
+                            clear_data_cache(); st.rerun()
+                        except Exception as e: st.error(f"Erreur : {e}")
 
-            st.dataframe(df_dfo_d, hide_index=True, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Resume par fournisseur</div>', unsafe_allow_html=True)
-            res = df_dfo.groupby("Fournisseur").apply(lambda x: pd.Series({
-                "Total du": x["Montant du (MAD)"].sum(), "Total paye": x["Montant paye (MAD)"].sum(),
-                "Restant": (x["Montant du (MAD)"] - x["Montant paye (MAD)"]).clip(lower=0).sum(),
-            }), include_groups=False).reset_index()
-            st.dataframe(res, hide_index=True, use_container_width=True)
-        else:
-            st.info("Aucune dette fournisseur enregistree.")
+        with sub2:
+            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Dette fournisseur</div>', unsafe_allow_html=True)
+            col_cfg_dfo = {
+                "Date": st.column_config.TextColumn("Date"),
+                "Fournisseur": st.column_config.TextColumn("Fournisseur"),
+                "Description": st.column_config.TextColumn("Description"),
+                "Lot": st.column_config.TextColumn("Lot"),
+                "Montant du (MAD)": st.column_config.NumberColumn("Montant du", min_value=0.0, format="%.2f"),
+                "Montant paye (MAD)": st.column_config.NumberColumn("Paye", min_value=0.0, format="%.2f"),
+                "Date echeance": st.column_config.TextColumn("Echeance"),
+                "Statut": st.column_config.SelectboxColumn("Statut", options=["A payer","Partiellement paye","Solde","En litige"], required=True),
+                "Remarque": st.column_config.TextColumn("Remarque"),
+            }
+            filter_dfo = [
+                ("Statut", "Statut", sorted(df_dfo["Statut"].dropna().unique().tolist()) if not df_dfo.empty else []),
+                ("Lot", "Lot", sorted(df_dfo["Lot"].dropna().astype(str).unique().tolist()) if not df_dfo.empty else []),
+            ]
+            render_finance_inline_editor(df_dfo, "Dette fournisseur", DFO_COLS, col_cfg_dfo,
+                ["Montant du (MAD)","Montant paye (MAD)"], "edit_dfo", filter_dfo)
 
-        st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un paiement fournisseur</div>', unsafe_allow_html=True)
-        if not df_dfo.empty:
-            fours = df_dfo["Fournisseur"].dropna().unique().tolist()
-            pf = st.selectbox("Fournisseur", ["— selectionner —"]+fours, key="pf_four")
-            if pf != "— selectionner —":
-                pm = st.number_input("Montant paye ce jour (MAD)", min_value=0.0, step=100.0, key="pf_montant")
-                if st.button("Enregistrer le paiement", key="btn_pf"):
-                    mask = df_dfo["Fournisseur"] == pf
-                    df_dfo.loc[mask, "Montant paye (MAD)"] = df_dfo.loc[mask, "Montant paye (MAD)"] + pm
-                    for i in df_dfo[mask].index:
-                        r = df_dfo.at[i,"Montant du (MAD)"] - df_dfo.at[i,"Montant paye (MAD)"]
-                        if r <= 0: df_dfo.at[i,"Statut"] = "Solde"
-                        elif df_dfo.at[i,"Montant paye (MAD)"] > 0: df_dfo.at[i,"Statut"] = "Partiellement paye"
-                    try:
-                        save_sheet(df_dfo, "Dette fournisseur")
-                        st.success(f"Paiement de {pm:,.0f} MAD enregistre.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e: st.error(f"Erreur : {e}")
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 3 — CAISSE
-    # ──────────────────────────────────────────────────────────────────────────
+    # ── TAB 3: CAISSE ──────────────────────────────────────────────────────────
     with ftab3:
         st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
-        st.caption("Suivi de toutes les entrees et sorties d\'argent en caisse.")
+        st.caption("Suivi de toutes les entrees et sorties d'argent en caisse.")
+
         c_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
         c_sol = c_in - c_out
@@ -1042,149 +1066,95 @@ def render_finance_tab(lots_list):
           </div>
         </div>""", unsafe_allow_html=True)
 
-        with st.expander("➕ Nouvelle operation de caisse", expanded=False):
-            cc1, cc2, cc3 = st.columns(3, gap="large")
-            with cc1:
-                ca_date = st.date_input("Date", datetime.now(), key="ca_date")
-                ca_type = st.selectbox("Type operation", ["ENTREE","SORTIE"], key="ca_type")
-                ca_cat  = st.selectbox("Categorie", ["Vente marchandise","Achat marchandise","Loyer","Salaire",
-                                                      "Transport","Frais bancaires","Remboursement dette",
-                                                      "Encaissement client","Paiement fournisseur","Divers"], key="ca_cat")
-            with cc2:
-                ca_desc = st.text_input("Description", key="ca_desc")
-                ca_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="ca_mont")
-                ca_mode = st.selectbox("Mode", ["Especes","Virement","Cheque","Mobile Payment","Autre"], key="ca_mode")
-            with cc3:
-                ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
-                ca_rem  = st.text_input("Remarque", key="ca_rem")
-            if st.button("Enregistrer l\'operation", key="btn_ca_save"):
-                row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
-                       "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
-                       "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
-                try:
-                    append_row(row, "Caisse")
-                    st.success("Operation de caisse enregistree.")
-                    clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur : {e}")
+        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
 
-        if not df_ca.empty:
-            ca1, ca2, ca3 = st.columns(3)
-            with ca1: fca_t = st.selectbox("Type", ["Tous","ENTREE","SORTIE"], key="fca_t")
-            with ca2:
-                cats = ["Toutes"]+sorted(df_ca["Categorie"].dropna().unique().tolist())
-                fca_c = st.selectbox("Categorie", cats, key="fca_c")
-            with ca3:
-                lots_ca = ["Tous"]+sorted([x for x in df_ca["Lot"].dropna().astype(str).unique() if x and x!="—"])
-                fca_l = st.selectbox("Lot", lots_ca, key="fca_l")
-            df_ca_d = df_ca.copy()
-            if fca_t != "Tous": df_ca_d = df_ca_d[df_ca_d["Type operation"]==fca_t]
-            if fca_c != "Toutes": df_ca_d = df_ca_d[df_ca_d["Categorie"]==fca_c]
-            if fca_l != "Tous": df_ca_d = df_ca_d[df_ca_d["Lot"]==fca_l]
-            st.markdown(f'<div class="info-count">{len(df_ca_d)} operation(s)</div>', unsafe_allow_html=True)
-
-            # ── EDITION INLINE ──
-            with st.expander("✏️ Modifier les opérations de caisse", expanded=False):
-                st.caption("Modifiez directement les cellules du tableau.")
-                df_ca_edit = df_ca.copy()
-                df_ca_edit.index = range(len(df_ca_edit))
-                df_ca_edit["_orig_idx"] = df_ca_edit.index
-                cols_ca_show = [c for c in CA_COLS if c in df_ca_edit.columns]
-                col_cfg_ca_edit = {
-                    "Date": st.column_config.TextColumn("Date"),
-                    "Type operation": st.column_config.SelectboxColumn("Type", options=["ENTREE","SORTIE"], required=True),
-                    "Categorie": st.column_config.SelectboxColumn("Categorie", options=[
-                        "Vente marchandise","Achat marchandise","Loyer","Salaire","Transport",
-                        "Frais bancaires","Remboursement dette","Encaissement client","Paiement fournisseur","Divers"
-                    ], required=True),
-                    "Description": st.column_config.TextColumn("Description"),
-                    "Montant (MAD)": st.column_config.NumberColumn("Montant", min_value=0.0, format="%.2f"),
-                    "Mode": st.column_config.SelectboxColumn("Mode", options=["Especes","Virement","Cheque","Mobile Payment","Autre"]),
-                    "Lot": st.column_config.TextColumn("Lot"),
-                    "Remarque": st.column_config.TextColumn("Remarque"),
-                }
-                edited_ca = st.data_editor(
-                    df_ca_edit[cols_ca_show + ["_orig_idx"]],
-                    column_config=col_cfg_ca_edit,
-                    hide_index=True, use_container_width=True, num_rows="fixed",
-                    column_order=cols_ca_show, key="editor_caisse"
-                )
-                if st.button("💾 Sauvegarder les modifications", key="btn_save_caisse"):
+        with sub1:
+            with st.expander("➕ Nouvelle operation de caisse", expanded=False):
+                cc1, cc2, cc3 = st.columns(3, gap="large")
+                with cc1:
+                    ca_date = st.date_input("Date", datetime.now(), key="ca_date")
+                    ca_type = st.selectbox("Type operation", ["ENTREE","SORTIE"], key="ca_type")
+                    ca_cat  = st.selectbox("Categorie", ["Vente marchandise","Achat marchandise","Loyer","Salaire",
+                                                          "Transport","Frais bancaires","Remboursement dette",
+                                                          "Encaissement client","Paiement fournisseur","Divers"], key="ca_cat")
+                with cc2:
+                    ca_desc = st.text_input("Description", key="ca_desc")
+                    ca_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="ca_mont")
+                    ca_mode = st.selectbox("Mode", ["Especes","Virement","Cheque","Mobile Payment","Autre"], key="ca_mode")
+                with cc3:
+                    ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
+                    ca_rem  = st.text_input("Remarque", key="ca_rem")
+                if st.button("Enregistrer l'operation", key="btn_ca_save"):
+                    row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
+                           "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
+                           "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
                     try:
-                        new_ca = edited_ca[cols_ca_show].copy()
-                        for col in ["Description","Lot","Remarque","Date"]:
-                            if col in new_ca.columns:
-                                new_ca[col] = new_ca[col].apply(lambda x: sanitize_text(str(x)) if x else x)
-                        save_sheet(new_ca, "Caisse")
-                        st.success("✅ Operations de caisse mises a jour.")
+                        append_row(row, "Caisse")
+                        st.success("Operation de caisse enregistree.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-            # ── SUPPRESSION ──
-            with st.expander("🗑️ Supprimer une opération de caisse", expanded=False):
-                def label_ca(r):
-                    return f"{r.get('Date','')} | {r.get('Type operation','')} | {r.get('Categorie','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-                labels_ca = [label_ca(row) for _, row in df_ca.iterrows()]
-                choix_ca_del = st.selectbox("Choisir l'operation", ["— selectionner —"]+labels_ca, key="ca_del_sel")
-                if choix_ca_del != "— selectionner —":
-                    idx_ca_del = labels_ca.index(choix_ca_del)
-                    rs_ca = df_ca.iloc[idx_ca_del]
-                    with st.container(border=True):
-                        st.markdown(f"**{rs_ca.get('Type operation','')} — {rs_ca.get('Categorie','')}** — {float(rs_ca.get('Montant (MAD)',0)):,.0f} MAD")
-                        st.caption(f"{rs_ca.get('Date','')} · {rs_ca.get('Description','')}")
-                    confirm_ca = st.checkbox("Je confirme la suppression", key="confirm_ca_del")
-                    if st.button("Supprimer cette operation", key="btn_ca_del"):
-                        if not confirm_ca: st.warning("Coche la case de confirmation.")
-                        else:
-                            new_ca_del = df_ca.drop(index=idx_ca_del).reset_index(drop=True)
-                            try:
-                                save_sheet(new_ca_del, "Caisse")
-                                st.success("Operation supprimee.")
-                                clear_data_cache(); st.rerun()
-                            except Exception as e: st.error(f"Erreur : {e}")
+            if not df_ca.empty:
+                ca1, ca2, ca3 = st.columns(3)
+                with ca1: fca_t = st.selectbox("Type", ["Tous","ENTREE","SORTIE"], key="fca_t")
+                with ca2:
+                    cats = ["Toutes"]+sorted(df_ca["Categorie"].dropna().unique().tolist())
+                    fca_c = st.selectbox("Categorie", cats, key="fca_c")
+                with ca3:
+                    lots_ca = ["Tous"]+sorted([x for x in df_ca["Lot"].dropna().astype(str).unique() if x and x!="—"])
+                    fca_l = st.selectbox("Lot", lots_ca, key="fca_l")
+                df_ca_d = df_ca.copy()
+                if fca_t != "Tous": df_ca_d = df_ca_d[df_ca_d["Type operation"]==fca_t]
+                if fca_c != "Toutes": df_ca_d = df_ca_d[df_ca_d["Categorie"]==fca_c]
+                if fca_l != "Tous": df_ca_d = df_ca_d[df_ca_d["Lot"]==fca_l]
+                st.markdown(f'<div class="info-count">{len(df_ca_d)} operation(s)</div>', unsafe_allow_html=True)
+                st.dataframe(df_ca_d, hide_index=True, use_container_width=True)
+                st.markdown('<div class="section-title" style="font-size:1rem">Evolution de la caisse</div>', unsafe_allow_html=True)
+                df_ca_t = df_ca.copy()
+                df_ca_t["Date"] = pd.to_datetime(df_ca_t["Date"], errors="coerce")
+                df_ca_t = df_ca_t.dropna(subset=["Date"]).sort_values("Date")
+                df_ca_t["Flux"] = df_ca_t.apply(lambda r: r["Montant (MAD)"] if r["Type operation"]=="ENTREE" else -r["Montant (MAD)"], axis=1)
+                df_ca_t["Solde cumule"] = df_ca_t["Flux"].cumsum()
+                if not df_ca_t.empty:
+                    fig_ca = go.Figure()
+                    fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumule"],
+                        mode="lines+markers", name="Solde cumule",
+                        line=dict(color="#1565C0",width=2), fill="tozeroy", fillcolor="rgba(21,101,192,0.08)"))
+                    fig_ca.add_trace(go.Bar(x=df_ca_t["Date"], y=df_ca_t["Flux"], name="Flux",
+                        marker_color=["#2D7A3A" if v>=0 else "#B03A2E" for v in df_ca_t["Flux"]], opacity=0.5))
+                    fig_ca.update_layout(**PL, legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"),
+                        xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
+                    st.plotly_chart(fig_ca, use_container_width=True)
+                st.markdown('<div class="section-title" style="font-size:1rem">Resume par categorie</div>', unsafe_allow_html=True)
+                res_ca = df_ca.groupby(["Categorie","Type operation"])["Montant (MAD)"].sum().reset_index()
+                st.dataframe(res_ca, hide_index=True, use_container_width=True)
+            else:
+                st.info("Aucune operation de caisse enregistree.")
 
-            # ── TICKET PDF ──
-            with st.expander("🎫 Créer un ticket / Reçu PDF", expanded=False):
-                st.caption("Générez un reçu PDF pour une opération de caisse.")
-                def label_ca_ticket(r):
-                    return f"{r.get('Date','')} | {r.get('Type operation','')} | {r.get('Description','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-                labels_tk_ca = [label_ca_ticket(row) for _, row in df_ca.iterrows()]
-                sel_tk_ca = st.selectbox("Choisir l'operation", ["— selectionner —"]+labels_tk_ca, key="ticket_ca_sel")
-                if sel_tk_ca != "— selectionner —":
-                    idx_tk_ca = labels_tk_ca.index(sel_tk_ca)
-                    row_tk_ca = df_ca.iloc[idx_tk_ca]
-                    ticket_num_ca = f"CA-{str(idx_tk_ca+1).zfill(4)}"
-                    ticket_data_ca = {k: row_tk_ca.get(k, "") for k in CA_COLS}
-                    ticket_download_button("Caisse", ticket_data_ca, ticket_num_ca, emis_par=username, key="dl_ticket_ca")
+        with sub2:
+            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Caisse</div>', unsafe_allow_html=True)
+            col_cfg_ca = {
+                "Date": st.column_config.TextColumn("Date"),
+                "Type operation": st.column_config.SelectboxColumn("Type", options=["ENTREE","SORTIE"], required=True),
+                "Categorie": st.column_config.SelectboxColumn("Categorie", options=["Vente marchandise","Achat marchandise","Loyer","Salaire","Transport","Frais bancaires","Remboursement dette","Encaissement client","Paiement fournisseur","Divers"], required=True),
+                "Description": st.column_config.TextColumn("Description"),
+                "Montant (MAD)": st.column_config.NumberColumn("Montant", min_value=0.0, format="%.2f"),
+                "Mode": st.column_config.SelectboxColumn("Mode", options=["Especes","Virement","Cheque","Mobile Payment","Autre"], required=True),
+                "Lot": st.column_config.TextColumn("Lot"),
+                "Remarque": st.column_config.TextColumn("Remarque"),
+            }
+            filter_ca = [
+                ("Type", "Type operation", ["ENTREE","SORTIE"]),
+                ("Categorie", "Categorie", sorted(df_ca["Categorie"].dropna().unique().tolist()) if not df_ca.empty else []),
+            ]
+            render_finance_inline_editor(df_ca, "Caisse", CA_COLS, col_cfg_ca,
+                ["Montant (MAD)"], "edit_ca", filter_ca)
 
-            st.dataframe(df_ca_d, hide_index=True, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Evolution de la caisse</div>', unsafe_allow_html=True)
-            df_ca_t = df_ca.copy()
-            df_ca_t["Date"] = pd.to_datetime(df_ca_t["Date"], errors="coerce")
-            df_ca_t = df_ca_t.dropna(subset=["Date"]).sort_values("Date")
-            df_ca_t["Flux"] = df_ca_t.apply(lambda r: r["Montant (MAD)"] if r["Type operation"]=="ENTREE" else -r["Montant (MAD)"], axis=1)
-            df_ca_t["Solde cumule"] = df_ca_t["Flux"].cumsum()
-            if not df_ca_t.empty:
-                fig_ca = go.Figure()
-                fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumule"],
-                    mode="lines+markers", name="Solde cumule",
-                    line=dict(color="#1565C0",width=2), fill="tozeroy", fillcolor="rgba(21,101,192,0.08)"))
-                fig_ca.add_trace(go.Bar(x=df_ca_t["Date"], y=df_ca_t["Flux"], name="Flux",
-                    marker_color=["#2D7A3A" if v>=0 else "#B03A2E" for v in df_ca_t["Flux"]], opacity=0.5))
-                fig_ca.update_layout(**PL, legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"),
-                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
-                st.plotly_chart(fig_ca, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Resume par categorie</div>', unsafe_allow_html=True)
-            res_ca = df_ca.groupby(["Categorie","Type operation"])["Montant (MAD)"].sum().reset_index()
-            st.dataframe(res_ca, hide_index=True, use_container_width=True)
-        else:
-            st.info("Aucune operation de caisse enregistree.")
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 4 — ENCAISSEMENT
-    # ──────────────────────────────────────────────────────────────────────────
+    # ── TAB 4: ENCAISSEMENT ────────────────────────────────────────────────────
     with ftab4:
         st.markdown('<div class="section-title">Encaissement</div>', unsafe_allow_html=True)
         st.caption("Suivi de tous les paiements recus de vos clients et partenaires.")
+
         enc_tot  = df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0
         enc_att  = df_enc[df_enc["Statut"]=="En attente"]["Montant (MAD)"].sum() if not df_enc.empty else 0
         enc_recu = df_enc[df_enc["Statut"]=="Recu"]["Montant (MAD)"].sum() if not df_enc.empty else 0
@@ -1204,139 +1174,185 @@ def render_finance_tab(lots_list):
           </div>
         </div>""", unsafe_allow_html=True)
 
-        with st.expander("➕ Enregistrer un encaissement", expanded=False):
-            ec1, ec2, ec3 = st.columns(3, gap="large")
-            with ec1:
-                en_date = st.date_input("Date", datetime.now(), key="en_date")
-                en_pay  = st.text_input("Payeur / Client", key="en_pay", placeholder="Nom du client")
-                en_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="en_lot")
-            with ec2:
-                en_desc = st.text_input("Description", key="en_desc")
-                en_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="en_mont")
-                en_mode = st.selectbox("Mode de paiement", ["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], key="en_mode")
-            with ec3:
-                en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
-                en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
-                en_rem  = st.text_input("Remarque", key="en_rem")
-            if st.button("Enregistrer l\'encaissement", key="btn_en_save"):
-                row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
-                       "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
-                       "Mode de paiement": en_mode, "Type encaissement": en_type,
-                       "Statut": en_stat, "Remarque": sanitize_text(en_rem)}
-                try:
-                    append_row(row, "Encaissement")
-                    st.success("Encaissement enregistre.")
-                    clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur : {e}")
+        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
 
-        if not df_enc.empty:
-            ce1, ce2, ce3 = st.columns(3)
-            with ce1: fes = st.selectbox("Statut", ["Tous"]+sorted(df_enc["Statut"].dropna().unique().tolist()), key="fes")
-            with ce2:
-                lots_enc = ["Tous"]+sorted([x for x in df_enc["Lot"].dropna().astype(str).unique() if x and x!="—"])
-                fel = st.selectbox("Lot", lots_enc, key="fel")
-            with ce3:
-                tet = ["Tous"]+sorted(df_enc["Type encaissement"].dropna().unique().tolist())
-                fet = st.selectbox("Type", tet, key="fet")
-            df_enc_d = df_enc.copy()
-            if fes != "Tous": df_enc_d = df_enc_d[df_enc_d["Statut"]==fes]
-            if fel != "Tous": df_enc_d = df_enc_d[df_enc_d["Lot"]==fel]
-            if fet != "Tous": df_enc_d = df_enc_d[df_enc_d["Type encaissement"]==fet]
-            st.markdown(f'<div class="info-count">{len(df_enc_d)} encaissement(s)</div>', unsafe_allow_html=True)
-
-            # ── EDITION INLINE ──
-            with st.expander("✏️ Modifier les encaissements", expanded=False):
-                st.caption("Modifiez directement les cellules du tableau.")
-                df_enc_edit = df_enc.copy()
-                df_enc_edit.index = range(len(df_enc_edit))
-                df_enc_edit["_orig_idx"] = df_enc_edit.index
-                cols_enc_show = [c for c in ENC_COLS if c in df_enc_edit.columns]
-                col_cfg_enc_edit = {
-                    "Date": st.column_config.TextColumn("Date"),
-                    "Payeur": st.column_config.TextColumn("Payeur"),
-                    "Lot": st.column_config.TextColumn("Lot"),
-                    "Description": st.column_config.TextColumn("Description"),
-                    "Montant (MAD)": st.column_config.NumberColumn("Montant", min_value=0.0, format="%.2f"),
-                    "Mode de paiement": st.column_config.SelectboxColumn("Mode", options=[
-                        "Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"
-                    ]),
-                    "Type encaissement": st.column_config.SelectboxColumn("Type", options=[
-                        "Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"
-                    ], required=True),
-                    "Statut": st.column_config.SelectboxColumn("Statut", options=[
-                        "Recu","En attente","Partiellement recu","Annule"
-                    ], required=True),
-                    "Remarque": st.column_config.TextColumn("Remarque"),
-                }
-                edited_enc = st.data_editor(
-                    df_enc_edit[cols_enc_show + ["_orig_idx"]],
-                    column_config=col_cfg_enc_edit,
-                    hide_index=True, use_container_width=True, num_rows="fixed",
-                    column_order=cols_enc_show, key="editor_encaissement"
-                )
-                if st.button("💾 Sauvegarder les modifications", key="btn_save_encaissement"):
+        with sub1:
+            with st.expander("➕ Enregistrer un encaissement", expanded=False):
+                ec1, ec2, ec3 = st.columns(3, gap="large")
+                with ec1:
+                    en_date = st.date_input("Date", datetime.now(), key="en_date")
+                    en_pay  = st.text_input("Payeur / Client", key="en_pay", placeholder="Nom du client")
+                    en_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="en_lot")
+                with ec2:
+                    en_desc = st.text_input("Description", key="en_desc")
+                    en_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="en_mont")
+                    en_mode = st.selectbox("Mode de paiement", ["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], key="en_mode")
+                with ec3:
+                    en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
+                    en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
+                    en_rem  = st.text_input("Remarque", key="en_rem")
+                if st.button("Enregistrer l'encaissement", key="btn_en_save"):
+                    row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
+                           "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
+                           "Mode de paiement": en_mode, "Type encaissement": en_type,
+                           "Statut": en_stat, "Remarque": sanitize_text(en_rem)}
                     try:
-                        new_enc = edited_enc[cols_enc_show].copy()
-                        for col in ["Payeur","Lot","Description","Remarque","Date"]:
-                            if col in new_enc.columns:
-                                new_enc[col] = new_enc[col].apply(lambda x: sanitize_text(str(x)) if x else x)
-                        save_sheet(new_enc, "Encaissement")
-                        st.success("✅ Encaissements mis a jour.")
+                        append_row(row, "Encaissement")
+                        st.success("Encaissement enregistre.")
                         clear_data_cache(); st.rerun()
                     except Exception as e: st.error(f"Erreur : {e}")
 
-            # ── SUPPRESSION ──
-            with st.expander("🗑️ Supprimer un encaissement", expanded=False):
-                def label_enc(r):
-                    return f"{r.get('Date','')} | {r.get('Payeur','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD | {r.get('Statut','')}"
-                labels_enc_del = [label_enc(row) for _, row in df_enc.iterrows()]
-                choix_enc_del = st.selectbox("Choisir l'encaissement", ["— selectionner —"]+labels_enc_del, key="enc_del_sel")
-                if choix_enc_del != "— selectionner —":
-                    idx_enc_del = labels_enc_del.index(choix_enc_del)
-                    rs_enc = df_enc.iloc[idx_enc_del]
-                    with st.container(border=True):
-                        st.markdown(f"**{h(str(rs_enc.get('Payeur','')))}** — {float(rs_enc.get('Montant (MAD)',0)):,.0f} MAD")
-                        st.caption(f"{rs_enc.get('Date','')} · {rs_enc.get('Statut','')}")
-                    confirm_enc = st.checkbox("Je confirme la suppression", key="confirm_enc_del")
-                    if st.button("Supprimer cet encaissement", key="btn_enc_del"):
-                        if not confirm_enc: st.warning("Coche la case de confirmation.")
-                        else:
-                            new_enc_del = df_enc.drop(index=idx_enc_del).reset_index(drop=True)
-                            try:
-                                save_sheet(new_enc_del, "Encaissement")
-                                st.success("Encaissement supprime.")
-                                clear_data_cache(); st.rerun()
-                            except Exception as e: st.error(f"Erreur : {e}")
+            if not df_enc.empty:
+                ce1, ce2, ce3 = st.columns(3)
+                with ce1: fes = st.selectbox("Statut", ["Tous"]+sorted(df_enc["Statut"].dropna().unique().tolist()), key="fes")
+                with ce2:
+                    lots_enc = ["Tous"]+sorted([x for x in df_enc["Lot"].dropna().astype(str).unique() if x and x!="—"])
+                    fel = st.selectbox("Lot", lots_enc, key="fel")
+                with ce3:
+                    tet = ["Tous"]+sorted(df_enc["Type encaissement"].dropna().unique().tolist())
+                    fet = st.selectbox("Type", tet, key="fet")
+                df_enc_d = df_enc.copy()
+                if fes != "Tous": df_enc_d = df_enc_d[df_enc_d["Statut"]==fes]
+                if fel != "Tous": df_enc_d = df_enc_d[df_enc_d["Lot"]==fel]
+                if fet != "Tous": df_enc_d = df_enc_d[df_enc_d["Type encaissement"]==fet]
+                st.markdown(f'<div class="info-count">{len(df_enc_d)} encaissement(s)</div>', unsafe_allow_html=True)
+                st.dataframe(df_enc_d, hide_index=True, use_container_width=True)
+                enc_lot = df_enc.groupby("Lot")["Montant (MAD)"].sum().reset_index()
+                enc_lot = enc_lot[enc_lot["Lot"].astype(str) != "—"]
+                if not enc_lot.empty:
+                    st.markdown('<div class="section-title" style="font-size:1rem">Encaissement par lot</div>', unsafe_allow_html=True)
+                    fig_enc = go.Figure(go.Bar(x=enc_lot["Lot"], y=enc_lot["Montant (MAD)"],
+                        marker_color="#1565C0", hovertemplate="%{x}<br>%{y:,.0f} MAD<extra></extra>"))
+                    fig_enc.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
+                    st.plotly_chart(fig_enc, use_container_width=True)
+                st.markdown('<div class="section-title" style="font-size:1rem">Resume par client / payeur</div>', unsafe_allow_html=True)
+                res_enc = df_enc.groupby("Payeur").agg(Total=("Montant (MAD)","sum"), Nb=("Montant (MAD)","count")
+                    ).reset_index().sort_values("Total", ascending=False)
+                st.dataframe(res_enc, hide_index=True, use_container_width=True)
+            else:
+                st.info("Aucun encaissement enregistre.")
 
-            # ── TICKET PDF ──
-            with st.expander("🎫 Créer un ticket / Reçu PDF", expanded=False):
-                st.caption("Générez un reçu PDF pour un encaissement.")
-                def label_enc_ticket(r):
-                    return f"{r.get('Date','')} | {r.get('Payeur','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-                labels_tk_enc = [label_enc_ticket(row) for _, row in df_enc.iterrows()]
-                sel_tk_enc = st.selectbox("Choisir l'encaissement", ["— selectionner —"]+labels_tk_enc, key="ticket_enc_sel")
-                if sel_tk_enc != "— selectionner —":
-                    idx_tk_enc = labels_tk_enc.index(sel_tk_enc)
-                    row_tk_enc = df_enc.iloc[idx_tk_enc]
-                    ticket_num_enc = f"ENC-{str(idx_tk_enc+1).zfill(4)}"
-                    ticket_data_enc = {k: row_tk_enc.get(k, "") for k in ENC_COLS}
-                    ticket_download_button("Encaissement", ticket_data_enc, ticket_num_enc, emis_par=username, key="dl_ticket_enc")
+        with sub2:
+            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Encaissement</div>', unsafe_allow_html=True)
+            col_cfg_enc = {
+                "Date": st.column_config.TextColumn("Date"),
+                "Payeur": st.column_config.TextColumn("Payeur"),
+                "Lot": st.column_config.TextColumn("Lot"),
+                "Description": st.column_config.TextColumn("Description"),
+                "Montant (MAD)": st.column_config.NumberColumn("Montant", min_value=0.0, format="%.2f"),
+                "Mode de paiement": st.column_config.SelectboxColumn("Mode", options=["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], required=True),
+                "Type encaissement": st.column_config.SelectboxColumn("Type", options=["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], required=True),
+                "Statut": st.column_config.SelectboxColumn("Statut", options=["Recu","En attente","Partiellement recu","Annule"], required=True),
+                "Remarque": st.column_config.TextColumn("Remarque"),
+            }
+            filter_enc = [
+                ("Statut", "Statut", sorted(df_enc["Statut"].dropna().unique().tolist()) if not df_enc.empty else []),
+            ]
+            render_finance_inline_editor(df_enc, "Encaissement", ENC_COLS, col_cfg_enc,
+                ["Montant (MAD)"], "edit_enc", filter_enc)
 
-            st.dataframe(df_enc_d, hide_index=True, use_container_width=True)
-            enc_lot = df_enc.groupby("Lot")["Montant (MAD)"].sum().reset_index()
-            enc_lot = enc_lot[enc_lot["Lot"].astype(str) != "—"]
-            if not enc_lot.empty:
-                st.markdown('<div class="section-title" style="font-size:1rem">Encaissement par lot</div>', unsafe_allow_html=True)
-                fig_enc = go.Figure(go.Bar(x=enc_lot["Lot"], y=enc_lot["Montant (MAD)"],
-                    marker_color="#1565C0", hovertemplate="%{x}<br>%{y:,.0f} MAD<extra></extra>"))
-                fig_enc.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
-                st.plotly_chart(fig_enc, use_container_width=True)
-            st.markdown('<div class="section-title" style="font-size:1rem">Resume par client / payeur</div>', unsafe_allow_html=True)
-            res_enc = df_enc.groupby("Payeur").agg(Total=("Montant (MAD)","sum"), Nb=("Montant (MAD)","count")
-                ).reset_index().sort_values("Total", ascending=False)
-            st.dataframe(res_enc, hide_index=True, use_container_width=True)
-        else:
-            st.info("Aucun encaissement enregistre.")
+    # ── TAB 5: TICKET / RECU PDF ───────────────────────────────────────────────
+    with ftab5:
+        st.markdown('<div class="section-title">Créer un ticket / Reçu PDF</div>', unsafe_allow_html=True)
+        st.caption("Générez un reçu PDF professionnel à télécharger et imprimer.")
+
+        rc1, rc2, rc3 = st.columns(3, gap="large")
+        with rc1:
+            t_type = st.selectbox("Type de reçu", [
+                "ENCAISSEMENT", "PAIEMENT", "REMBOURSEMENT",
+                "DETTE FINANCIERE", "DETTE FOURNISSEUR", "CAISSE"
+            ], key="ticket_type")
+            t_date = st.date_input("Date", datetime.now(), key="ticket_date")
+            t_num  = st.text_input("Numéro de référence", value=f"REC-{datetime.now().strftime('%Y%m%d-%H%M')}", key="ticket_num")
+        with rc2:
+            t_emetteur = st.text_input("Émetteur / Société", value="MAHAL", key="ticket_emetteur")
+            t_dest     = st.text_input("Destinataire / Client", key="ticket_dest", placeholder="Nom du client ou fournisseur")
+            t_lot      = st.selectbox("Lot associé (optionnel)", ["—"] + lots_list, key="ticket_lot")
+        with rc3:
+            t_montant = st.number_input("Montant (MAD)", min_value=0.0, step=0.01, key="ticket_montant")
+            t_mode    = st.selectbox("Mode de paiement", ["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], key="ticket_mode")
+            t_ref     = st.text_input("Référence interne", key="ticket_ref", placeholder="Ex: FAC-001, CHQ-042...")
+
+        t_desc = st.text_input("Description / Objet", key="ticket_desc", placeholder="Objet de ce reçu...")
+        t_rem  = st.text_area("Remarque / Notes", key="ticket_rem", placeholder="Informations complémentaires...", height=80)
+
+        st.markdown("---")
+
+        if st.button("🎫 Générer le reçu PDF", key="btn_gen_pdf"):
+            if not t_dest:
+                st.error("Le champ Destinataire est obligatoire.")
+            elif t_montant <= 0:
+                st.error("Le montant doit être supérieur à 0.")
+            else:
+                data_pdf = {
+                    "numero": sanitize_text(t_num),
+                    "type_recu": t_type,
+                    "date": t_date.strftime("%d/%m/%Y"),
+                    "emetteur": sanitize_text(t_emetteur),
+                    "destinataire": sanitize_text(t_dest),
+                    "lot": sanitize_text(t_lot) if t_lot != "—" else "",
+                    "description": sanitize_text(t_desc),
+                    "montant": t_montant,
+                    "mode_paiement": t_mode,
+                    "reference": sanitize_text(t_ref),
+                    "remarque": sanitize_text(t_rem),
+                }
+                try:
+                    pdf_bytes = generate_receipt_pdf(data_pdf)
+                    fname = f"recu_{sanitize_text(t_num).replace(' ','_')}.pdf"
+                    st.success("✅ Reçu généré avec succès !")
+                    st.download_button(
+                        label="⬇️ Télécharger le reçu PDF",
+                        data=pdf_bytes,
+                        file_name=fname,
+                        mime="application/pdf",
+                        key="dl_pdf_btn"
+                    )
+                except Exception as e:
+                    st.error(f"Erreur lors de la génération du PDF : {e}")
+
+        # Quick receipt from existing encaissement
+        if not df_enc.empty:
+            st.markdown('<div class="section-title" style="font-size:1rem;margin-top:2rem">Générer un reçu depuis un encaissement existant</div>', unsafe_allow_html=True)
+            st.caption("Sélectionnez un encaissement enregistré pour générer son reçu directement.")
+
+            enc_labels = []
+            for _, row in df_enc.iterrows():
+                try: amt = f"{float(row.get('Montant (MAD)',0)):,.0f}"
+                except: amt = "0"
+                enc_labels.append(f"{row.get('Date','')} | {row.get('Payeur','')} | {row.get('Lot','')} | {amt} MAD")
+
+            sel_enc = st.selectbox("Encaissement", ["— sélectionner —"] + enc_labels, key="ticket_from_enc")
+            if sel_enc != "— sélectionner —":
+                enc_idx = enc_labels.index(sel_enc)
+                enc_row = df_enc.iloc[enc_idx]
+                num_auto = f"REC-ENC-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                if st.button("🎫 Générer le reçu pour cet encaissement", key="btn_gen_enc_pdf"):
+                    data_enc = {
+                        "numero": num_auto,
+                        "type_recu": "ENCAISSEMENT",
+                        "date": str(enc_row.get("Date", "")),
+                        "emetteur": "MAHAL",
+                        "destinataire": str(enc_row.get("Payeur", "")),
+                        "lot": str(enc_row.get("Lot", "")),
+                        "description": str(enc_row.get("Description", "")),
+                        "montant": enc_row.get("Montant (MAD)", 0),
+                        "mode_paiement": str(enc_row.get("Mode de paiement", "")),
+                        "reference": str(enc_row.get("Type encaissement", "")),
+                        "remarque": str(enc_row.get("Remarque", "")),
+                    }
+                    try:
+                        pdf_bytes = generate_receipt_pdf(data_enc)
+                        st.success("✅ Reçu généré !")
+                        st.download_button(
+                            label="⬇️ Télécharger le reçu",
+                            data=pdf_bytes,
+                            file_name=f"recu_{num_auto}.pdf",
+                            mime="application/pdf",
+                            key="dl_enc_pdf_btn"
+                        )
+                    except Exception as e:
+                        st.error(f"Erreur : {e}")
 
 
 # ─── Chargement données ────────────────────────────────────────────────────────
@@ -1464,6 +1480,7 @@ st.markdown(f"""
   <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
 </div>""", unsafe_allow_html=True)
 
+
 # ─── BUILD DRAWER HTML ────────────────────────────────────────────────────────
 sections_order = []
 sections_map = {}
@@ -1473,7 +1490,6 @@ for item in nav_items:
         sections_map[sec] = []
         sections_order.append(sec)
     sections_map[sec].append(item)
-
 
 import streamlit.components.v1 as components
 
@@ -1820,9 +1836,6 @@ def render_page():
     elif page == "suivi_avances":
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
         st.caption("Cliquez sur une cellule pour la modifier directement.")
-
-        # ── Info bulle pour aider l'utilisateur ──
-        
         ef1, ef2, ef3 = st.columns(3, gap="large")
         with ef1:
             lots_edit_opts = ["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
@@ -1944,7 +1957,7 @@ def render_page():
     # ── FINANCE ───────────────────────────────────────────────────────────────
     elif page == "finance":
         st.markdown('<div class="page-title" style="font-size:2rem">Finance</div>', unsafe_allow_html=True)
-        st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement</div>', unsafe_allow_html=True)
+        st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement · Tickets PDF</div>', unsafe_allow_html=True)
         render_finance_tab(lots_existants)
 
     # ── MODIFIER TRANSACTION (sous-admin) ─────────────────────────────────────
@@ -1960,7 +1973,6 @@ def render_page():
         if df_sa_view.empty:
             st.info("Aucune transaction à afficher pour votre compte.")
         else:
-            # Info bulle pour aider l'utilisateu
             lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
             fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
             if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
@@ -2058,6 +2070,7 @@ def render_page():
                   <div style="display:flex;justify-content:space-between;align-items:flex-start">
                     <div><div class="user-card-name">{h(fn)}</div>
                     <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {rlu}</div></div>
+                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span>
                   </div></div>""", unsafe_allow_html=True)
                 ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
                 with ac2:
