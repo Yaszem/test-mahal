@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import plotly.graph_objects as go
 import gspread
 from google.oauth2.service_account import Credentials
@@ -10,6 +10,11 @@ import secrets
 import html as _html
 import re
 import io
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -136,188 +141,711 @@ body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [ro
 .active-tab-pill{display:inline-flex;align-items:center;gap:0.4rem;background:#F0EDE5;border:1px solid #DDDAD2;border-radius:20px;padding:0.28rem 0.85rem;font-size:0.72rem;color:#555;font-weight:500;letter-spacing:0.03em;cursor:pointer;transition:all 0.2s ease;margin-left:0.8rem}
 .active-tab-pill:hover{background:#E8E5DE}
 .active-tab-pill-icon{font-size:0.78rem}
+.email-card{background:#FFFFFF;border:1px solid #E8E5DE;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.email-status-ok{background:#EEF7EE;border:1px solid #C3DEC3;border-radius:8px;padding:0.6rem 1rem;font-size:0.82rem;color:#2D6A2D;display:flex;align-items:center;gap:0.5rem}
+.email-status-err{background:#FDECEA;border:1px solid #E8B4B0;border-radius:8px;padding:0.6rem 1rem;font-size:0.82rem;color:#7A1C1C;display:flex;align-items:center;gap:0.5rem}
 @media screen and (max-width:768px){.block-container{padding:1rem 1rem 2rem 1rem !important;max-width:100% !important}.auth-left{display:none !important}.page-title{font-size:1.8rem !important}.page-subtitle{font-size:0.72rem !important;margin-bottom:1rem !important}.metric-row{display:grid !important;grid-template-columns:1fr 1fr !important;gap:0.6rem !important;margin-bottom:1.2rem !important}.section-title{font-size:1.1rem !important;margin-top:1.2rem !important;margin-bottom:0.8rem !important}#mahal-drawer{width:280px}}
 @media screen and (max-width:480px){.block-container{padding:0.7rem 0.6rem 1.5rem 0.6rem !important}.page-title{font-size:1.5rem !important}.metric-value{font-size:1rem !important}}
 </style>
 """, unsafe_allow_html=True)
 
 
-# ─── PDF Receipt Generator ──────────────────────────────────────────────────────
-def generate_receipt_pdf(data: dict) -> bytes:
-    """Generate a professional receipt PDF and return bytes."""
+# ═══════════════════════════════════════════════════════════════════════════════
+# EMAIL SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _get_email_cfg():
+    """Récupère la config email depuis st.secrets."""
+    return st.secrets.get("email", {})
+
+def email_configured() -> bool:
+    """Vérifie si l'email est configuré dans les secrets."""
+    cfg = _get_email_cfg()
+    return bool(cfg.get("smtp_server") and cfg.get("sender") and cfg.get("password") and cfg.get("admin_email"))
+
+def send_email(to: str, subject: str, html_body: str, pdf_bytes: bytes = None, pdf_filename: str = None) -> tuple[bool, str]:
+    """
+    Envoie un email HTML avec optionnellement un PDF en pièce jointe.
+    Retourne (succès: bool, message: str).
+
+    Configuration requise dans st.secrets :
+    [email]
+    smtp_server   = "smtp.gmail.com"
+    smtp_port     = 587
+    sender        = "ton@gmail.com"
+    password      = "app_password_gmail"   # App Password Google, pas ton vrai mot de passe
+    admin_email   = "admin@gmail.com"
+    """
+    cfg = _get_email_cfg()
+    if not cfg:
+        return False, "Configuration email manquante dans st.secrets."
+    try:
+        msg = MIMEMultipart("mixed")
+        msg["From"]    = cfg["sender"]
+        msg["To"]      = to
+        msg["Subject"] = subject
+
+        # Corps HTML
+        alt_part = MIMEMultipart("alternative")
+        alt_part.attach(MIMEText(html_body, "html", "utf-8"))
+        msg.attach(alt_part)
+
+        # Pièce jointe PDF (optionnel)
+        if pdf_bytes and pdf_filename:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(pdf_bytes)
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f'attachment; filename="{pdf_filename}"')
+            msg.attach(part)
+
+        port = int(cfg.get("smtp_port", 587))
+        with smtplib.SMTP(cfg["smtp_server"], port, timeout=15) as s:
+            s.ehlo()
+            s.starttls()
+            s.login(cfg["sender"], cfg["password"])
+            s.send_message(msg)
+        return True, "Email envoyé avec succès."
+    except smtplib.SMTPAuthenticationError:
+        return False, "Erreur d'authentification SMTP. Vérifie ton App Password Gmail."
+    except smtplib.SMTPConnectError:
+        return False, "Impossible de se connecter au serveur SMTP."
+    except Exception as e:
+        return False, f"Erreur : {str(e)}"
+
+
+# ─── Template HTML email ──────────────────────────────────────────────────────
+def _email_base(title: str, content: str) -> str:
+    """Template HTML commun pour tous les emails MAHAL."""
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{{margin:0;padding:0;background:#F7F6F2;font-family:'Helvetica Neue',Arial,sans-serif;color:#1C1C1C}}
+  .outer{{max-width:600px;margin:32px auto;background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #E0DDD5}}
+  .header{{background:#1C1C1C;padding:32px 40px}}
+  .header-brand{{font-size:32px;color:#F7F6F2;letter-spacing:-0.03em;margin:0;font-weight:300}}
+  .header-sub{{font-size:11px;color:rgba(247,246,242,0.4);letter-spacing:0.2em;text-transform:uppercase;margin-top:4px}}
+  .body{{padding:32px 40px}}
+  .title{{font-size:20px;font-weight:500;color:#1C1C1C;margin:0 0 8px 0}}
+  .subtitle{{font-size:13px;color:#AAA;margin:0 0 28px 0}}
+  .divider{{height:1px;background:#E8E5DE;margin:24px 0}}
+  .metric-row{{display:flex;gap:12px;margin:20px 0;flex-wrap:wrap}}
+  .metric{{flex:1;min-width:120px;background:#F7F6F2;border-radius:8px;padding:14px 16px;border:1px solid #E8E5DE}}
+  .metric-label{{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#AAA;margin-bottom:6px}}
+  .metric-value{{font-size:20px;font-weight:500;color:#1C1C1C}}
+  .metric-value.pos{{color:#2D7A3A}}
+  .metric-value.neg{{color:#B03A2E}}
+  table.data{{width:100%;border-collapse:collapse;font-size:13px;margin:16px 0}}
+  table.data th{{background:#F0EDE5;padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:#777;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #DDDAD2}}
+  table.data td{{padding:8px 12px;border-bottom:1px solid #F0EDE5;color:#1C1C1C}}
+  table.data tr:last-child td{{border-bottom:none}}
+  .badge{{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}}
+  .badge-ok{{background:#EEF7EE;color:#2D6A2D;border:1px solid #C3DEC3}}
+  .badge-warn{{background:#FFF8E1;color:#7A5C00;border:1px solid #F0C040}}
+  .badge-err{{background:#FDECEA;color:#7A1C1C;border:1px solid #E8B4B0}}
+  .footer{{background:#F7F6F2;border-top:1px solid #E0DDD5;padding:20px 40px;font-size:11px;color:#BBB;text-align:center}}
+  .cta{{display:inline-block;background:#1C1C1C;color:#F7F6F2;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:500;margin:16px 0}}
+  .alert-box{{background:#FFF3E0;border:1px solid #FFB74D;border-radius:8px;padding:12px 16px;font-size:13px;color:#7A4100;margin:16px 0}}
+</style>
+</head>
+<body>
+<div class="outer">
+  <div class="header">
+    <p class="header-brand">Mahal</p>
+    <p class="header-sub">Gestion &amp; Transactions</p>
+  </div>
+  <div class="body">
+    <h2 class="title">{title}</h2>
+    {content}
+  </div>
+  <div class="footer">
+    Document généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} &mdash; Plateforme MAHAL © 2025 &mdash; Usage interne uniquement
+  </div>
+</div>
+</body>
+</html>"""
+
+
+# ─── EMAIL 1 : Nouvelle inscription ──────────────────────────────────────────
+def send_email_new_registration(new_user: dict) -> tuple[bool, str]:
+    """Envoie un email à l'admin quand un nouvel utilisateur s'inscrit."""
+    cfg = _get_email_cfg()
+    if not cfg.get("admin_email"):
+        return False, "admin_email non configuré."
+
+    prenom = str(new_user.get("prenom", "")).strip()
+    nom    = str(new_user.get("nom", "")).strip()
+    uname  = str(new_user.get("username", ""))
+    dt     = str(new_user.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M")))
+    role   = str(new_user.get("role", "sous-admin"))
+
+    content = f"""
+    <p class="subtitle">Une nouvelle demande d'accès vient d'être soumise sur la plateforme.</p>
+    <div class="divider"></div>
+    <table class="data">
+      <tr><th>Champ</th><th>Valeur</th></tr>
+      <tr><td>Prénom</td><td><strong>{prenom}</strong></td></tr>
+      <tr><td>Nom</td><td><strong>{nom}</strong></td></tr>
+      <tr><td>Identifiant</td><td><code>@{uname}</code></td></tr>
+      <tr><td>Rôle demandé</td><td><span class="badge badge-warn">{role}</span></td></tr>
+      <tr><td>Date d'inscription</td><td>{dt}</td></tr>
+    </table>
+    <div class="alert-box">
+      Action requise : rendez-vous dans la section <strong>Utilisateurs</strong> de la plateforme pour approuver ou refuser cette demande.
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#AAA">Cet email a été envoyé automatiquement suite à une inscription sur MAHAL.</p>
+    """
+    html = _email_base(f"Nouvelle inscription : {prenom} {nom}", content)
+    return send_email(
+        to=cfg["admin_email"],
+        subject=f"[MAHAL] Nouvelle demande d'accès — @{uname}",
+        html_body=html
+    )
+
+
+# ─── EMAIL 2 : Rapport hebdomadaire ──────────────────────────────────────────
+def generate_rapport_hebdomadaire_pdf(transactions_df, df_enc, df_ca) -> bytes:
+    """Génère le PDF du rapport hebdomadaire."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4,
         rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
 
     styles = getSampleStyleSheet()
-    dark = colors.HexColor("#1C1C1C")
-    green = colors.HexColor("#2D7A3A")
-    beige = colors.HexColor("#F0EDE5")
+    dark   = colors.HexColor("#1C1C1C")
+    green  = colors.HexColor("#2D7A3A")
+    red    = colors.HexColor("#B03A2E")
+    beige  = colors.HexColor("#F0EDE5")
     border = colors.HexColor("#E0DDD5")
-    grey = colors.HexColor("#999999")
+    grey   = colors.HexColor("#999999")
+    blue   = colors.HexColor("#1565C0")
 
-    title_style = ParagraphStyle('Title', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=26, textColor=dark,
-        leading=30, spaceAfter=2*mm)
-    sub_style = ParagraphStyle('Sub', parent=styles['Normal'],
-        fontName='Helvetica', fontSize=9, textColor=grey,
-        leading=13, spaceAfter=1*mm)
-    label_style = ParagraphStyle('Label', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=8, textColor=grey,
-        leading=11, spaceAfter=1*mm)
-    value_style = ParagraphStyle('Value', parent=styles['Normal'],
-        fontName='Helvetica', fontSize=10, textColor=dark,
-        leading=14, spaceAfter=1*mm)
-    amount_style = ParagraphStyle('Amount', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=22, textColor=green,
-        leading=28, alignment=TA_RIGHT)
-    footer_style = ParagraphStyle('Footer', parent=styles['Normal'],
-        fontName='Helvetica', fontSize=7.5, textColor=grey,
-        leading=11, alignment=TA_CENTER)
-    note_style = ParagraphStyle('Note', parent=styles['Normal'],
-        fontName='Helvetica', fontSize=9, textColor=dark,
-        leading=13, spaceAfter=1*mm)
+    title_s  = ParagraphStyle('T', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=22, textColor=dark, leading=28, spaceAfter=3*mm)
+    sub_s    = ParagraphStyle('S', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=grey, leading=13)
+    label_s  = ParagraphStyle('L', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, textColor=grey, leading=11)
+    value_s  = ParagraphStyle('V', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=dark, leading=14)
+    sec_s    = ParagraphStyle('SEC', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=dark, leading=16, spaceBefore=6*mm, spaceAfter=3*mm)
+    foot_s   = ParagraphStyle('F', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, textColor=grey, leading=11, alignment=TA_CENTER)
 
     story = []
 
-    # Header bar
-    header_data = [[
-        Paragraph("MAHAL", title_style),
-        Paragraph(f"RECU N° {data.get('numero','—')}", ParagraphStyle('RNum',
-            parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11,
-            textColor=dark, alignment=TA_RIGHT))
+    # En-tête
+    today     = datetime.now()
+    week_start = today - timedelta(days=today.weekday())
+    week_end   = week_start + timedelta(days=6)
+
+    hdr = [[
+        Paragraph("MAHAL", title_s),
+        Paragraph(f"Rapport hebdomadaire<br/>Semaine du {week_start.strftime('%d/%m')} au {week_end.strftime('%d/%m/%Y')}", ParagraphStyle('RN', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=grey, alignment=TA_RIGHT, leading=14))
     ]]
-    header_table = Table(header_data, colWidths=[90*mm, 80*mm])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4*mm),
-    ]))
-    story.append(header_table)
-    story.append(Paragraph("Gestion &amp; Transactions", sub_style))
+    ht = Table(hdr, colWidths=[90*mm, 80*mm])
+    ht.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('BOTTOMPADDING',(0,0),(-1,-1),4*mm)]))
+    story.append(ht)
     story.append(HRFlowable(width="100%", thickness=1, color=border, spaceAfter=6*mm))
 
-    # Date + Type badge
-    type_rec = data.get('type_recu', 'ENCAISSEMENT')
-    type_colors_map = {
-        'ENCAISSEMENT': colors.HexColor("#1565C0"),
-        'PAIEMENT': colors.HexColor("#2D7A3A"),
-        'REMBOURSEMENT': colors.HexColor("#7A4100"),
-        'DETTE FINANCIERE': colors.HexColor("#B03A2E"),
-        'DETTE FOURNISSEUR': colors.HexColor("#7A4100"),
-        'CAISSE': colors.HexColor("#555555"),
-    }
-    type_color = type_colors_map.get(type_rec, dark)
+    # Filtre semaine courante
+    df_week = pd.DataFrame()
+    if not transactions_df.empty and 'Date' in transactions_df.columns:
+        t = transactions_df.copy()
+        t['Date'] = pd.to_datetime(t['Date'], errors='coerce')
+        t = t.dropna(subset=['Date'])
+        df_week = t[(t['Date'] >= pd.Timestamp(week_start)) & (t['Date'] <= pd.Timestamp(week_end))]
 
-    badge_data = [[
-        Paragraph(f"Date : {data.get('date', datetime.now().strftime('%d/%m/%Y'))}", value_style),
-        Paragraph(f"  {type_rec}  ", ParagraphStyle('Badge',
-            parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8,
-            textColor=colors.white, backColor=type_color,
-            alignment=TA_RIGHT, leading=10))
+    ta_w = df_week[df_week['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum() if not df_week.empty else 0
+    tv_w = df_week[df_week['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum() if not df_week.empty else 0
+    td_w = df_week[df_week['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum() if not df_week.empty else 0
+    rn_w = tv_w - (ta_w + td_w)
+    rn_color = green if rn_w >= 0 else red
+
+    # KPIs semaine
+    story.append(Paragraph("KPIs de la semaine", sec_s))
+    kpi_data = [[
+        Paragraph("ACHATS", label_s), Paragraph("VENTES", label_s),
+        Paragraph("DÉPENSES", label_s), Paragraph("RÉSULTAT NET", label_s)
+    ],[
+        Paragraph(f"{ta_w:,.0f} MAD", ParagraphStyle('KV', parent=value_s, textColor=dark)),
+        Paragraph(f"{tv_w:,.0f} MAD", ParagraphStyle('KV', parent=value_s, textColor=green)),
+        Paragraph(f"{td_w:,.0f} MAD", ParagraphStyle('KV', parent=value_s, textColor=colors.HexColor("#C0864A"))),
+        Paragraph(f"{rn_w:+,.0f} MAD", ParagraphStyle('KV', parent=value_s, textColor=rn_color, fontName='Helvetica-Bold')),
     ]]
-    badge_table = Table(badge_data, colWidths=[90*mm, 80*mm])
-    badge_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('RIGHTPADDING', (1,0), (1,0), 0),
+    kpi_t = Table(kpi_data, colWidths=[42*mm, 42*mm, 42*mm, 44*mm])
+    kpi_t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), beige),
+        ('BOX', (0,0), (-1,-1), 0.5, border),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, border),
+        ('TOPPADDING', (0,0), (-1,-1), 3*mm),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3*mm),
+        ('LEFTPADDING', (0,0), (-1,-1), 3*mm),
     ]))
-    story.append(badge_table)
+    story.append(kpi_t)
     story.append(Spacer(1, 5*mm))
 
-    # Info grid
-    info_rows = []
-    fields = [
-        ("Emetteur / Société", data.get('emetteur', 'MAHAL')),
-        ("Destinataire / Client", data.get('destinataire', '—')),
-        ("Lot", data.get('lot', '—')),
-        ("Description", data.get('description', '—')),
-        ("Mode de paiement", data.get('mode_paiement', '—')),
-        ("Référence", data.get('reference', '—')),
-    ]
-    for label, value in fields:
-        if value and value != '—' or label in ("Emetteur / Société", "Destinataire / Client"):
-            info_rows.append([
-                Paragraph(label, label_style),
-                Paragraph(str(value), value_style)
-            ])
-
-    if info_rows:
-        info_table = Table(info_rows, colWidths=[55*mm, 115*mm])
-        info_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (0,-1), beige),
-            ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.white, colors.HexColor("#FAFAF8")]),
+    # Transactions de la semaine
+    story.append(Paragraph(f"Transactions de la semaine ({len(df_week)})", sec_s))
+    if not df_week.empty:
+        cols_show = ['Date', 'Personne', 'Lot', 'Type (Achat/Vente/Dépense)', 'Montant (MAD)']
+        cols_show = [c for c in cols_show if c in df_week.columns]
+        rows = [[Paragraph(c.replace(' (Achat/Vente/Dépense)','').replace(' (MAD)',''), label_s) for c in cols_show]]
+        for _, r in df_week.head(20).iterrows():
+            row_data = []
+            for c in cols_show:
+                val = str(r.get(c, ''))
+                if c == 'Montant (MAD)':
+                    try: val = f"{float(val):,.0f} MAD"
+                    except: pass
+                elif c == 'Date' and hasattr(r[c], 'strftime'):
+                    val = r[c].strftime('%d/%m/%Y')
+                row_data.append(Paragraph(val, value_s))
+            rows.append(row_data)
+        col_w = [170*mm // len(cols_show)] * len(cols_show)
+        tx_t = Table(rows, colWidths=col_w)
+        tx_t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), beige),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#FAFAF8")]),
             ('GRID', (0,0), (-1,-1), 0.5, border),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('TOPPADDING', (0,0), (-1,-1), 3*mm),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 3*mm),
-            ('LEFTPADDING', (0,0), (-1,-1), 3*mm),
-            ('RIGHTPADDING', (0,0), (-1,-1), 3*mm),
-            ('ROUNDEDCORNERS', [4], ),
+            ('TOPPADDING', (0,0), (-1,-1), 2.5*mm),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2.5*mm),
+            ('LEFTPADDING', (0,0), (-1,-1), 2.5*mm),
         ]))
-        story.append(info_table)
+        story.append(tx_t)
+        if len(df_week) > 20:
+            story.append(Paragraph(f"... et {len(df_week)-20} transaction(s) supplémentaire(s).", sub_s))
+    else:
+        story.append(Paragraph("Aucune transaction cette semaine.", sub_s))
 
-    story.append(Spacer(1, 8*mm))
+    # Encaissements semaine
+    enc_week = pd.DataFrame()
+    if not df_enc.empty and 'Date' in df_enc.columns:
+        e = df_enc.copy()
+        e['Date'] = pd.to_datetime(e['Date'], errors='coerce')
+        e = e.dropna(subset=['Date'])
+        enc_week = e[(e['Date'] >= pd.Timestamp(week_start)) & (e['Date'] <= pd.Timestamp(week_end))]
 
-    # Amount box
-    montant_val = data.get('montant', 0)
-    try:
-        montant_float = float(montant_val)
-    except:
-        montant_float = 0.0
+    story.append(Spacer(1, 4*mm))
+    story.append(Paragraph(f"Encaissements de la semaine ({len(enc_week)})", sec_s))
+    if not enc_week.empty:
+        enc_total = enc_week['Montant (MAD)'].sum() if 'Montant (MAD)' in enc_week.columns else 0
+        story.append(Paragraph(f"Total encaissé : {enc_total:,.0f} MAD", ParagraphStyle('ET', parent=value_s, fontName='Helvetica-Bold', textColor=blue)))
+        story.append(Spacer(1, 2*mm))
+        cols_enc = ['Date','Payeur','Lot','Montant (MAD)','Statut']
+        cols_enc = [c for c in cols_enc if c in enc_week.columns]
+        rows_e = [[Paragraph(c.replace(' (MAD)',''), label_s) for c in cols_enc]]
+        for _, r in enc_week.head(10).iterrows():
+            rd = []
+            for c in cols_enc:
+                val = str(r.get(c,''))
+                if c == 'Montant (MAD)':
+                    try: val = f"{float(val):,.0f} MAD"
+                    except: pass
+                rd.append(Paragraph(val, value_s))
+            rows_e.append(rd)
+        cw_e = [170*mm // len(cols_enc)] * len(cols_enc)
+        et = Table(rows_e, colWidths=cw_e)
+        et.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), beige),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#FAFAF8")]),
+            ('GRID', (0,0), (-1,-1), 0.5, border),
+            ('TOPPADDING', (0,0), (-1,-1), 2.5*mm),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2.5*mm),
+            ('LEFTPADDING', (0,0), (-1,-1), 2.5*mm),
+        ]))
+        story.append(et)
+    else:
+        story.append(Paragraph("Aucun encaissement cette semaine.", sub_s))
 
-    amount_data = [[
-        Paragraph("MONTANT TOTAL", ParagraphStyle('AmtLabel', parent=styles['Normal'],
-            fontName='Helvetica-Bold', fontSize=9, textColor=grey, leading=12)),
-        Paragraph(f"{montant_float:,.2f} MAD", amount_style)
-    ]]
-    amount_table = Table(amount_data, colWidths=[80*mm, 90*mm])
-    amount_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), beige),
-        ('BOX', (0,0), (-1,-1), 1, border),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('TOPPADDING', (0,0), (-1,-1), 5*mm),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5*mm),
-        ('LEFTPADDING', (0,0), (-1,-1), 5*mm),
-        ('RIGHTPADDING', (0,0), (-1,-1), 5*mm),
-    ]))
-    story.append(amount_table)
-    story.append(Spacer(1, 6*mm))
-
-    # Remarque
-    if data.get('remarque'):
-        story.append(Paragraph("Remarque :", label_style))
-        story.append(Paragraph(str(data['remarque']), note_style))
-        story.append(Spacer(1, 4*mm))
-
-    # Signature zone
-    sig_data = [[
-        Paragraph("Signature émetteur :", label_style),
-        Paragraph("Signature destinataire :", label_style),
-    ], [
-        Paragraph("\n\n\n_________________________", note_style),
-        Paragraph("\n\n\n_________________________", note_style),
-    ]]
-    sig_table = Table(sig_data, colWidths=[85*mm, 85*mm])
-    sig_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('TOPPADDING', (0,0), (-1,-1), 2*mm),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2*mm),
-        ('LINEABOVE', (0,0), (-1,0), 0.5, border),
-    ]))
-    story.append(sig_table)
-
-    # Footer
     story.append(Spacer(1, 8*mm))
     story.append(HRFlowable(width="100%", thickness=0.5, color=border, spaceAfter=3*mm))
-    story.append(Paragraph(
-        f"Document généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} — Plateforme MAHAL © 2025 — Document non contractuel",
-        footer_style))
+    story.append(Paragraph(f"Rapport généré le {today.strftime('%d/%m/%Y à %H:%M')} — Plateforme MAHAL © 2025", foot_s))
 
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
 
 
-# ─── Google Sheets ─────────────────────────────────────────────────────────────
+def send_email_rapport_hebdomadaire(transactions_df, df_enc, df_ca) -> tuple[bool, str]:
+    """Génère et envoie le rapport hebdomadaire par email."""
+    cfg = _get_email_cfg()
+    if not cfg.get("admin_email"):
+        return False, "admin_email non configuré."
+
+    today      = datetime.now()
+    week_start = today - timedelta(days=today.weekday())
+    week_end   = week_start + timedelta(days=6)
+
+    # Stats rapides pour l'email
+    df_week = pd.DataFrame()
+    if not transactions_df.empty and 'Date' in transactions_df.columns:
+        t = transactions_df.copy()
+        t['Date'] = pd.to_datetime(t['Date'], errors='coerce')
+        t = t.dropna(subset=['Date'])
+        df_week = t[(t['Date'] >= pd.Timestamp(week_start)) & (t['Date'] <= pd.Timestamp(week_end))]
+
+    ta_w = df_week[df_week['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum() if not df_week.empty else 0
+    tv_w = df_week[df_week['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum() if not df_week.empty else 0
+    td_w = df_week[df_week['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum() if not df_week.empty else 0
+    rn_w = tv_w - (ta_w + td_w)
+    rn_color_css = "#2D7A3A" if rn_w >= 0 else "#B03A2E"
+    nb_tx = len(df_week)
+
+    # Encaissements semaine
+    enc_total = 0
+    if not df_enc.empty and 'Montant (MAD)' in df_enc.columns:
+        try:
+            e = df_enc.copy()
+            e['Date'] = pd.to_datetime(e['Date'], errors='coerce')
+            e = e.dropna(subset=['Date'])
+            enc_w = e[(e['Date'] >= pd.Timestamp(week_start)) & (e['Date'] <= pd.Timestamp(week_end))]
+            enc_total = pd.to_numeric(enc_w['Montant (MAD)'], errors='coerce').fillna(0).sum()
+        except: pass
+
+    content = f"""
+    <p class="subtitle">Semaine du {week_start.strftime('%d/%m/%Y')} au {week_end.strftime('%d/%m/%Y')}</p>
+    <div class="divider"></div>
+    <div class="metric-row">
+      <div class="metric"><div class="metric-label">Achats</div><div class="metric-value">{ta_w:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Ventes</div><div class="metric-value pos">{tv_w:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Dépenses</div><div class="metric-value">{td_w:,.0f} MAD</div></div>
+    </div>
+    <div class="metric-row">
+      <div class="metric"><div class="metric-label">Résultat net</div><div class="metric-value" style="color:{rn_color_css}">{rn_w:+,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Transactions</div><div class="metric-value">{nb_tx}</div></div>
+      <div class="metric"><div class="metric-label">Encaissé</div><div class="metric-value pos">{enc_total:,.0f} MAD</div></div>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#555">Le rapport détaillé complet est joint à cet email en PDF. Il inclut le détail de toutes les transactions, encaissements de la semaine.</p>
+    <p style="font-size:12px;color:#AAA;margin-top:16px">Ce rapport est généré et envoyé automatiquement chaque semaine par la plateforme MAHAL.</p>
+    """
+    html = _email_base(f"Rapport hebdomadaire — Semaine {week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m/%Y')}", content)
+
+    # Génération du PDF
+    try:
+        pdf_bytes = generate_rapport_hebdomadaire_pdf(transactions_df, df_enc, df_ca)
+        pdf_name  = f"rapport_hebdo_{week_start.strftime('%Y-%m-%d')}.pdf"
+    except Exception as e:
+        return False, f"Erreur génération PDF : {e}"
+
+    return send_email(
+        to=cfg["admin_email"],
+        subject=f"[MAHAL] Rapport hebdomadaire — {week_start.strftime('%d/%m')}–{week_end.strftime('%d/%m/%Y')}",
+        html_body=html,
+        pdf_bytes=pdf_bytes,
+        pdf_filename=pdf_name
+    )
+
+
+# ─── EMAIL 3 : Bilan mensuel ──────────────────────────────────────────────────
+def generate_bilan_mensuel_pdf(transactions_df, df_df, df_dfo, df_ca, df_enc, mois_dt: datetime) -> bytes:
+    """Génère le PDF du bilan mensuel complet."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+        rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+
+    styles = getSampleStyleSheet()
+    dark   = colors.HexColor("#1C1C1C")
+    green  = colors.HexColor("#2D7A3A")
+    red    = colors.HexColor("#B03A2E")
+    beige  = colors.HexColor("#F0EDE5")
+    border = colors.HexColor("#E0DDD5")
+    grey   = colors.HexColor("#999999")
+    blue   = colors.HexColor("#1565C0")
+    orange = colors.HexColor("#7A4100")
+
+    title_s  = ParagraphStyle('T', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=22, textColor=dark, leading=28)
+    sub_s    = ParagraphStyle('S', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=grey, leading=13)
+    label_s  = ParagraphStyle('L', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, textColor=grey, leading=11)
+    value_s  = ParagraphStyle('V', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=dark, leading=14)
+    sec_s    = ParagraphStyle('SEC', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=dark, leading=16, spaceBefore=7*mm, spaceAfter=3*mm)
+    foot_s   = ParagraphStyle('F', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, textColor=grey, leading=11, alignment=TA_CENTER)
+
+    mois_label = mois_dt.strftime('%B %Y').capitalize()
+    mois_start = mois_dt.replace(day=1)
+    if mois_dt.month == 12:
+        mois_end = mois_dt.replace(year=mois_dt.year+1, month=1, day=1) - timedelta(days=1)
+    else:
+        mois_end = mois_dt.replace(month=mois_dt.month+1, day=1) - timedelta(days=1)
+
+    story = []
+
+    # En-tête
+    hdr = [[
+        Paragraph("MAHAL", title_s),
+        Paragraph(f"Bilan mensuel<br/>{mois_label}", ParagraphStyle('RN', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=grey, alignment=TA_RIGHT, leading=14))
+    ]]
+    ht = Table(hdr, colWidths=[90*mm, 80*mm])
+    ht.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('BOTTOMPADDING',(0,0),(-1,-1),4*mm)]))
+    story.append(ht)
+    story.append(HRFlowable(width="100%", thickness=1, color=border, spaceAfter=6*mm))
+
+    def filter_month(df, date_col='Date'):
+        if df.empty or date_col not in df.columns: return pd.DataFrame()
+        d = df.copy()
+        d[date_col] = pd.to_datetime(d[date_col], errors='coerce')
+        d = d.dropna(subset=[date_col])
+        return d[(d[date_col] >= pd.Timestamp(mois_start)) & (d[date_col] <= pd.Timestamp(mois_end))]
+
+    df_month = filter_month(transactions_df) if not transactions_df.empty else pd.DataFrame()
+
+    # KPIs globaux du mois
+    ta_m = df_month[df_month['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum() if not df_month.empty else 0
+    tv_m = df_month[df_month['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum() if not df_month.empty else 0
+    td_m = df_month[df_month['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum() if not df_month.empty else 0
+    rn_m = tv_m - (ta_m + td_m)
+
+    # Caisse mois
+    ca_month = filter_month(df_ca)
+    ca_in  = ca_month[ca_month['Type operation']=='ENTREE']['Montant (MAD)'].sum() if not ca_month.empty else 0
+    ca_out = ca_month[ca_month['Type operation']=='SORTIE']['Montant (MAD)'].sum() if not ca_month.empty else 0
+    ca_sol = ca_in - ca_out
+
+    # Encaissements mois
+    enc_month     = filter_month(df_enc)
+    enc_total_m   = enc_month['Montant (MAD)'].sum() if not enc_month.empty else 0
+    enc_confirmed = enc_month[enc_month.get('Statut','') == 'Recu']['Montant (MAD)'].sum() if not enc_month.empty and 'Statut' in enc_month.columns else 0
+
+    story.append(Paragraph("Synthèse du mois", sec_s))
+    kpi_rows = [
+        [Paragraph("ACHATS", label_s), Paragraph("VENTES", label_s), Paragraph("DÉPENSES", label_s), Paragraph("RÉSULTAT NET", label_s)],
+        [
+            Paragraph(f"{ta_m:,.0f} MAD", value_s),
+            Paragraph(f"{tv_m:,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=green)),
+            Paragraph(f"{td_m:,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=colors.HexColor("#C0864A"))),
+            Paragraph(f"{rn_m:+,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=green if rn_m>=0 else red, fontName='Helvetica-Bold')),
+        ],
+        [Paragraph("ENTRÉES CAISSE", label_s), Paragraph("SORTIES CAISSE", label_s), Paragraph("SOLDE CAISSE", label_s), Paragraph("ENCAISSEMENTS", label_s)],
+        [
+            Paragraph(f"{ca_in:,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=green)),
+            Paragraph(f"{ca_out:,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=red)),
+            Paragraph(f"{ca_sol:+,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=green if ca_sol>=0 else red, fontName='Helvetica-Bold')),
+            Paragraph(f"{enc_total_m:,.0f} MAD", ParagraphStyle('kv', parent=value_s, textColor=blue)),
+        ],
+    ]
+    kpi_t = Table(kpi_rows, colWidths=[42*mm]*4)
+    kpi_t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), beige),
+        ('BOX', (0,0), (-1,-1), 0.5, border),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, border),
+        ('BACKGROUND', (0,2), (-1,2), colors.HexColor("#F0EDE5")),
+        ('TOPPADDING', (0,0), (-1,-1), 3*mm),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3*mm),
+        ('LEFTPADDING', (0,0), (-1,-1), 3*mm),
+    ]))
+    story.append(kpi_t)
+
+    # Résumé par lot
+    story.append(Paragraph("Résumé par lot", sec_s))
+    if not df_month.empty and 'Lot' in df_month.columns:
+        lots_summary = df_month.groupby('Lot').apply(lambda x: pd.Series({
+            'Achats':   x[x['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum(),
+            'Ventes':   x[x['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum(),
+            'Dépenses': x[x['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum(),
+        }), include_groups=False).reset_index()
+        lots_summary['Résultat'] = lots_summary['Ventes'] - (lots_summary['Achats'] + lots_summary['Dépenses'])
+        rows_l = [[Paragraph(c, label_s) for c in ['Lot','Achats','Ventes','Dépenses','Résultat']]]
+        for _, r in lots_summary.iterrows():
+            res_val = r['Résultat']
+            rows_l.append([
+                Paragraph(str(r['Lot']), value_s),
+                Paragraph(f"{r['Achats']:,.0f}", value_s),
+                Paragraph(f"{r['Ventes']:,.0f}", ParagraphStyle('gv', parent=value_s, textColor=green)),
+                Paragraph(f"{r['Dépenses']:,.0f}", value_s),
+                Paragraph(f"{res_val:+,.0f}", ParagraphStyle('rv', parent=value_s, textColor=green if res_val>=0 else red, fontName='Helvetica-Bold')),
+            ])
+        lt = Table(rows_l, colWidths=[40*mm, 30*mm, 30*mm, 30*mm, 40*mm])
+        lt.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), beige),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#FAFAF8")]),
+            ('GRID', (0,0), (-1,-1), 0.5, border),
+            ('TOPPADDING', (0,0), (-1,-1), 2.5*mm),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2.5*mm),
+            ('LEFTPADDING', (0,0), (-1,-1), 2.5*mm),
+        ]))
+        story.append(lt)
+    else:
+        story.append(Paragraph("Aucune transaction ce mois.", sub_s))
+
+    # Dettes en cours
+    story.append(Paragraph("Dettes en cours", sec_s))
+    df_df_actif  = df_df[df_df.get('Statut', pd.Series()) != 'Rembourse'] if not df_df.empty and 'Statut' in df_df.columns else df_df
+    df_dfo_actif = df_dfo[df_dfo.get('Statut', pd.Series()) != 'Solde']   if not df_dfo.empty and 'Statut' in df_dfo.columns else df_dfo
+    kdf  = (df_df_actif["Montant initial (MAD)"] - df_df_actif["Montant rembourse (MAD)"]).clip(lower=0).sum()  if not df_df_actif.empty else 0
+    kdfo = (df_dfo_actif["Montant du (MAD)"]     - df_dfo_actif["Montant paye (MAD)"]).clip(lower=0).sum()      if not df_dfo_actif.empty else 0
+    dette_data = [
+        [Paragraph("TYPE", label_s), Paragraph("RESTANT DÛ", label_s), Paragraph("STATUT", label_s)],
+        [Paragraph("Dettes financières", value_s), Paragraph(f"{kdf:,.0f} MAD", ParagraphStyle('dv', parent=value_s, textColor=red)), Paragraph("En cours", value_s)],
+        [Paragraph("Dettes fournisseurs", value_s), Paragraph(f"{kdfo:,.0f} MAD", ParagraphStyle('dv', parent=value_s, textColor=orange)), Paragraph("En cours", value_s)],
+        [Paragraph("TOTAL DETTES", label_s), Paragraph(f"{kdf+kdfo:,.0f} MAD", ParagraphStyle('dv', parent=value_s, textColor=red, fontName='Helvetica-Bold')), Paragraph("", value_s)],
+    ]
+    dt = Table(dette_data, colWidths=[70*mm, 60*mm, 40*mm])
+    dt.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), beige),
+        ('BACKGROUND', (0,3), (-1,3), colors.HexColor("#FDECEA")),
+        ('ROWBACKGROUNDS', (0,1), (-1,2), [colors.white, colors.HexColor("#FAFAF8")]),
+        ('GRID', (0,0), (-1,-1), 0.5, border),
+        ('TOPPADDING', (0,0), (-1,-1), 3*mm),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3*mm),
+        ('LEFTPADDING', (0,0), (-1,-1), 3*mm),
+    ]))
+    story.append(dt)
+
+    story.append(Spacer(1, 10*mm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=border, spaceAfter=3*mm))
+    story.append(Paragraph(f"Bilan généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} — Plateforme MAHAL © 2025", foot_s))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def send_email_bilan_mensuel(transactions_df, df_df, df_dfo, df_ca, df_enc, mois_dt: datetime = None) -> tuple[bool, str]:
+    """Génère et envoie le bilan mensuel complet par email."""
+    cfg = _get_email_cfg()
+    if not cfg.get("admin_email"):
+        return False, "admin_email non configuré."
+
+    if mois_dt is None:
+        mois_dt = datetime.now().replace(day=1)
+
+    mois_label = mois_dt.strftime('%B %Y').capitalize()
+    mois_start = mois_dt.replace(day=1)
+
+    # Stats pour l'email HTML
+    def filter_month(df):
+        if df.empty or 'Date' not in df.columns: return pd.DataFrame()
+        d = df.copy(); d['Date'] = pd.to_datetime(d['Date'], errors='coerce')
+        d = d.dropna(subset=['Date'])
+        if mois_dt.month == 12:
+            mois_end = mois_dt.replace(year=mois_dt.year+1, month=1, day=1) - timedelta(days=1)
+        else:
+            mois_end = mois_dt.replace(month=mois_dt.month+1, day=1) - timedelta(days=1)
+        return d[(d['Date'] >= pd.Timestamp(mois_start)) & (d['Date'] <= pd.Timestamp(mois_end))]
+
+    df_m  = filter_month(transactions_df)
+    enc_m = filter_month(df_enc)
+    ca_m  = filter_month(df_ca)
+
+    ta_m  = df_m[df_m['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()  if not df_m.empty else 0
+    tv_m  = df_m[df_m['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()  if not df_m.empty else 0
+    td_m  = df_m[df_m['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum() if not df_m.empty else 0
+    rn_m  = tv_m - (ta_m + td_m)
+    enc_t = pd.to_numeric(enc_m['Montant (MAD)'], errors='coerce').fillna(0).sum() if not enc_m.empty else 0
+    ca_in = ca_m[ca_m['Type operation']=='ENTREE']['Montant (MAD)'].sum() if not ca_m.empty else 0
+    ca_out= ca_m[ca_m['Type operation']=='SORTIE']['Montant (MAD)'].sum() if not ca_m.empty else 0
+    kdf   = (df_df["Montant initial (MAD)"] - df_df["Montant rembourse (MAD)"]).clip(lower=0).sum() if not df_df.empty else 0
+    kdfo  = (df_dfo["Montant du (MAD)"] - df_dfo["Montant paye (MAD)"]).clip(lower=0).sum()         if not df_dfo.empty else 0
+
+    rn_css   = "#2D7A3A" if rn_m >= 0 else "#B03A2E"
+    ca_css   = "#2D7A3A" if (ca_in-ca_out) >= 0 else "#B03A2E"
+    nb_lots  = df_m['Lot'].nunique() if not df_m.empty and 'Lot' in df_m.columns else 0
+
+    content = f"""
+    <p class="subtitle">Bilan complet du mois de {mois_label}</p>
+    <div class="divider"></div>
+    <p style="font-size:13px;font-weight:500;color:#555;margin-bottom:12px">Transactions</p>
+    <div class="metric-row">
+      <div class="metric"><div class="metric-label">Achats</div><div class="metric-value">{ta_m:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Ventes</div><div class="metric-value pos">{tv_m:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Dépenses</div><div class="metric-value">{td_m:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Résultat</div><div class="metric-value" style="color:{rn_css}">{rn_m:+,.0f} MAD</div></div>
+    </div>
+    <p style="font-size:13px;font-weight:500;color:#555;margin:16px 0 12px 0">Caisse & Encaissements</p>
+    <div class="metric-row">
+      <div class="metric"><div class="metric-label">Entrées caisse</div><div class="metric-value pos">{ca_in:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Sorties caisse</div><div class="metric-value neg">{ca_out:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Solde caisse</div><div class="metric-value" style="color:{ca_css}">{ca_in-ca_out:+,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Encaissé</div><div class="metric-value" style="color:#1565C0">{enc_t:,.0f} MAD</div></div>
+    </div>
+    <p style="font-size:13px;font-weight:500;color:#555;margin:16px 0 12px 0">Dettes</p>
+    <div class="metric-row">
+      <div class="metric"><div class="metric-label">Dette financière</div><div class="metric-value neg">{kdf:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Dette fournisseur</div><div class="metric-value" style="color:#7A4100">{kdfo:,.0f} MAD</div></div>
+      <div class="metric"><div class="metric-label">Lots actifs ce mois</div><div class="metric-value">{nb_lots}</div></div>
+      <div class="metric"><div class="metric-label">Transactions</div><div class="metric-value">{len(df_m)}</div></div>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#555">Le bilan mensuel complet détaillé est joint à cet email en PDF. Il inclut le résumé par lot, le détail des dettes et l'historique de la caisse.</p>
+    <p style="font-size:12px;color:#AAA;margin-top:16px">Ce bilan est généré automatiquement chaque mois par la plateforme MAHAL.</p>
+    """
+    html = _email_base(f"Bilan mensuel — {mois_label}", content)
+
+    try:
+        pdf_bytes = generate_bilan_mensuel_pdf(transactions_df, df_df, df_dfo, df_ca, df_enc, mois_dt)
+        pdf_name  = f"bilan_{mois_dt.strftime('%Y_%m')}.pdf"
+    except Exception as e:
+        return False, f"Erreur génération PDF bilan : {e}"
+
+    return send_email(
+        to=cfg["admin_email"],
+        subject=f"[MAHAL] Bilan mensuel — {mois_label}",
+        html_body=html,
+        pdf_bytes=pdf_bytes,
+        pdf_filename=pdf_name
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PDF Receipt Generator (inchangé)
+# ═══════════════════════════════════════════════════════════════════════════════
+def generate_receipt_pdf(data: dict) -> bytes:
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+        rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+    styles = getSampleStyleSheet()
+    dark = colors.HexColor("#1C1C1C"); green = colors.HexColor("#2D7A3A")
+    beige = colors.HexColor("#F0EDE5"); border = colors.HexColor("#E0DDD5"); grey = colors.HexColor("#999999")
+    title_style  = ParagraphStyle('Title', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=26, textColor=dark, leading=30, spaceAfter=2*mm)
+    sub_style    = ParagraphStyle('Sub', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=grey, leading=13, spaceAfter=1*mm)
+    label_style  = ParagraphStyle('Label', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, textColor=grey, leading=11, spaceAfter=1*mm)
+    value_style  = ParagraphStyle('Value', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=dark, leading=14, spaceAfter=1*mm)
+    amount_style = ParagraphStyle('Amount', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=22, textColor=green, leading=28, alignment=TA_RIGHT)
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, textColor=grey, leading=11, alignment=TA_CENTER)
+    note_style   = ParagraphStyle('Note', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=dark, leading=13, spaceAfter=1*mm)
+    story = []
+    header_data = [[Paragraph("MAHAL", title_style), Paragraph(f"RECU N° {data.get('numero','—')}", ParagraphStyle('RNum', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=dark, alignment=TA_RIGHT))]]
+    header_table = Table(header_data, colWidths=[90*mm, 80*mm])
+    header_table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('BOTTOMPADDING',(0,0),(-1,-1),4*mm)]))
+    story.append(header_table)
+    story.append(Paragraph("Gestion &amp; Transactions", sub_style))
+    story.append(HRFlowable(width="100%", thickness=1, color=border, spaceAfter=6*mm))
+    type_rec = data.get('type_recu', 'ENCAISSEMENT')
+    type_colors_map = {'ENCAISSEMENT': colors.HexColor("#1565C0"), 'PAIEMENT': colors.HexColor("#2D7A3A"), 'REMBOURSEMENT': colors.HexColor("#7A4100"), 'DETTE FINANCIERE': colors.HexColor("#B03A2E"), 'DETTE FOURNISSEUR': colors.HexColor("#7A4100"), 'CAISSE': colors.HexColor("#555555")}
+    type_color = type_colors_map.get(type_rec, dark)
+    badge_data = [[Paragraph(f"Date : {data.get('date', datetime.now().strftime('%d/%m/%Y'))}", value_style), Paragraph(f"  {type_rec}  ", ParagraphStyle('Badge', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8, textColor=colors.white, backColor=type_color, alignment=TA_RIGHT, leading=10))]]
+    badge_table = Table(badge_data, colWidths=[90*mm, 80*mm])
+    badge_table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('RIGHTPADDING',(1,0),(1,0),0)]))
+    story.append(badge_table); story.append(Spacer(1, 5*mm))
+    info_rows = []
+    fields = [("Emetteur / Société", data.get('emetteur','MAHAL')), ("Destinataire / Client", data.get('destinataire','—')), ("Lot", data.get('lot','—')), ("Description", data.get('description','—')), ("Mode de paiement", data.get('mode_paiement','—')), ("Référence", data.get('reference','—'))]
+    for label, value in fields:
+        if value and value != '—' or label in ("Emetteur / Société","Destinataire / Client"):
+            info_rows.append([Paragraph(label, label_style), Paragraph(str(value), value_style)])
+    if info_rows:
+        info_table = Table(info_rows, colWidths=[55*mm, 115*mm])
+        info_table.setStyle(TableStyle([('BACKGROUND',(0,0),(0,-1),beige),('ROWBACKGROUNDS',(0,0),(-1,-1),[colors.white,colors.HexColor("#FAFAF8")]),('GRID',(0,0),(-1,-1),0.5,border),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('TOPPADDING',(0,0),(-1,-1),3*mm),('BOTTOMPADDING',(0,0),(-1,-1),3*mm),('LEFTPADDING',(0,0),(-1,-1),3*mm),('RIGHTPADDING',(0,0),(-1,-1),3*mm)]))
+        story.append(info_table)
+    story.append(Spacer(1, 8*mm))
+    montant_val = data.get('montant', 0)
+    try: montant_float = float(montant_val)
+    except: montant_float = 0.0
+    amount_data = [[Paragraph("MONTANT TOTAL", ParagraphStyle('AmtLabel', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=grey, leading=12)), Paragraph(f"{montant_float:,.2f} MAD", amount_style)]]
+    amount_table = Table(amount_data, colWidths=[80*mm, 90*mm])
+    amount_table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),beige),('BOX',(0,0),(-1,-1),1,border),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('TOPPADDING',(0,0),(-1,-1),5*mm),('BOTTOMPADDING',(0,0),(-1,-1),5*mm),('LEFTPADDING',(0,0),(-1,-1),5*mm),('RIGHTPADDING',(0,0),(-1,-1),5*mm)]))
+    story.append(amount_table); story.append(Spacer(1, 6*mm))
+    if data.get('remarque'):
+        story.append(Paragraph("Remarque :", label_style)); story.append(Paragraph(str(data['remarque']), note_style)); story.append(Spacer(1, 4*mm))
+    sig_data = [[Paragraph("Signature émetteur :", label_style), Paragraph("Signature destinataire :", label_style)], [Paragraph("\n\n\n_________________________", note_style), Paragraph("\n\n\n_________________________", note_style)]]
+    sig_table = Table(sig_data, colWidths=[85*mm, 85*mm])
+    sig_table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('TOPPADDING',(0,0),(-1,-1),2*mm),('BOTTOMPADDING',(0,0),(-1,-1),2*mm),('LINEABOVE',(0,0),(-1,0),0.5,border)]))
+    story.append(sig_table); story.append(Spacer(1, 8*mm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=border, spaceAfter=3*mm))
+    story.append(Paragraph(f"Document généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} — Plateforme MAHAL © 2025 — Document non contractuel", footer_style))
+    doc.build(story); buffer.seek(0); return buffer.getvalue()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Google Sheets (inchangé)
+# ═══════════════════════════════════════════════════════════════════════════════
 @st.cache_resource
 def get_client():
     creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=SCOPES)
@@ -329,29 +857,23 @@ def _load_sheet_cached(sheet_name):
     data = sh.worksheet(sheet_name).get_all_records()
     return pd.DataFrame(data) if data else pd.DataFrame()
 
-def load_sheet(sheet_name):
-    return _load_sheet_cached(sheet_name)
-
-def clear_data_cache():
-    _load_sheet_cached.clear()
+def load_sheet(sheet_name): return _load_sheet_cached(sheet_name)
+def clear_data_cache(): _load_sheet_cached.clear()
 
 def save_sheet(df, sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
-    ws = sh.worksheet(sheet_name)
-    ws.clear()
+    ws = sh.worksheet(sheet_name); ws.clear()
     df2 = df.fillna("").astype(str)
     ws.update([df2.columns.tolist()] + df2.values.tolist())
 
 def append_row(row_dict, sheet_name):
     sh = get_client().open_by_key(SPREADSHEET_ID)
-    ws = sh.worksheet(sheet_name)
-    headers = ws.row_values(1)
+    ws = sh.worksheet(sheet_name); headers = ws.row_values(1)
     ws.append_row([str(row_dict.get(h, "")) for h in headers])
 
 def ensure_users_sheet():
     sh = get_client().open_by_key(SPREADSHEET_ID)
-    try:
-        sh.worksheet("Utilisateurs")
+    try: sh.worksheet("Utilisateurs")
     except gspread.WorksheetNotFound:
         ws = sh.add_worksheet("Utilisateurs", rows=500, cols=12)
         ws.update([["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"]])
@@ -359,35 +881,29 @@ def ensure_users_sheet():
 def ensure_finance_sheets():
     sh = get_client().open_by_key(SPREADSHEET_ID)
     sheets_config = {
-        "Dette financiere": ["Date","Creancier","Type de dette","Montant initial (MAD)",
-                             "Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"],
-        "Dette fournisseur": ["Date","Fournisseur","Description","Lot","Montant du (MAD)",
-                              "Montant paye (MAD)","Date echeance","Statut","Remarque"],
-        "Caisse": ["Date","Type operation","Categorie","Description",
-                   "Montant (MAD)","Mode","Lot","Remarque"],
-        "Encaissement": ["Date","Payeur","Lot","Description","Montant (MAD)",
-                         "Mode de paiement","Type encaissement","Statut","Remarque"],
+        "Dette financiere": ["Date","Creancier","Type de dette","Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"],
+        "Dette fournisseur": ["Date","Fournisseur","Description","Lot","Montant du (MAD)","Montant paye (MAD)","Date echeance","Statut","Remarque"],
+        "Caisse": ["Date","Type operation","Categorie","Description","Montant (MAD)","Mode","Lot","Remarque"],
+        "Encaissement": ["Date","Payeur","Lot","Description","Montant (MAD)","Mode de paiement","Type encaissement","Statut","Remarque"],
     }
     for sname, headers in sheets_config.items():
-        try:
-            sh.worksheet(sname)
+        try: sh.worksheet(sname)
         except gspread.WorksheetNotFound:
-            ws = sh.add_worksheet(sname, rows=1000, cols=len(headers))
-            ws.update([headers])
+            ws = sh.add_worksheet(sname, rows=1000, cols=len(headers)); ws.update([headers])
 
 def _fin_load(sname, cols):
     try:
         df = load_sheet(sname)
-        if df.empty:
-            return pd.DataFrame(columns=cols)
+        if df.empty: return pd.DataFrame(columns=cols)
         for c in cols:
-            if c not in df.columns:
-                df[c] = ""
+            if c not in df.columns: df[c] = ""
         return df
-    except Exception:
-        return pd.DataFrame(columns=cols)
+    except Exception: return pd.DataFrame(columns=cols)
 
-# ─── Auth helpers ───────────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Auth helpers (inchangé)
+# ═══════════════════════════════════════════════════════════════════════════════
 def hash_password(p): return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
 def check_password(p, h):
     try: return bcrypt.checkpw(p.encode(), h.encode())
@@ -396,8 +912,7 @@ def check_password(p, h):
 def get_users() -> pd.DataFrame:
     try:
         df = load_sheet("Utilisateurs")
-        if df.empty:
-            df = pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
+        if df.empty: df = pd.DataFrame(columns=["username","password_hash","role","statut","lots_autorises","created_at","nom","prenom"])
         for col in ["nom","prenom"]:
             if col not in df.columns: df[col] = ""
         return df
@@ -413,34 +928,26 @@ def update_session_for_user(uname, new_role, new_lots_list):
     store = _session_store()
     for token, entry in store.items():
         u = entry.get("user", {})
-        if u.get("username", "").lower() == uname.lower():
-            u["role"] = new_role
-            u["lots_autorises"] = new_lots_list
-            entry["user"] = u
-            break
+        if u.get("username","").lower() == uname.lower():
+            u["role"] = new_role; u["lots_autorises"] = new_lots_list; entry["user"] = u; break
 
-def h(val: str) -> str:
-    return _html.escape(str(val))
+def h(val: str) -> str: return _html.escape(str(val))
 
 def sanitize_text(val: str) -> str:
     val = str(val).strip()
-    if val and val[0] in ('=', '+', '-', '@', '|', '%', '\t', '\r', '\n'):
-        val = "'" + val
+    if val and val[0] in ('=','+','-','@','|','%','\t','\r','\n'): val = "'" + val
     val = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', val)
     return val
 
 def find_user(uname):
-    users = get_users()
-    row = users[users["username"].str.lower() == uname.lower()]
+    users = get_users(); row = users[users["username"].str.lower() == uname.lower()]
     return None if row.empty else row.iloc[0].to_dict()
 
 @st.cache_resource
 def _lockout_store(): return {}
 
 def is_locked_out(uname):
-    store = _lockout_store()
-    key_lock = f"lockout_{uname.lower()}"
-    key_att  = f"attempts_{uname.lower()}"
+    store = _lockout_store(); key_lock = f"lockout_{uname.lower()}"; key_att = f"attempts_{uname.lower()}"
     if key_lock in store:
         elapsed = time.time() - store[key_lock]
         if elapsed < LOCKOUT_SECONDS: return True
@@ -448,17 +955,12 @@ def is_locked_out(uname):
     return False
 
 def record_failed(uname):
-    store = _lockout_store()
-    key_att  = f"attempts_{uname.lower()}"
-    key_lock = f"lockout_{uname.lower()}"
+    store = _lockout_store(); key_att = f"attempts_{uname.lower()}"; key_lock = f"lockout_{uname.lower()}"
     store[key_att] = store.get(key_att, 0) + 1
-    if store[key_att] >= MAX_ATTEMPTS:
-        store[key_lock] = time.time()
+    if store[key_att] >= MAX_ATTEMPTS: store[key_lock] = time.time()
 
 def reset_attempts(uname):
-    store = _lockout_store()
-    store.pop(f"attempts_{uname.lower()}", None)
-    store.pop(f"lockout_{uname.lower()}", None)
+    store = _lockout_store(); store.pop(f"attempts_{uname.lower()}", None); store.pop(f"lockout_{uname.lower()}", None)
 
 def admin_exists():
     u = get_users(); return not u.empty and not u[u["role"]=="admin"].empty
@@ -467,7 +969,6 @@ def count_pending():
     try: return len(get_users().query("statut == 'en_attente'"))
     except: return 0
 
-import hashlib as _hl
 SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
 
 @st.cache_resource
@@ -482,32 +983,26 @@ def _load_session(token):
     if not token: return None
     entry = _session_store().get(token)
     if not entry: return None
-    if time.time() > entry["expires_at"]:
-        _session_store().pop(token, None); return None
+    if time.time() > entry["expires_at"]: _session_store().pop(token, None); return None
     return entry["user"]
 
 def _clear_session(token): _session_store().pop(token, None)
 
-for k, v in [("authenticated", False), ("username", ""), ("role", ""),
-              ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
+for k, v in [("authenticated",False),("username",""),("role",""),("lots_autorises",[]),("auth_page","login"),("_sess_token","")]:
     if k not in st.session_state: st.session_state[k] = v
 
 _early_nav = st.query_params.get("nav", "")
-if _early_nav:
-    st.session_state["_pending_nav"] = _early_nav
+if _early_nav: st.session_state["_pending_nav"] = _early_nav
 
 if not st.session_state.authenticated:
     token_url = st.query_params.get("t", "")
     if token_url:
         u = _load_session(token_url)
         if u:
-            st.session_state.authenticated = True
-            st.session_state.username = u["username"]
-            st.session_state.role = u["role"]
-            st.session_state.lots_autorises = u["lots_autorises"]
+            st.session_state.authenticated = True; st.session_state.username = u["username"]
+            st.session_state.role = u["role"]; st.session_state.lots_autorises = u["lots_autorises"]
             st.session_state["_sess_token"] = token_url
-        else:
-            st.query_params.clear()
+        else: st.query_params.clear()
 
 def warn(m): st.warning(m)
 def err(m):  st.error(m)
@@ -520,26 +1015,9 @@ def ok(m):   st.success(m)
 def page_login():
     l, r = st.columns([1.15, 1])
     with l:
-        st.markdown("""
-        <div class="auth-left">
-          <div class="auth-logo-area">
-            <div class="auth-brand">Mahal</div>
-            <div class="auth-brand-sub">Gestion &amp; Transactions</div>
-          </div>
-          <div class="auth-left-sep"></div>
-          <div class="auth-left-bottom">
-            <div class="auth-tagline">Suivez vos lots, vos achats, vos ventes et vos dépenses — simplement et en temps réel.</div>
-            <div class="auth-year">© 2025 — Plateforme privée</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="auth-left"><div class="auth-logo-area"><div class="auth-brand">Mahal</div><div class="auth-brand-sub">Gestion &amp; Transactions</div></div><div class="auth-left-sep"></div><div class="auth-left-bottom"><div class="auth-tagline">Suivez vos lots, vos achats, vos ventes et vos dépenses — simplement et en temps réel.</div><div class="auth-year">© 2025 — Plateforme privée</div></div></div>""", unsafe_allow_html=True)
     with r:
-        st.markdown("""
-        <div class="auth-right-inner">
-          <div class="auth-badge"><span class="auth-badge-dot"></span>Accès sécurisé</div>
-          <div class="auth-eyebrow">Bienvenue</div>
-          <div class="auth-form-title">Connexion</div>
-          <div class="auth-form-desc">Entrez vos identifiants pour accéder à votre tableau de bord.</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="auth-right-inner"><div class="auth-badge"><span class="auth-badge-dot"></span>Accès sécurisé</div><div class="auth-eyebrow">Bienvenue</div><div class="auth-form-title">Connexion</div><div class="auth-form-desc">Entrez vos identifiants pour accéder à votre tableau de bord.</div></div>""", unsafe_allow_html=True)
         uname = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
         pwd   = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
         if st.button("Se connecter →", key="btn_login", use_container_width=True):
@@ -549,58 +1027,34 @@ def page_login():
                 err(f"Trop de tentatives. Réessaie dans {rem//60}m{rem%60}s."); return
             user = find_user(uname)
             if not user or not check_password(pwd, str(user["password_hash"])):
-                record_failed(uname)
-                att = _lockout_store().get(f"attempts_{uname.lower()}", 0)
+                record_failed(uname); att = _lockout_store().get(f"attempts_{uname.lower()}", 0)
                 err(f"Identifiants incorrects. {MAX_ATTEMPTS - att} tentative(s) restante(s)."); return
-            if str(user["statut"]) == "en_attente":
-                warn("Connexion impossible pour le moment. Contacte l'administrateur."); return
-            if str(user["statut"]) == "rejeté":
-                err("Connexion impossible pour le moment. Contacte l'administrateur."); return
+            if str(user["statut"]) == "en_attente": warn("Connexion impossible pour le moment. Contacte l'administrateur."); return
+            if str(user["statut"]) == "rejeté": err("Connexion impossible pour le moment. Contacte l'administrateur."); return
             reset_attempts(uname)
-            lots_raw = str(user.get("lots_autorises",""))
-            lots_list = [l.strip() for l in lots_raw.split(",") if l.strip()]
-            st.session_state.authenticated = True
-            st.session_state.username = str(user["username"])
-            st.session_state.role = str(user["role"])
-            st.session_state.lots_autorises = lots_list
+            lots_raw = str(user.get("lots_autorises","")); lots_list = [l.strip() for l in lots_raw.split(",") if l.strip()]
+            st.session_state.authenticated = True; st.session_state.username = str(user["username"])
+            st.session_state.role = str(user["role"]); st.session_state.lots_autorises = lots_list
             token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
-            st.session_state["_sess_token"] = token
-            st.query_params["t"] = token
-            st.rerun()
+            st.session_state["_sess_token"] = token; st.query_params["t"] = token; st.rerun()
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
             st.session_state.auth_page = "register"; st.rerun()
         st.markdown('<div class="auth-switch-text">Accès réservé aux membres autorisés.</div>', unsafe_allow_html=True)
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# INSCRIPTION
+# INSCRIPTION — avec envoi email automatique à l'admin
 # ═══════════════════════════════════════════════════════════════════════════════
 def page_register():
     l, r = st.columns([1.15, 1])
     with l:
-        st.markdown("""
-        <div class="auth-left">
-          <div class="auth-logo-area">
-            <div class="auth-brand">Mahal</div>
-            <div class="auth-brand-sub">Créer un compte</div>
-          </div>
-          <div class="auth-left-sep"></div>
-          <div class="auth-left-bottom">
-            <div class="auth-tagline">Votre demande sera examinée par un administrateur avant activation de votre accès.</div>
-            <div class="auth-year">© 2025 — Plateforme privée</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="auth-left"><div class="auth-logo-area"><div class="auth-brand">Mahal</div><div class="auth-brand-sub">Créer un compte</div></div><div class="auth-left-sep"></div><div class="auth-left-bottom"><div class="auth-tagline">Votre demande sera examinée par un administrateur avant activation de votre accès.</div><div class="auth-year">© 2025 — Plateforme privée</div></div></div>""", unsafe_allow_html=True)
     with r:
-        st.markdown("""
-        <div class="auth-right-inner">
-          <div class="auth-badge"><span class="auth-badge-dot"></span>Inscription</div>
-          <div class="auth-eyebrow">Nouveau membre</div>
-          <div class="auth-form-title">Créer un compte</div>
-          <div class="auth-form-desc">Votre demande sera soumise à l'approbation de l'administrateur.</div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="auth-right-inner"><div class="auth-badge"><span class="auth-badge-dot"></span>Inscription</div><div class="auth-eyebrow">Nouveau membre</div><div class="auth-form-title">Créer un compte</div><div class="auth-form-desc">Votre demande sera soumise à l'approbation de l'administrateur.</div></div>""", unsafe_allow_html=True)
         rc1, rc2 = st.columns(2, gap="small")
         with rc1: prenom = st.text_input("Prénom", key="reg_prenom", placeholder="Votre prénom")
-        with rc2: nom    = st.text_input("Nom", key="reg_nom", placeholder="Votre nom")
+        with rc2: nom    = st.text_input("Nom",    key="reg_nom",    placeholder="Votre nom")
         uname = st.text_input("Nom d'utilisateur", key="reg_user", placeholder="Choisir un identifiant")
         pwd1  = st.text_input("Mot de passe", type="password", key="reg_pass", placeholder="8 car. min. avec chiffres")
         pwd2  = st.text_input("Confirmer le mot de passe", type="password", key="reg_pass2", placeholder="••••••••")
@@ -624,18 +1078,28 @@ def page_register():
             if find_user(uname):
                 st.session_state.pop("registering", None); err("Nom d'utilisateur déjà pris."); return
             is_first = not admin_exists()
-            new_u = {"username": sanitize_text(uname),
-                     "password_hash": hash_password(pwd1),
-                     "role": "admin" if is_first else "sous-admin",
-                     "statut": "approuvé" if is_first else "en_attente",
-                     "lots_autorises": "",
-                     "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                     "nom": sanitize_text(nom.upper()),
-                     "prenom": sanitize_text(prenom.capitalize())}
+            new_u = {
+                "username":      sanitize_text(uname),
+                "password_hash": hash_password(pwd1),
+                "role":          "admin" if is_first else "sous-admin",
+                "statut":        "approuvé" if is_first else "en_attente",
+                "lots_autorises": "",
+                "created_at":    datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "nom":           sanitize_text(nom.upper()),
+                "prenom":        sanitize_text(prenom.capitalize())
+            }
             try:
                 with st.spinner("Enregistrement…"):
                     append_row(new_u, "Utilisateurs")
                     _load_sheet_cached.clear()
+
+                    # ── EMAIL AUTOMATIQUE À L'ADMIN ──────────────────────────
+                    if not is_first and email_configured():
+                        try:
+                            send_email_new_registration(new_u)
+                        except Exception:
+                            pass  # L'email est silencieux, n'empêche pas l'inscription
+
                 msg = "Compte créé ! Tu peux te connecter." if is_first else "Inscription envoyée — en attente d'approbation."
                 ok(msg); st.session_state.pop("registering", None)
             except Exception as e:
@@ -676,36 +1140,23 @@ def compute_resume_personne(t):
     if t.empty or 'Personne' not in t.columns: return EMPTY
     t = to_numeric(t.copy(), ['Montant (MAD)']); t = t.dropna(subset=['Personne'])
     if t.empty: return EMPTY
-    g = t.groupby('Personne').apply(lambda x: pd.Series({
-        'Total Achats':   x.loc[x['Type (Achat/Vente/Dépense)']=='ACHAT','Montant (MAD)'].sum(),
-        'Total Ventes':   x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Montant (MAD)'].sum(),
-        'Total Dépenses': x.loc[x['Type (Achat/Vente/Dépense)']=='DÉPENSE','Montant (MAD)'].sum(),
-    }), include_groups=False).reset_index()
+    g = t.groupby('Personne').apply(lambda x: pd.Series({'Total Achats': x.loc[x['Type (Achat/Vente/Dépense)']=='ACHAT','Montant (MAD)'].sum(), 'Total Ventes': x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Montant (MAD)'].sum(), 'Total Dépenses': x.loc[x['Type (Achat/Vente/Dépense)']=='DÉPENSE','Montant (MAD)'].sum()}), include_groups=False).reset_index()
     if g.empty or 'Total Ventes' not in g.columns: return EMPTY
     g['Résultat'] = g['Total Ventes'] - (g['Total Achats'] + g['Total Dépenses']); return g
 
 def compute_suivi_lot(t):
     EMPTY = pd.DataFrame(columns=['Lot','Total Achats','Total Ventes','Total Dépenses','Stock Restant (pièces)','Résultat'])
     if t.empty or 'Lot' not in t.columns: return EMPTY
-    t = to_numeric(t.copy(), ['Montant (MAD)','Quantité (pièces)'])
-    t = t.dropna(subset=['Lot']); t = t[t['Lot'].astype(str).str.strip() != '']
+    t = to_numeric(t.copy(), ['Montant (MAD)','Quantité (pièces)']); t = t.dropna(subset=['Lot']); t = t[t['Lot'].astype(str).str.strip() != '']
     if t.empty: return EMPTY
-    g = t.groupby('Lot').apply(lambda x: pd.Series({
-        'Total Achats':           x.loc[x['Type (Achat/Vente/Dépense)']=='ACHAT','Montant (MAD)'].sum(),
-        'Total Ventes':           x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Montant (MAD)'].sum(),
-        'Total Dépenses':         x.loc[x['Type (Achat/Vente/Dépense)']=='DÉPENSE','Montant (MAD)'].sum(),
-        'Stock Restant (pièces)': (x.loc[x['Type (Achat/Vente/Dépense)']=='ACHAT','Quantité (pièces)'].sum()
-                                 - x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Quantité (pièces)'].sum()),
-    }), include_groups=False).reset_index()
+    g = t.groupby('Lot').apply(lambda x: pd.Series({'Total Achats': x.loc[x['Type (Achat/Vente/Dépense)']=='ACHAT','Montant (MAD)'].sum(), 'Total Ventes': x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Montant (MAD)'].sum(), 'Total Dépenses': x.loc[x['Type (Achat/Vente/Dépense)']=='DÉPENSE','Montant (MAD)'].sum(), 'Stock Restant (pièces)': (x.loc[x['Type (Achat/Vente/Dépense)']=='ACHAT','Quantité (pièces)'].sum() - x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Quantité (pièces)'].sum())}), include_groups=False).reset_index()
     if g.empty or 'Total Ventes' not in g.columns: return EMPTY
     g['Résultat'] = g['Total Ventes'] - (g['Total Achats'] + g['Total Dépenses']); return g
 
 def compute_historique_lot(t):
     if t.empty or 'Lot' not in t.columns: return pd.DataFrame()
-    cols = [c for c in ['Lot','Date','Type (Achat/Vente/Dépense)','Personne','Description',
-                        'Montant (MAD)','Quantité (pièces)','Remarque','Statut du lot'] if c in t.columns]
-    df = t[cols].copy()
-    df = df[df['Lot'].astype(str).str.strip() != '']
+    cols = [c for c in ['Lot','Date','Type (Achat/Vente/Dépense)','Personne','Description','Montant (MAD)','Quantité (pièces)','Remarque','Statut du lot'] if c in t.columns]
+    df = t[cols].copy(); df = df[df['Lot'].astype(str).str.strip() != '']
     return df.sort_values(['Lot','Date'], ascending=[True, False])
 
 def compute_suivi_avances(t):
@@ -713,646 +1164,450 @@ def compute_suivi_avances(t):
     if t.empty or 'Lot' not in t.columns: return EMPTY
     t = to_numeric(t.copy(), ['Montant (MAD)']); t = t.dropna(subset=['Lot','Personne'])
     if t.empty: return EMPTY
-    g = t.groupby(['Lot','Personne']).apply(lambda x: pd.Series({
-        'Total Avancé':   x.loc[x['Type (Achat/Vente/Dépense)'].isin(['ACHAT','DÉPENSE']),'Montant (MAD)'].sum(),
-        'Total Encaissé': x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Montant (MAD)'].sum(),
-    }), include_groups=False).reset_index()
+    g = t.groupby(['Lot','Personne']).apply(lambda x: pd.Series({'Total Avancé': x.loc[x['Type (Achat/Vente/Dépense)'].isin(['ACHAT','DÉPENSE']),'Montant (MAD)'].sum(), 'Total Encaissé': x.loc[x['Type (Achat/Vente/Dépense)']=='VENTE','Montant (MAD)'].sum()}), include_groups=False).reset_index()
     if g.empty or 'Total Encaissé' not in g.columns: return EMPTY
     g['Solde'] = g['Total Encaissé'] - g['Total Avancé']; return g
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# HELPER: inline editor for finance sheets
-# ═══════════════════════════════════════════════════════════════════════════════
+# ─── Finance inline editor (inchangé) ────────────────────────────────────────
 def render_finance_inline_editor(df_source, sheet_name, cols_show, column_config, numeric_cols, key_prefix, filter_opts=None):
-    """Generic inline editor + delete for any finance sheet."""
-    df_work = to_numeric(df_source.copy(), numeric_cols)
-    df_work = df_work.reset_index(drop=True)
-    df_work["_orig_idx"] = df_work.index
-
-    # Optional filters
+    df_work = to_numeric(df_source.copy(), numeric_cols); df_work = df_work.reset_index(drop=True); df_work["_orig_idx"] = df_work.index
     if filter_opts:
-        fcols = st.columns(len(filter_opts), gap="small")
-        filter_vals = {}
+        fcols = st.columns(len(filter_opts), gap="small"); filter_vals = {}
         for i, (fname, fkey, fopts) in enumerate(filter_opts):
-            with fcols[i]:
-                filter_vals[fkey] = st.selectbox(fname, ["Tous"] + fopts, key=f"{key_prefix}_f_{fkey}")
+            with fcols[i]: filter_vals[fkey] = st.selectbox(fname, ["Tous"] + fopts, key=f"{key_prefix}_f_{fkey}")
         for fkey, fval in filter_vals.items():
             col_name = next((f[0] for f in filter_opts if f[1] == fkey), None)
-            if fval != "Tous" and col_name in df_work.columns:
-                df_work = df_work[df_work[col_name] == fval]
-
+            if fval != "Tous" and col_name in df_work.columns: df_work = df_work[df_work[col_name] == fval]
     visible_cols = [c for c in cols_show if c in df_work.columns]
     st.markdown(f'<div class="info-count">{len(df_work)} ligne(s)</div>', unsafe_allow_html=True)
-
-    edited = st.data_editor(
-        df_work[visible_cols + ["_orig_idx"]],
-        column_config=column_config,
-        hide_index=True,
-        use_container_width=True,
-        num_rows="fixed",
-        column_order=visible_cols,
-        key=f"{key_prefix}_editor"
-    )
-
+    edited = st.data_editor(df_work[visible_cols + ["_orig_idx"]], column_config=column_config, hide_index=True, use_container_width=True, num_rows="fixed", column_order=visible_cols, key=f"{key_prefix}_editor")
     if st.button("💾 Sauvegarder les modifications", key=f"{key_prefix}_save_btn"):
         try:
             full_df = to_numeric(_fin_load(sheet_name, cols_show), numeric_cols).reset_index(drop=True)
             for _, row_edit in edited.iterrows():
                 oi = int(row_edit["_orig_idx"])
                 for col in visible_cols:
-                    if col in full_df.columns:
-                        full_df.at[oi, col] = row_edit[col]
-            save_sheet(full_df, sheet_name)
-            st.success("✅ Modifications enregistrées.")
-            clear_data_cache(); st.rerun()
-        except Exception as e:
-            st.error(f"Erreur : {e}")
-
-    # Delete section
+                    if col in full_df.columns: full_df.at[oi, col] = row_edit[col]
+            save_sheet(full_df, sheet_name); st.success("✅ Modifications enregistrées."); clear_data_cache(); st.rerun()
+        except Exception as e: st.error(f"Erreur : {e}")
     st.markdown('<div class="section-title" style="font-size:1rem;margin-top:1.5rem">Supprimer une ligne</div>', unsafe_allow_html=True)
     full_df_del = to_numeric(_fin_load(sheet_name, cols_show), numeric_cols).reset_index(drop=True)
-
     if not full_df_del.empty:
         def make_del_label(r):
             parts = []
-            for c in ['Date', 'Creancier', 'Fournisseur', 'Payeur', 'Type operation', 'Categorie', 'Description']:
-                if c in r and str(r[c]).strip():
-                    parts.append(str(r[c]))
-            # Always add amount
-            for c in ['Montant initial (MAD)', 'Montant du (MAD)', 'Montant (MAD)']:
+            for c in ['Date','Creancier','Fournisseur','Payeur','Type operation','Categorie','Description']:
+                if c in r and str(r[c]).strip(): parts.append(str(r[c]))
+            for c in ['Montant initial (MAD)','Montant du (MAD)','Montant (MAD)']:
                 if c in r:
                     try: parts.append(f"{float(r[c]):,.0f} MAD"); break
                     except: pass
             return " | ".join(parts[:4]) if parts else f"Ligne {r.name}"
-
         labels_del = [make_del_label(row) for _, row in full_df_del.iterrows()]
         choix_del = st.selectbox("Choisir la ligne à supprimer", ["— sélectionner —"] + labels_del, key=f"{key_prefix}_del_sel")
         if choix_del != "— sélectionner —":
-            del_idx = labels_del.index(choix_del)
-            confirm = st.checkbox("Confirmer la suppression", key=f"{key_prefix}_del_confirm")
+            del_idx = labels_del.index(choix_del); confirm = st.checkbox("Confirmer la suppression", key=f"{key_prefix}_del_confirm")
             if st.button("🗑 Supprimer cette ligne", key=f"{key_prefix}_del_btn"):
-                if not confirm:
-                    st.warning("Coche la case de confirmation.")
+                if not confirm: st.warning("Coche la case de confirmation.")
                 else:
                     updated = full_df_del.drop(index=del_idx).reset_index(drop=True)
-                    try:
-                        save_sheet(updated, sheet_name)
-                        st.success("Ligne supprimée.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e:
-                        st.error(f"Erreur : {e}")
-    else:
-        st.info("Aucune donnée à supprimer.")
+                    try: save_sheet(updated, sheet_name); st.success("Ligne supprimée."); clear_data_cache(); st.rerun()
+                    except Exception as e: st.error(f"Erreur : {e}")
+    else: st.info("Aucune donnée à supprimer.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# FINANCE TAB RENDERER
+# FINANCE TAB — avec onglet Notifications email
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_finance_tab(lots_list):
     try: ensure_finance_sheets()
     except Exception: pass
 
-    DF_COLS  = ["Date","Creancier","Type de dette","Montant initial (MAD)",
-                "Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"]
-    DFO_COLS = ["Date","Fournisseur","Description","Lot","Montant du (MAD)",
-                "Montant paye (MAD)","Date echeance","Statut","Remarque"]
-    CA_COLS  = ["Date","Type operation","Categorie","Description",
-                "Montant (MAD)","Mode","Lot","Remarque"]
-    ENC_COLS = ["Date","Payeur","Lot","Description","Montant (MAD)",
-                "Mode de paiement","Type encaissement","Statut","Remarque"]
+    DF_COLS  = ["Date","Creancier","Type de dette","Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)","Date echeance","Statut","Remarque"]
+    DFO_COLS = ["Date","Fournisseur","Description","Lot","Montant du (MAD)","Montant paye (MAD)","Date echeance","Statut","Remarque"]
+    CA_COLS  = ["Date","Type operation","Categorie","Description","Montant (MAD)","Mode","Lot","Remarque"]
+    ENC_COLS = ["Date","Payeur","Lot","Description","Montant (MAD)","Mode de paiement","Type encaissement","Statut","Remarque"]
 
     df_df  = to_numeric(_fin_load("Dette financiere",  DF_COLS),  ["Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)"])
     df_dfo = to_numeric(_fin_load("Dette fournisseur", DFO_COLS), ["Montant du (MAD)","Montant paye (MAD)"])
     df_ca  = to_numeric(_fin_load("Caisse",            CA_COLS),  ["Montant (MAD)"])
     df_enc = to_numeric(_fin_load("Encaissement",      ENC_COLS), ["Montant (MAD)"])
 
-    kpi_df   = (df_df["Montant initial (MAD)"]  - df_df["Montant rembourse (MAD)"]).clip(lower=0).sum() if not df_df.empty else 0
-    kpi_dfo  = (df_dfo["Montant du (MAD)"] - df_dfo["Montant paye (MAD)"]).clip(lower=0).sum() if not df_dfo.empty else 0
-    kpi_in   = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
-    kpi_out  = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
-    kpi_sol  = kpi_in - kpi_out
-    kpi_enc  = df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0
-    c_sol    = "#2D7A3A" if kpi_sol >= 0 else "#B03A2E"
+    kpi_df  = (df_df["Montant initial (MAD)"] - df_df["Montant rembourse (MAD)"]).clip(lower=0).sum() if not df_df.empty else 0
+    kpi_dfo = (df_dfo["Montant du (MAD)"] - df_dfo["Montant paye (MAD)"]).clip(lower=0).sum() if not df_dfo.empty else 0
+    kpi_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
+    kpi_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
+    kpi_sol = kpi_in - kpi_out
+    kpi_enc = df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0
+    c_sol   = "#2D7A3A" if kpi_sol >= 0 else "#B03A2E"
 
-    st.markdown(f"""
-    <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
-      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Dette financiere restante</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#B03A2E">{kpi_df:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
-      </div>
-      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Dette fournisseur restante</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{kpi_dfo:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
-      </div>
-      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Solde caisse</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_sol}">{kpi_sol:+,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
-      </div>
-      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-        <div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Total encaisse</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1565C0">{kpi_enc:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Dette financiere restante</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#B03A2E">{kpi_df:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div></div>
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Dette fournisseur restante</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{kpi_dfo:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div></div>
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Solde caisse</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_sol}">{kpi_sol:+,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div></div>
+      <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;font-weight:500;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Total encaisse</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1565C0">{kpi_enc:,.0f} <small style="opacity:.5;font-size:0.8rem">MAD</small></div></div>
+    </div>""", unsafe_allow_html=True)
 
-    PL = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-              font=dict(family="DM Sans", color="#555", size=12), margin=dict(l=10,r=10,t=40,b=10))
+    PL = dict(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(family="DM Sans", color="#555", size=12), margin=dict(l=10,r=10,t=40,b=10))
 
-    ftab1, ftab2, ftab3, ftab4, ftab5 = st.tabs([
+    ftab1, ftab2, ftab3, ftab4, ftab5, ftab6 = st.tabs([
         "🏦 Dette financiere",
         "📦 Dette fournisseur",
         "💵 Caisse",
         "✅ Encaissement",
-        "🎫 Créer un ticket / Reçu PDF"
+        "🎫 Créer un ticket / Reçu PDF",
+        "📧 Notifications email",   # ← NOUVEL ONGLET
     ])
 
-    # ── TAB 1: DETTE FINANCIERE ────────────────────────────────────────────────
-    with ftab1:
-        st.markdown('<div class="section-title">Dette financiere</div>', unsafe_allow_html=True)
-        st.caption("Emprunts bancaires, credits, dettes envers des personnes physiques ou morales.")
+    # ── ONGLET NOTIFICATIONS EMAIL ─────────────────────────────────────────────
+    with ftab6:
+        st.markdown('<div class="section-title">Notifications email</div>', unsafe_allow_html=True)
+        st.caption("Envoyez manuellement les rapports par email ou vérifiez la configuration.")
 
-        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
+        # Statut de la configuration
+        if email_configured():
+            cfg = _get_email_cfg()
+            st.markdown(f"""<div class="email-status-ok">
+              ✅ Email configuré — Expéditeur : <strong>{cfg.get('sender','')}</strong> → Destinataire admin : <strong>{cfg.get('admin_email','')}</strong>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<div class="email-status-err">
+              ⚠️ Email non configuré. Ajoutez la section <code>[email]</code> dans vos <code>st.secrets</code>.
+            </div>""", unsafe_allow_html=True)
+            with st.expander("Comment configurer l'email ?", expanded=True):
+                st.code("""# Dans .streamlit/secrets.toml
 
-        with sub1:
-            with st.expander("➕ Ajouter une dette financiere", expanded=False):
-                fc1, fc2, fc3 = st.columns(3, gap="large")
-                with fc1:
-                    df_date = st.date_input("Date", datetime.now(), key="df_date")
-                    df_crea = st.text_input("Creancier / Banque", key="df_crea", placeholder="Ex: BMCE, Ali Hassan...")
-                    df_type = st.selectbox("Type de dette", ["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], key="df_type")
-                with fc2:
-                    df_mi   = st.number_input("Montant initial (MAD)", min_value=0.0, step=100.0, key="df_mi")
-                    df_mr   = st.number_input("Deja rembourse (MAD)", min_value=0.0, step=100.0, key="df_mr")
-                    df_taux = st.number_input("Taux interet (%)", min_value=0.0, step=0.1, key="df_taux")
-                with fc3:
-                    df_ech  = st.date_input("Date echeance", key="df_ech")
-                    df_stat = st.selectbox("Statut", ["En cours","Rembourse","En retard","Renegocie"], key="df_stat")
-                    df_rem  = st.text_input("Remarque", key="df_rem")
-                if st.button("Enregistrer la dette", key="btn_df_save"):
-                    row = {"Date": str(df_date), "Creancier": sanitize_text(df_crea), "Type de dette": df_type,
-                           "Montant initial (MAD)": df_mi, "Montant rembourse (MAD)": df_mr, "Taux interet (%)": df_taux,
-                           "Date echeance": str(df_ech), "Statut": df_stat, "Remarque": sanitize_text(df_rem)}
-                    try:
-                        append_row(row, "Dette financiere")
-                        st.success("Dette financiere enregistree.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e: st.error(f"Erreur : {e}")
+[email]
+smtp_server  = "smtp.gmail.com"
+smtp_port    = 587
+sender       = "votre@gmail.com"
+password     = "xxxx xxxx xxxx xxxx"   # App Password Gmail (pas votre vrai mdp)
+admin_email  = "admin@gmail.com"
 
-            if not df_df.empty:
-                df_df_d = df_df.copy()
-                df_df_d["Restant (MAD)"] = (df_df_d["Montant initial (MAD)"] - df_df_d["Montant rembourse (MAD)"]).clip(lower=0)
-                sf_s = st.selectbox("Filtrer par statut", ["Tous"]+sorted(df_df_d["Statut"].dropna().unique().tolist()), key="sf_dfstat")
-                if sf_s != "Tous": df_df_d = df_df_d[df_df_d["Statut"]==sf_s]
-                st.markdown(f'<div class="info-count">{len(df_df_d)} dette(s)</div>', unsafe_allow_html=True)
-                st.dataframe(df_df_d, hide_index=True, use_container_width=True)
-                if len(df_df_d) > 0:
-                    fig = go.Figure()
-                    fig.add_trace(go.Bar(name="Initial", x=df_df_d["Creancier"], y=df_df_d["Montant initial (MAD)"], marker_color="#E8B4B0"))
-                    fig.add_trace(go.Bar(name="Rembourse", x=df_df_d["Creancier"], y=df_df_d["Montant rembourse (MAD)"], marker_color="#2D7A3A"))
-                    fig.update_layout(**PL, barmode="overlay", legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"))
-                    st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Aucune dette financiere enregistree.")
-
-            st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un remboursement</div>', unsafe_allow_html=True)
-            if not df_df.empty:
-                creas = df_df["Creancier"].dropna().unique().tolist()
-                rc = st.selectbox("Creancier", ["— selectionner —"]+creas, key="rc_crea")
-                if rc != "— selectionner —":
-                    rm = st.number_input("Montant rembourse ce jour (MAD)", min_value=0.0, step=100.0, key="rc_montant")
-                    if st.button("Enregistrer remboursement", key="btn_rc"):
-                        df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] = (
-                            df_df.loc[df_df["Creancier"]==rc, "Montant rembourse (MAD)"] + rm)
-                        try:
-                            save_sheet(df_df, "Dette financiere")
-                            st.success(f"Remboursement de {rm:,.0f} MAD enregistre.")
-                            clear_data_cache(); st.rerun()
-                        except Exception as e: st.error(f"Erreur : {e}")
-
-        with sub2:
-            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Dette financiere</div>', unsafe_allow_html=True)
-            col_cfg_df = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Creancier": st.column_config.TextColumn("Creancier"),
-                "Type de dette": st.column_config.SelectboxColumn("Type", options=["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"], required=True),
-                "Montant initial (MAD)": st.column_config.NumberColumn("Montant initial", min_value=0.0, format="%.2f"),
-                "Montant rembourse (MAD)": st.column_config.NumberColumn("Rembourse", min_value=0.0, format="%.2f"),
-                "Taux interet (%)": st.column_config.NumberColumn("Taux (%)", min_value=0.0, format="%.2f"),
-                "Date echeance": st.column_config.TextColumn("Echeance"),
-                "Statut": st.column_config.SelectboxColumn("Statut", options=["En cours","Rembourse","En retard","Renegocie"], required=True),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-            }
-            filter_df = [
-                ("Statut", "Statut", sorted(df_df["Statut"].dropna().unique().tolist()) if not df_df.empty else [])
-            ]
-            render_finance_inline_editor(df_df, "Dette financiere", DF_COLS, col_cfg_df,
-                ["Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)"],
-                "edit_df", filter_df)
-
-    # ── TAB 2: DETTE FOURNISSEUR ───────────────────────────────────────────────
-    with ftab2:
-        st.markdown('<div class="section-title">Dette fournisseur</div>', unsafe_allow_html=True)
-        st.caption("Ce que vous devez a vos fournisseurs pour des achats non encore regles.")
-
-        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
-
-        with sub1:
-            with st.expander("➕ Ajouter une dette fournisseur", expanded=False):
-                ff1, ff2, ff3 = st.columns(3, gap="large")
-                with ff1:
-                    dfo_date = st.date_input("Date", datetime.now(), key="dfo_date")
-                    dfo_four = st.text_input("Fournisseur", key="dfo_four", placeholder="Nom du fournisseur")
-                    dfo_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="dfo_lot")
-                with ff2:
-                    dfo_desc = st.text_input("Description", key="dfo_desc")
-                    dfo_du   = st.number_input("Montant du (MAD)", min_value=0.0, step=100.0, key="dfo_du")
-                    dfo_pay  = st.number_input("Deja paye (MAD)", min_value=0.0, step=100.0, key="dfo_pay")
-                with ff3:
-                    dfo_ech  = st.date_input("Date echeance", key="dfo_ech")
-                    dfo_stat = st.selectbox("Statut", ["A payer","Partiellement paye","Solde","En litige"], key="dfo_stat")
-                    dfo_rem  = st.text_input("Remarque", key="dfo_rem")
-                if st.button("Enregistrer la dette fournisseur", key="btn_dfo_save"):
-                    row = {"Date": str(dfo_date), "Fournisseur": sanitize_text(dfo_four),
-                           "Description": sanitize_text(dfo_desc), "Lot": sanitize_text(dfo_lot),
-                           "Montant du (MAD)": dfo_du, "Montant paye (MAD)": dfo_pay,
-                           "Date echeance": str(dfo_ech), "Statut": dfo_stat, "Remarque": sanitize_text(dfo_rem)}
-                    try:
-                        append_row(row, "Dette fournisseur")
-                        st.success("Dette fournisseur enregistree.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e: st.error(f"Erreur : {e}")
-
-            if not df_dfo.empty:
-                df_dfo_d = df_dfo.copy()
-                df_dfo_d["Restant (MAD)"] = (df_dfo_d["Montant du (MAD)"] - df_dfo_d["Montant paye (MAD)"]).clip(lower=0)
-                col_f1, col_f2 = st.columns(2)
-                with col_f1: fs = st.selectbox("Statut", ["Tous"]+sorted(df_dfo_d["Statut"].dropna().unique().tolist()), key="ffo_s")
-                with col_f2: fl = st.selectbox("Lot", ["Tous"]+sorted(df_dfo_d["Lot"].dropna().astype(str).unique().tolist()), key="ffo_l")
-                if fs != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Statut"]==fs]
-                if fl != "Tous": df_dfo_d = df_dfo_d[df_dfo_d["Lot"]==fl]
-                st.markdown(f'<div class="info-count">{len(df_dfo_d)} dette(s) fournisseur</div>', unsafe_allow_html=True)
-                st.dataframe(df_dfo_d, hide_index=True, use_container_width=True)
-                st.markdown('<div class="section-title" style="font-size:1rem">Resume par fournisseur</div>', unsafe_allow_html=True)
-                res = df_dfo.groupby("Fournisseur").apply(lambda x: pd.Series({
-                    "Total du": x["Montant du (MAD)"].sum(), "Total paye": x["Montant paye (MAD)"].sum(),
-                    "Restant": (x["Montant du (MAD)"] - x["Montant paye (MAD)"]).clip(lower=0).sum(),
-                }), include_groups=False).reset_index()
-                st.dataframe(res, hide_index=True, use_container_width=True)
-            else:
-                st.info("Aucune dette fournisseur enregistree.")
-
-            st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un paiement fournisseur</div>', unsafe_allow_html=True)
-            if not df_dfo.empty:
-                fours = df_dfo["Fournisseur"].dropna().unique().tolist()
-                pf = st.selectbox("Fournisseur", ["— selectionner —"]+fours, key="pf_four")
-                if pf != "— selectionner —":
-                    pm = st.number_input("Montant paye ce jour (MAD)", min_value=0.0, step=100.0, key="pf_montant")
-                    if st.button("Enregistrer le paiement", key="btn_pf"):
-                        mask = df_dfo["Fournisseur"] == pf
-                        df_dfo.loc[mask, "Montant paye (MAD)"] = df_dfo.loc[mask, "Montant paye (MAD)"] + pm
-                        for i in df_dfo[mask].index:
-                            r = df_dfo.at[i,"Montant du (MAD)"] - df_dfo.at[i,"Montant paye (MAD)"]
-                            if r <= 0: df_dfo.at[i,"Statut"] = "Solde"
-                            elif df_dfo.at[i,"Montant paye (MAD)"] > 0: df_dfo.at[i,"Statut"] = "Partiellement paye"
-                        try:
-                            save_sheet(df_dfo, "Dette fournisseur")
-                            st.success(f"Paiement de {pm:,.0f} MAD enregistre.")
-                            clear_data_cache(); st.rerun()
-                        except Exception as e: st.error(f"Erreur : {e}")
-
-        with sub2:
-            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Dette fournisseur</div>', unsafe_allow_html=True)
-            col_cfg_dfo = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Fournisseur": st.column_config.TextColumn("Fournisseur"),
-                "Description": st.column_config.TextColumn("Description"),
-                "Lot": st.column_config.TextColumn("Lot"),
-                "Montant du (MAD)": st.column_config.NumberColumn("Montant du", min_value=0.0, format="%.2f"),
-                "Montant paye (MAD)": st.column_config.NumberColumn("Paye", min_value=0.0, format="%.2f"),
-                "Date echeance": st.column_config.TextColumn("Echeance"),
-                "Statut": st.column_config.SelectboxColumn("Statut", options=["A payer","Partiellement paye","Solde","En litige"], required=True),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-            }
-            filter_dfo = [
-                ("Statut", "Statut", sorted(df_dfo["Statut"].dropna().unique().tolist()) if not df_dfo.empty else []),
-                ("Lot", "Lot", sorted(df_dfo["Lot"].dropna().astype(str).unique().tolist()) if not df_dfo.empty else []),
-            ]
-            render_finance_inline_editor(df_dfo, "Dette fournisseur", DFO_COLS, col_cfg_dfo,
-                ["Montant du (MAD)","Montant paye (MAD)"], "edit_dfo", filter_dfo)
-
-    # ── TAB 3: CAISSE ──────────────────────────────────────────────────────────
-    with ftab3:
-        st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
-        st.caption("Suivi de toutes les entrees et sorties d'argent en caisse.")
-
-        c_in  = df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
-        c_out = df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
-        c_sol = c_in - c_out
-        c_col = "#2D7A3A" if c_sol >= 0 else "#B03A2E"
-        st.markdown(f"""
-        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
-          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Entrees</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#2D7A3A">{c_in:,.0f} MAD</div>
-          </div>
-          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Sorties</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#B03A2E">{c_out:,.0f} MAD</div>
-          </div>
-          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Solde caisse</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_col}">{c_sol:+,.0f} MAD</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
-        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
-
-        with sub1:
-            with st.expander("➕ Nouvelle operation de caisse", expanded=False):
-                cc1, cc2, cc3 = st.columns(3, gap="large")
-                with cc1:
-                    ca_date = st.date_input("Date", datetime.now(), key="ca_date")
-                    ca_type = st.selectbox("Type operation", ["ENTREE","SORTIE"], key="ca_type")
-                    ca_cat  = st.selectbox("Categorie", ["Vente marchandise","Achat marchandise","Loyer","Salaire",
-                                                          "Transport","Frais bancaires","Remboursement dette",
-                                                          "Encaissement client","Paiement fournisseur","Divers"], key="ca_cat")
-                with cc2:
-                    ca_desc = st.text_input("Description", key="ca_desc")
-                    ca_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="ca_mont")
-                    ca_mode = st.selectbox("Mode", ["Especes","Virement","Cheque","Mobile Payment","Autre"], key="ca_mode")
-                with cc3:
-                    ca_lot  = st.selectbox("Lot associe (optionnel)", ["—"]+lots_list, key="ca_lot")
-                    ca_rem  = st.text_input("Remarque", key="ca_rem")
-                if st.button("Enregistrer l'operation", key="btn_ca_save"):
-                    row = {"Date": str(ca_date), "Type operation": ca_type, "Categorie": ca_cat,
-                           "Description": sanitize_text(ca_desc), "Montant (MAD)": ca_mont,
-                           "Mode": ca_mode, "Lot": sanitize_text(ca_lot), "Remarque": sanitize_text(ca_rem)}
-                    try:
-                        append_row(row, "Caisse")
-                        st.success("Operation de caisse enregistree.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e: st.error(f"Erreur : {e}")
-
-            if not df_ca.empty:
-                ca1, ca2, ca3 = st.columns(3)
-                with ca1: fca_t = st.selectbox("Type", ["Tous","ENTREE","SORTIE"], key="fca_t")
-                with ca2:
-                    cats = ["Toutes"]+sorted(df_ca["Categorie"].dropna().unique().tolist())
-                    fca_c = st.selectbox("Categorie", cats, key="fca_c")
-                with ca3:
-                    lots_ca = ["Tous"]+sorted([x for x in df_ca["Lot"].dropna().astype(str).unique() if x and x!="—"])
-                    fca_l = st.selectbox("Lot", lots_ca, key="fca_l")
-                df_ca_d = df_ca.copy()
-                if fca_t != "Tous": df_ca_d = df_ca_d[df_ca_d["Type operation"]==fca_t]
-                if fca_c != "Toutes": df_ca_d = df_ca_d[df_ca_d["Categorie"]==fca_c]
-                if fca_l != "Tous": df_ca_d = df_ca_d[df_ca_d["Lot"]==fca_l]
-                st.markdown(f'<div class="info-count">{len(df_ca_d)} operation(s)</div>', unsafe_allow_html=True)
-                st.dataframe(df_ca_d, hide_index=True, use_container_width=True)
-                st.markdown('<div class="section-title" style="font-size:1rem">Evolution de la caisse</div>', unsafe_allow_html=True)
-                df_ca_t = df_ca.copy()
-                df_ca_t["Date"] = pd.to_datetime(df_ca_t["Date"], errors="coerce")
-                df_ca_t = df_ca_t.dropna(subset=["Date"]).sort_values("Date")
-                df_ca_t["Flux"] = df_ca_t.apply(lambda r: r["Montant (MAD)"] if r["Type operation"]=="ENTREE" else -r["Montant (MAD)"], axis=1)
-                df_ca_t["Solde cumule"] = df_ca_t["Flux"].cumsum()
-                if not df_ca_t.empty:
-                    fig_ca = go.Figure()
-                    fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"], y=df_ca_t["Solde cumule"],
-                        mode="lines+markers", name="Solde cumule",
-                        line=dict(color="#1565C0",width=2), fill="tozeroy", fillcolor="rgba(21,101,192,0.08)"))
-                    fig_ca.add_trace(go.Bar(x=df_ca_t["Date"], y=df_ca_t["Flux"], name="Flux",
-                        marker_color=["#2D7A3A" if v>=0 else "#B03A2E" for v in df_ca_t["Flux"]], opacity=0.5))
-                    fig_ca.update_layout(**PL, legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center"),
-                        xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
-                    st.plotly_chart(fig_ca, use_container_width=True)
-                st.markdown('<div class="section-title" style="font-size:1rem">Resume par categorie</div>', unsafe_allow_html=True)
-                res_ca = df_ca.groupby(["Categorie","Type operation"])["Montant (MAD)"].sum().reset_index()
-                st.dataframe(res_ca, hide_index=True, use_container_width=True)
-            else:
-                st.info("Aucune operation de caisse enregistree.")
-
-        with sub2:
-            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Caisse</div>', unsafe_allow_html=True)
-            col_cfg_ca = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Type operation": st.column_config.SelectboxColumn("Type", options=["ENTREE","SORTIE"], required=True),
-                "Categorie": st.column_config.SelectboxColumn("Categorie", options=["Vente marchandise","Achat marchandise","Loyer","Salaire","Transport","Frais bancaires","Remboursement dette","Encaissement client","Paiement fournisseur","Divers"], required=True),
-                "Description": st.column_config.TextColumn("Description"),
-                "Montant (MAD)": st.column_config.NumberColumn("Montant", min_value=0.0, format="%.2f"),
-                "Mode": st.column_config.SelectboxColumn("Mode", options=["Especes","Virement","Cheque","Mobile Payment","Autre"], required=True),
-                "Lot": st.column_config.TextColumn("Lot"),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-            }
-            filter_ca = [
-                ("Type", "Type operation", ["ENTREE","SORTIE"]),
-                ("Categorie", "Categorie", sorted(df_ca["Categorie"].dropna().unique().tolist()) if not df_ca.empty else []),
-            ]
-            render_finance_inline_editor(df_ca, "Caisse", CA_COLS, col_cfg_ca,
-                ["Montant (MAD)"], "edit_ca", filter_ca)
-
-    # ── TAB 4: ENCAISSEMENT ────────────────────────────────────────────────────
-    with ftab4:
-        st.markdown('<div class="section-title">Encaissement</div>', unsafe_allow_html=True)
-        st.caption("Suivi de tous les paiements recus de vos clients et partenaires.")
-
-        enc_tot  = df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0
-        enc_att  = df_enc[df_enc["Statut"]=="En attente"]["Montant (MAD)"].sum() if not df_enc.empty else 0
-        enc_recu = df_enc[df_enc["Statut"]=="Recu"]["Montant (MAD)"].sum() if not df_enc.empty else 0
-        st.markdown(f"""
-        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem">
-          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Total encaisse</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1565C0">{enc_tot:,.0f} MAD</div>
-          </div>
-          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Confirme recu</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#2D7A3A">{enc_recu:,.0f} MAD</div>
-          </div>
-          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px">
-            <div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">En attente</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{enc_att:,.0f} MAD</div>
-          </div>
-        </div>""", unsafe_allow_html=True)
-
-        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
-
-        with sub1:
-            with st.expander("➕ Enregistrer un encaissement", expanded=False):
-                ec1, ec2, ec3 = st.columns(3, gap="large")
-                with ec1:
-                    en_date = st.date_input("Date", datetime.now(), key="en_date")
-                    en_pay  = st.text_input("Payeur / Client", key="en_pay", placeholder="Nom du client")
-                    en_lot  = st.selectbox("Lot associe", ["—"]+lots_list, key="en_lot")
-                with ec2:
-                    en_desc = st.text_input("Description", key="en_desc")
-                    en_mont = st.number_input("Montant (MAD)", min_value=0.0, step=10.0, key="en_mont")
-                    en_mode = st.selectbox("Mode de paiement", ["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], key="en_mode")
-                with ec3:
-                    en_type = st.selectbox("Type encaissement", ["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], key="en_type")
-                    en_stat = st.selectbox("Statut", ["Recu","En attente","Partiellement recu","Annule"], key="en_stat")
-                    en_rem  = st.text_input("Remarque", key="en_rem")
-                if st.button("Enregistrer l'encaissement", key="btn_en_save"):
-                    row = {"Date": str(en_date), "Payeur": sanitize_text(en_pay), "Lot": sanitize_text(en_lot),
-                           "Description": sanitize_text(en_desc), "Montant (MAD)": en_mont,
-                           "Mode de paiement": en_mode, "Type encaissement": en_type,
-                           "Statut": en_stat, "Remarque": sanitize_text(en_rem)}
-                    try:
-                        append_row(row, "Encaissement")
-                        st.success("Encaissement enregistre.")
-                        clear_data_cache(); st.rerun()
-                    except Exception as e: st.error(f"Erreur : {e}")
-
-            if not df_enc.empty:
-                ce1, ce2, ce3 = st.columns(3)
-                with ce1: fes = st.selectbox("Statut", ["Tous"]+sorted(df_enc["Statut"].dropna().unique().tolist()), key="fes")
-                with ce2:
-                    lots_enc = ["Tous"]+sorted([x for x in df_enc["Lot"].dropna().astype(str).unique() if x and x!="—"])
-                    fel = st.selectbox("Lot", lots_enc, key="fel")
-                with ce3:
-                    tet = ["Tous"]+sorted(df_enc["Type encaissement"].dropna().unique().tolist())
-                    fet = st.selectbox("Type", tet, key="fet")
-                df_enc_d = df_enc.copy()
-                if fes != "Tous": df_enc_d = df_enc_d[df_enc_d["Statut"]==fes]
-                if fel != "Tous": df_enc_d = df_enc_d[df_enc_d["Lot"]==fel]
-                if fet != "Tous": df_enc_d = df_enc_d[df_enc_d["Type encaissement"]==fet]
-                st.markdown(f'<div class="info-count">{len(df_enc_d)} encaissement(s)</div>', unsafe_allow_html=True)
-                st.dataframe(df_enc_d, hide_index=True, use_container_width=True)
-                enc_lot = df_enc.groupby("Lot")["Montant (MAD)"].sum().reset_index()
-                enc_lot = enc_lot[enc_lot["Lot"].astype(str) != "—"]
-                if not enc_lot.empty:
-                    st.markdown('<div class="section-title" style="font-size:1rem">Encaissement par lot</div>', unsafe_allow_html=True)
-                    fig_enc = go.Figure(go.Bar(x=enc_lot["Lot"], y=enc_lot["Montant (MAD)"],
-                        marker_color="#1565C0", hovertemplate="%{x}<br>%{y:,.0f} MAD<extra></extra>"))
-                    fig_enc.update_layout(**PL, xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#EEE",tickformat=",.0f"))
-                    st.plotly_chart(fig_enc, use_container_width=True)
-                st.markdown('<div class="section-title" style="font-size:1rem">Resume par client / payeur</div>', unsafe_allow_html=True)
-                res_enc = df_enc.groupby("Payeur").agg(Total=("Montant (MAD)","sum"), Nb=("Montant (MAD)","count")
-                    ).reset_index().sort_values("Total", ascending=False)
-                st.dataframe(res_enc, hide_index=True, use_container_width=True)
-            else:
-                st.info("Aucun encaissement enregistre.")
-
-        with sub2:
-            st.markdown('<div class="section-title" style="font-size:1rem">Modifier / Supprimer — Encaissement</div>', unsafe_allow_html=True)
-            col_cfg_enc = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Payeur": st.column_config.TextColumn("Payeur"),
-                "Lot": st.column_config.TextColumn("Lot"),
-                "Description": st.column_config.TextColumn("Description"),
-                "Montant (MAD)": st.column_config.NumberColumn("Montant", min_value=0.0, format="%.2f"),
-                "Mode de paiement": st.column_config.SelectboxColumn("Mode", options=["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], required=True),
-                "Type encaissement": st.column_config.SelectboxColumn("Type", options=["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"], required=True),
-                "Statut": st.column_config.SelectboxColumn("Statut", options=["Recu","En attente","Partiellement recu","Annule"], required=True),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-            }
-            filter_enc = [
-                ("Statut", "Statut", sorted(df_enc["Statut"].dropna().unique().tolist()) if not df_enc.empty else []),
-            ]
-            render_finance_inline_editor(df_enc, "Encaissement", ENC_COLS, col_cfg_enc,
-                ["Montant (MAD)"], "edit_enc", filter_enc)
-
-    # ── TAB 5: TICKET / RECU PDF ───────────────────────────────────────────────
-    with ftab5:
-        st.markdown('<div class="section-title">Créer un ticket / Reçu PDF</div>', unsafe_allow_html=True)
-        st.caption("Générez un reçu PDF professionnel à télécharger et imprimer.")
-
-        rc1, rc2, rc3 = st.columns(3, gap="large")
-        with rc1:
-            t_type = st.selectbox("Type de reçu", [
-                "ENCAISSEMENT", "PAIEMENT", "REMBOURSEMENT",
-                "DETTE FINANCIERE", "DETTE FOURNISSEUR", "CAISSE"
-            ], key="ticket_type")
-            t_date = st.date_input("Date", datetime.now(), key="ticket_date")
-            t_num  = st.text_input("Numéro de référence", value=f"REC-{datetime.now().strftime('%Y%m%d-%H%M')}", key="ticket_num")
-        with rc2:
-            t_emetteur = st.text_input("Émetteur / Société", value="MAHAL", key="ticket_emetteur")
-            t_dest     = st.text_input("Destinataire / Client", key="ticket_dest", placeholder="Nom du client ou fournisseur")
-            t_lot      = st.selectbox("Lot associé (optionnel)", ["—"] + lots_list, key="ticket_lot")
-        with rc3:
-            t_montant = st.number_input("Montant (MAD)", min_value=0.0, step=0.01, key="ticket_montant")
-            t_mode    = st.selectbox("Mode de paiement", ["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"], key="ticket_mode")
-            t_ref     = st.text_input("Référence interne", key="ticket_ref", placeholder="Ex: FAC-001, CHQ-042...")
-
-        t_desc = st.text_input("Description / Objet", key="ticket_desc", placeholder="Objet de ce reçu...")
-        t_rem  = st.text_area("Remarque / Notes", key="ticket_rem", placeholder="Informations complémentaires...", height=80)
+# Pour créer un App Password Gmail :
+# Mon compte Google → Sécurité → Validation en 2 étapes → Mots de passe d'application""", language="toml")
 
         st.markdown("---")
 
-        if st.button("🎫 Générer le reçu PDF", key="btn_gen_pdf"):
-            if not t_dest:
-                st.error("Le champ Destinataire est obligatoire.")
-            elif t_montant <= 0:
-                st.error("Le montant doit être supérieur à 0.")
+        # ── Email 1 : Test de connexion ──────────────────────────────────────
+        st.markdown('<div class="section-title" style="font-size:1.1rem">Test de connexion email</div>', unsafe_allow_html=True)
+        st.caption("Envoie un email de test pour vérifier que la configuration fonctionne.")
+        if st.button("📤 Envoyer un email de test", key="btn_test_email", disabled=not email_configured()):
+            cfg = _get_email_cfg()
+            content = """
+            <p class="subtitle">Ceci est un email de test envoyé depuis la plateforme MAHAL.</p>
+            <div class="divider"></div>
+            <p style="font-size:13px;color:#555">Si vous recevez cet email, la configuration SMTP est correcte et les notifications automatiques fonctionneront.</p>
+            <div style="background:#EEF7EE;border:1px solid #C3DEC3;border-radius:8px;padding:12px 16px;font-size:13px;color:#2D6A2D;margin:16px 0">
+              Configuration validée avec succès.
+            </div>
+            """
+            html = _email_base("Test de configuration email", content)
+            with st.spinner("Envoi en cours..."):
+                ok_mail, msg_mail = send_email(
+                    to=cfg["admin_email"],
+                    subject="[MAHAL] Test de configuration email",
+                    html_body=html
+                )
+            if ok_mail: st.success(f"✅ {msg_mail}")
+            else:        st.error(f"❌ {msg_mail}")
+
+        st.markdown("---")
+
+        # ── Email 2 : Rapport hebdomadaire ───────────────────────────────────
+        st.markdown('<div class="section-title" style="font-size:1.1rem">Rapport hebdomadaire</div>', unsafe_allow_html=True)
+        st.caption("Génère et envoie le rapport de la semaine en cours avec un PDF détaillé joint.")
+
+        today      = datetime.now()
+        week_start = today - timedelta(days=today.weekday())
+        week_end   = week_start + timedelta(days=6)
+
+        # Aperçu rapide
+        if not transactions_all.empty and 'Date' in transactions_all.columns:
+            t_tmp = transactions_all.copy()
+            t_tmp['Date'] = pd.to_datetime(t_tmp['Date'], errors='coerce')
+            t_tmp = t_tmp.dropna(subset=['Date'])
+            df_w  = t_tmp[(t_tmp['Date'] >= pd.Timestamp(week_start)) & (t_tmp['Date'] <= pd.Timestamp(week_end))]
+            st.markdown(f'<div class="info-count">Semaine du {week_start.strftime("%d/%m/%Y")} au {week_end.strftime("%d/%m/%Y")} — <strong>{len(df_w)}</strong> transaction(s)</div>', unsafe_allow_html=True)
+
+        col_h1, col_h2 = st.columns([3, 1], gap="large")
+        with col_h1:
+            st.info("Le rapport inclut : KPIs de la semaine, tableau des transactions, résumé des encaissements. PDF joint automatiquement.")
+        with col_h2:
+            if st.button("📧 Envoyer le rapport hebdo", key="btn_send_hebdo", disabled=not email_configured()):
+                with st.spinner("Génération du PDF et envoi..."):
+                    ok_h, msg_h = send_email_rapport_hebdomadaire(transactions_all, df_enc, df_ca)
+                if ok_h: st.success(f"✅ {msg_h}")
+                else:     st.error(f"❌ {msg_h}")
+
+        # Téléchargement local du PDF hebdo sans envoi email
+        if st.button("⬇️ Télécharger le PDF hebdomadaire (sans envoi)", key="btn_dl_hebdo"):
+            try:
+                pdf_b = generate_rapport_hebdomadaire_pdf(transactions_all, df_enc, df_ca)
+                st.download_button(
+                    label="⬇️ Télécharger le rapport PDF",
+                    data=pdf_b,
+                    file_name=f"rapport_hebdo_{week_start.strftime('%Y-%m-%d')}.pdf",
+                    mime="application/pdf",
+                    key="dl_hebdo_pdf"
+                )
+            except Exception as e:
+                st.error(f"Erreur : {e}")
+
+        st.markdown("---")
+
+        # ── Email 3 : Bilan mensuel ──────────────────────────────────────────
+        st.markdown('<div class="section-title" style="font-size:1.1rem">Bilan mensuel complet</div>', unsafe_allow_html=True)
+        st.caption("Génère et envoie le bilan financier complet du mois sélectionné.")
+
+        bm1, bm2, bm3 = st.columns([2, 2, 1], gap="large")
+        with bm1:
+            mois_options = []
+            for i in range(12):
+                d = (datetime.now().replace(day=1) - timedelta(days=i*28)).replace(day=1)
+                mois_options.append((d.strftime('%B %Y').capitalize(), d))
+            mois_labels = [m[0] for m in mois_options]
+            sel_mois = st.selectbox("Mois du bilan", mois_labels, key="bilan_mois_sel")
+            mois_dt_sel = next(m[1] for m in mois_options if m[0] == sel_mois)
+        with bm2:
+            st.info("Le bilan inclut : synthèse financière, résumé par lot, état des dettes, caisse et encaissements. PDF joint.")
+        with bm3:
+            if st.button("📧 Envoyer le bilan mensuel", key="btn_send_bilan", disabled=not email_configured()):
+                with st.spinner("Génération du bilan PDF et envoi..."):
+                    ok_b, msg_b = send_email_bilan_mensuel(transactions_all, df_df, df_dfo, df_ca, df_enc, mois_dt_sel)
+                if ok_b: st.success(f"✅ {msg_b}")
+                else:     st.error(f"❌ {msg_b}")
+
+        # Téléchargement local du PDF bilan sans envoi
+        if st.button("⬇️ Télécharger le bilan PDF (sans envoi)", key="btn_dl_bilan"):
+            try:
+                pdf_b2 = generate_bilan_mensuel_pdf(transactions_all, df_df, df_dfo, df_ca, df_enc, mois_dt_sel)
+                st.download_button(
+                    label="⬇️ Télécharger le bilan PDF",
+                    data=pdf_b2,
+                    file_name=f"bilan_{mois_dt_sel.strftime('%Y_%m')}.pdf",
+                    mime="application/pdf",
+                    key="dl_bilan_pdf"
+                )
+            except Exception as e:
+                st.error(f"Erreur : {e}")
+
+        st.markdown("---")
+
+        # ── Résumé des automatisations disponibles ───────────────────────────
+        st.markdown('<div class="section-title" style="font-size:1.1rem">Récapitulatif des automatisations actives</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="display:flex;flex-direction:column;gap:0.6rem">
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:8px;padding:0.8rem 1.2rem;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:0.88rem;font-weight:500">Email automatique — Nouvelle inscription</div>
+              <div style="font-size:0.75rem;color:#AAA;margin-top:2px">Déclenché à chaque inscription d'un nouvel utilisateur</div>
+            </div>
+            <span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;background:{'#EEF7EE' if email_configured() else '#FDECEA'};color:{'#2D6A2D' if email_configured() else '#7A1C1C'};border:1px solid {'#C3DEC3' if email_configured() else '#E8B4B0'}">{'Actif' if email_configured() else 'Inactif'}</span>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:8px;padding:0.8rem 1.2rem;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:0.88rem;font-weight:500">Rapport hebdomadaire — Envoi manuel</div>
+              <div style="font-size:0.75rem;color:#AAA;margin-top:2px">Déclenché manuellement depuis cet onglet</div>
+            </div>
+            <span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;background:{'#EEF7EE' if email_configured() else '#FDECEA'};color:{'#2D6A2D' if email_configured() else '#7A1C1C'};border:1px solid {'#C3DEC3' if email_configured() else '#E8B4B0'}">{'Disponible' if email_configured() else 'Inactif'}</span>
+          </div>
+          <div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:8px;padding:0.8rem 1.2rem;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:0.88rem;font-weight:500">Bilan mensuel — Envoi manuel</div>
+              <div style="font-size:0.75rem;color:#AAA;margin-top:2px">Déclenché manuellement, pour tout mois sélectionnable</div>
+            </div>
+            <span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;background:{'#EEF7EE' if email_configured() else '#FDECEA'};color:{'#2D6A2D' if email_configured() else '#7A1C1C'};border:1px solid {'#C3DEC3' if email_configured() else '#E8B4B0'}">{'Disponible' if email_configured() else 'Inactif'}</span>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── TABs 1-5 finance (identiques à l'original) ────────────────────────────
+    with ftab1:
+        st.markdown('<div class="section-title">Dette financiere</div>', unsafe_allow_html=True)
+        st.caption("Emprunts bancaires, credits, dettes envers des personnes physiques ou morales.")
+        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
+        with sub1:
+            with st.expander("➕ Ajouter une dette financiere", expanded=False):
+                fc1, fc2, fc3 = st.columns(3, gap="large")
+                with fc1: df_date=st.date_input("Date",datetime.now(),key="df_date"); df_crea=st.text_input("Creancier / Banque",key="df_crea",placeholder="Ex: BMCE, Ali Hassan..."); df_type=st.selectbox("Type de dette",["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"],key="df_type")
+                with fc2: df_mi=st.number_input("Montant initial (MAD)",min_value=0.0,step=100.0,key="df_mi"); df_mr=st.number_input("Deja rembourse (MAD)",min_value=0.0,step=100.0,key="df_mr"); df_taux=st.number_input("Taux interet (%)",min_value=0.0,step=0.1,key="df_taux")
+                with fc3: df_ech=st.date_input("Date echeance",key="df_ech"); df_stat=st.selectbox("Statut",["En cours","Rembourse","En retard","Renegocie"],key="df_stat"); df_rem=st.text_input("Remarque",key="df_rem")
+                if st.button("Enregistrer la dette",key="btn_df_save"):
+                    row={"Date":str(df_date),"Creancier":sanitize_text(df_crea),"Type de dette":df_type,"Montant initial (MAD)":df_mi,"Montant rembourse (MAD)":df_mr,"Taux interet (%)":df_taux,"Date echeance":str(df_ech),"Statut":df_stat,"Remarque":sanitize_text(df_rem)}
+                    try: append_row(row,"Dette financiere"); st.success("Dette financiere enregistree."); clear_data_cache(); st.rerun()
+                    except Exception as e: st.error(f"Erreur : {e}")
+            if not df_df.empty:
+                df_df_d = df_df.copy(); df_df_d["Restant (MAD)"] = (df_df_d["Montant initial (MAD)"]-df_df_d["Montant rembourse (MAD)"]).clip(lower=0)
+                sf_s = st.selectbox("Filtrer par statut",["Tous"]+sorted(df_df_d["Statut"].dropna().unique().tolist()),key="sf_dfstat")
+                if sf_s != "Tous": df_df_d = df_df_d[df_df_d["Statut"]==sf_s]
+                st.markdown(f'<div class="info-count">{len(df_df_d)} dette(s)</div>',unsafe_allow_html=True); st.dataframe(df_df_d,hide_index=True,use_container_width=True)
+                if len(df_df_d) > 0:
+                    fig = go.Figure(); fig.add_trace(go.Bar(name="Initial",x=df_df_d["Creancier"],y=df_df_d["Montant initial (MAD)"],marker_color="#E8B4B0")); fig.add_trace(go.Bar(name="Rembourse",x=df_df_d["Creancier"],y=df_df_d["Montant rembourse (MAD)"],marker_color="#2D7A3A"))
+                    fig.update_layout(**PL,barmode="overlay",legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center")); st.plotly_chart(fig,use_container_width=True)
+            else: st.info("Aucune dette financiere enregistree.")
+            st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un remboursement</div>',unsafe_allow_html=True)
+            if not df_df.empty:
+                creas=df_df["Creancier"].dropna().unique().tolist(); rc=st.selectbox("Creancier",["— selectionner —"]+creas,key="rc_crea")
+                if rc != "— selectionner —":
+                    rm=st.number_input("Montant rembourse ce jour (MAD)",min_value=0.0,step=100.0,key="rc_montant")
+                    if st.button("Enregistrer remboursement",key="btn_rc"):
+                        df_df.loc[df_df["Creancier"]==rc,"Montant rembourse (MAD)"]=(df_df.loc[df_df["Creancier"]==rc,"Montant rembourse (MAD)"]+rm)
+                        try: save_sheet(df_df,"Dette financiere"); st.success(f"Remboursement de {rm:,.0f} MAD enregistre."); clear_data_cache(); st.rerun()
+                        except Exception as e: st.error(f"Erreur : {e}")
+        with sub2:
+            col_cfg_df={"Date":st.column_config.TextColumn("Date"),"Creancier":st.column_config.TextColumn("Creancier"),"Type de dette":st.column_config.SelectboxColumn("Type",options=["Emprunt bancaire","Credit fournisseur","Pret personnel","Autre"],required=True),"Montant initial (MAD)":st.column_config.NumberColumn("Montant initial",min_value=0.0,format="%.2f"),"Montant rembourse (MAD)":st.column_config.NumberColumn("Rembourse",min_value=0.0,format="%.2f"),"Taux interet (%)":st.column_config.NumberColumn("Taux (%)",min_value=0.0,format="%.2f"),"Date echeance":st.column_config.TextColumn("Echeance"),"Statut":st.column_config.SelectboxColumn("Statut",options=["En cours","Rembourse","En retard","Renegocie"],required=True),"Remarque":st.column_config.TextColumn("Remarque")}
+            filter_df=[("Statut","Statut",sorted(df_df["Statut"].dropna().unique().tolist()) if not df_df.empty else [])]
+            render_finance_inline_editor(df_df,"Dette financiere",DF_COLS,col_cfg_df,["Montant initial (MAD)","Montant rembourse (MAD)","Taux interet (%)"],"edit_df",filter_df)
+
+    with ftab2:
+        st.markdown('<div class="section-title">Dette fournisseur</div>', unsafe_allow_html=True)
+        st.caption("Ce que vous devez a vos fournisseurs pour des achats non encore regles.")
+        sub1, sub2 = st.tabs(["➕ Ajouter / Consulter", "✏️ Modifier / Supprimer"])
+        with sub1:
+            with st.expander("➕ Ajouter une dette fournisseur", expanded=False):
+                ff1, ff2, ff3 = st.columns(3, gap="large")
+                with ff1: dfo_date=st.date_input("Date",datetime.now(),key="dfo_date"); dfo_four=st.text_input("Fournisseur",key="dfo_four",placeholder="Nom du fournisseur"); dfo_lot=st.selectbox("Lot associe",["—"]+lots_list,key="dfo_lot")
+                with ff2: dfo_desc=st.text_input("Description",key="dfo_desc"); dfo_du=st.number_input("Montant du (MAD)",min_value=0.0,step=100.0,key="dfo_du"); dfo_pay=st.number_input("Deja paye (MAD)",min_value=0.0,step=100.0,key="dfo_pay")
+                with ff3: dfo_ech=st.date_input("Date echeance",key="dfo_ech"); dfo_stat=st.selectbox("Statut",["A payer","Partiellement paye","Solde","En litige"],key="dfo_stat"); dfo_rem=st.text_input("Remarque",key="dfo_rem")
+                if st.button("Enregistrer la dette fournisseur",key="btn_dfo_save"):
+                    row={"Date":str(dfo_date),"Fournisseur":sanitize_text(dfo_four),"Description":sanitize_text(dfo_desc),"Lot":sanitize_text(dfo_lot),"Montant du (MAD)":dfo_du,"Montant paye (MAD)":dfo_pay,"Date echeance":str(dfo_ech),"Statut":dfo_stat,"Remarque":sanitize_text(dfo_rem)}
+                    try: append_row(row,"Dette fournisseur"); st.success("Dette fournisseur enregistree."); clear_data_cache(); st.rerun()
+                    except Exception as e: st.error(f"Erreur : {e}")
+            if not df_dfo.empty:
+                df_dfo_d=df_dfo.copy(); df_dfo_d["Restant (MAD)"]=(df_dfo_d["Montant du (MAD)"]-df_dfo_d["Montant paye (MAD)"]).clip(lower=0)
+                col_f1,col_f2=st.columns(2)
+                with col_f1: fs=st.selectbox("Statut",["Tous"]+sorted(df_dfo_d["Statut"].dropna().unique().tolist()),key="ffo_s")
+                with col_f2: fl=st.selectbox("Lot",["Tous"]+sorted(df_dfo_d["Lot"].dropna().astype(str).unique().tolist()),key="ffo_l")
+                if fs!="Tous": df_dfo_d=df_dfo_d[df_dfo_d["Statut"]==fs]
+                if fl!="Tous": df_dfo_d=df_dfo_d[df_dfo_d["Lot"]==fl]
+                st.markdown(f'<div class="info-count">{len(df_dfo_d)} dette(s) fournisseur</div>',unsafe_allow_html=True); st.dataframe(df_dfo_d,hide_index=True,use_container_width=True)
+                res=df_dfo.groupby("Fournisseur").apply(lambda x: pd.Series({"Total du":x["Montant du (MAD)"].sum(),"Total paye":x["Montant paye (MAD)"].sum(),"Restant":(x["Montant du (MAD)"]-x["Montant paye (MAD)"]).clip(lower=0).sum()}),include_groups=False).reset_index()
+                st.dataframe(res,hide_index=True,use_container_width=True)
+            else: st.info("Aucune dette fournisseur enregistree.")
+            st.markdown('<div class="section-title" style="font-size:1rem">Enregistrer un paiement fournisseur</div>',unsafe_allow_html=True)
+            if not df_dfo.empty:
+                fours=df_dfo["Fournisseur"].dropna().unique().tolist(); pf=st.selectbox("Fournisseur",["— selectionner —"]+fours,key="pf_four")
+                if pf!="— selectionner —":
+                    pm=st.number_input("Montant paye ce jour (MAD)",min_value=0.0,step=100.0,key="pf_montant")
+                    if st.button("Enregistrer le paiement",key="btn_pf"):
+                        mask=df_dfo["Fournisseur"]==pf; df_dfo.loc[mask,"Montant paye (MAD)"]=df_dfo.loc[mask,"Montant paye (MAD)"]+pm
+                        for i in df_dfo[mask].index:
+                            r=df_dfo.at[i,"Montant du (MAD)"]-df_dfo.at[i,"Montant paye (MAD)"]
+                            if r<=0: df_dfo.at[i,"Statut"]="Solde"
+                            elif df_dfo.at[i,"Montant paye (MAD)"]>0: df_dfo.at[i,"Statut"]="Partiellement paye"
+                        try: save_sheet(df_dfo,"Dette fournisseur"); st.success(f"Paiement de {pm:,.0f} MAD enregistre."); clear_data_cache(); st.rerun()
+                        except Exception as e: st.error(f"Erreur : {e}")
+        with sub2:
+            col_cfg_dfo={"Date":st.column_config.TextColumn("Date"),"Fournisseur":st.column_config.TextColumn("Fournisseur"),"Description":st.column_config.TextColumn("Description"),"Lot":st.column_config.TextColumn("Lot"),"Montant du (MAD)":st.column_config.NumberColumn("Montant du",min_value=0.0,format="%.2f"),"Montant paye (MAD)":st.column_config.NumberColumn("Paye",min_value=0.0,format="%.2f"),"Date echeance":st.column_config.TextColumn("Echeance"),"Statut":st.column_config.SelectboxColumn("Statut",options=["A payer","Partiellement paye","Solde","En litige"],required=True),"Remarque":st.column_config.TextColumn("Remarque")}
+            filter_dfo=[("Statut","Statut",sorted(df_dfo["Statut"].dropna().unique().tolist()) if not df_dfo.empty else []),("Lot","Lot",sorted(df_dfo["Lot"].dropna().astype(str).unique().tolist()) if not df_dfo.empty else [])]
+            render_finance_inline_editor(df_dfo,"Dette fournisseur",DFO_COLS,col_cfg_dfo,["Montant du (MAD)","Montant paye (MAD)"],"edit_dfo",filter_dfo)
+
+    with ftab3:
+        st.markdown('<div class="section-title">Caisse</div>', unsafe_allow_html=True)
+        c_in=df_ca[df_ca["Type operation"]=="ENTREE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
+        c_out=df_ca[df_ca["Type operation"]=="SORTIE"]["Montant (MAD)"].sum() if not df_ca.empty else 0
+        c_sol=c_in-c_out; c_col="#2D7A3A" if c_sol>=0 else "#B03A2E"
+        st.markdown(f"""<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem"><div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Entrees</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#2D7A3A">{c_in:,.0f} MAD</div></div><div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Sorties</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#B03A2E">{c_out:,.0f} MAD</div></div><div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Solde caisse</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:{c_col}">{c_sol:+,.0f} MAD</div></div></div>""",unsafe_allow_html=True)
+        sub1,sub2=st.tabs(["➕ Ajouter / Consulter","✏️ Modifier / Supprimer"])
+        with sub1:
+            with st.expander("➕ Nouvelle operation de caisse",expanded=False):
+                cc1,cc2,cc3=st.columns(3,gap="large")
+                with cc1: ca_date=st.date_input("Date",datetime.now(),key="ca_date"); ca_type=st.selectbox("Type operation",["ENTREE","SORTIE"],key="ca_type"); ca_cat=st.selectbox("Categorie",["Vente marchandise","Achat marchandise","Loyer","Salaire","Transport","Frais bancaires","Remboursement dette","Encaissement client","Paiement fournisseur","Divers"],key="ca_cat")
+                with cc2: ca_desc=st.text_input("Description",key="ca_desc"); ca_mont=st.number_input("Montant (MAD)",min_value=0.0,step=10.0,key="ca_mont"); ca_mode=st.selectbox("Mode",["Especes","Virement","Cheque","Mobile Payment","Autre"],key="ca_mode")
+                with cc3: ca_lot=st.selectbox("Lot associe (optionnel)",["—"]+lots_list,key="ca_lot"); ca_rem=st.text_input("Remarque",key="ca_rem")
+                if st.button("Enregistrer l'operation",key="btn_ca_save"):
+                    row={"Date":str(ca_date),"Type operation":ca_type,"Categorie":ca_cat,"Description":sanitize_text(ca_desc),"Montant (MAD)":ca_mont,"Mode":ca_mode,"Lot":sanitize_text(ca_lot),"Remarque":sanitize_text(ca_rem)}
+                    try: append_row(row,"Caisse"); st.success("Operation de caisse enregistree."); clear_data_cache(); st.rerun()
+                    except Exception as e: st.error(f"Erreur : {e}")
+            if not df_ca.empty:
+                ca1,ca2,ca3=st.columns(3)
+                with ca1: fca_t=st.selectbox("Type",["Tous","ENTREE","SORTIE"],key="fca_t")
+                with ca2: fca_c=st.selectbox("Categorie",["Toutes"]+sorted(df_ca["Categorie"].dropna().unique().tolist()),key="fca_c")
+                with ca3: fca_l=st.selectbox("Lot",["Tous"]+sorted([x for x in df_ca["Lot"].dropna().astype(str).unique() if x and x!="—"]),key="fca_l")
+                df_ca_d=df_ca.copy()
+                if fca_t!="Tous": df_ca_d=df_ca_d[df_ca_d["Type operation"]==fca_t]
+                if fca_c!="Toutes": df_ca_d=df_ca_d[df_ca_d["Categorie"]==fca_c]
+                if fca_l!="Tous": df_ca_d=df_ca_d[df_ca_d["Lot"]==fca_l]
+                st.dataframe(df_ca_d,hide_index=True,use_container_width=True)
+                df_ca_t=df_ca.copy(); df_ca_t["Date"]=pd.to_datetime(df_ca_t["Date"],errors="coerce"); df_ca_t=df_ca_t.dropna(subset=["Date"]).sort_values("Date"); df_ca_t["Flux"]=df_ca_t.apply(lambda r: r["Montant (MAD)"] if r["Type operation"]=="ENTREE" else -r["Montant (MAD)"],axis=1); df_ca_t["Solde cumule"]=df_ca_t["Flux"].cumsum()
+                if not df_ca_t.empty:
+                    fig_ca=go.Figure(); fig_ca.add_trace(go.Scatter(x=df_ca_t["Date"],y=df_ca_t["Solde cumule"],mode="lines+markers",name="Solde cumule",line=dict(color="#1565C0",width=2),fill="tozeroy",fillcolor="rgba(21,101,192,0.08)")); fig_ca.add_trace(go.Bar(x=df_ca_t["Date"],y=df_ca_t["Flux"],name="Flux",marker_color=["#2D7A3A" if v>=0 else "#B03A2E" for v in df_ca_t["Flux"]],opacity=0.5))
+                    fig_ca.update_layout(**PL,legend=dict(orientation="h",y=-0.2,x=0.5,xanchor="center")); st.plotly_chart(fig_ca,use_container_width=True)
+            else: st.info("Aucune operation de caisse enregistree.")
+        with sub2:
+            col_cfg_ca={"Date":st.column_config.TextColumn("Date"),"Type operation":st.column_config.SelectboxColumn("Type",options=["ENTREE","SORTIE"],required=True),"Categorie":st.column_config.SelectboxColumn("Categorie",options=["Vente marchandise","Achat marchandise","Loyer","Salaire","Transport","Frais bancaires","Remboursement dette","Encaissement client","Paiement fournisseur","Divers"],required=True),"Description":st.column_config.TextColumn("Description"),"Montant (MAD)":st.column_config.NumberColumn("Montant",min_value=0.0,format="%.2f"),"Mode":st.column_config.SelectboxColumn("Mode",options=["Especes","Virement","Cheque","Mobile Payment","Autre"],required=True),"Lot":st.column_config.TextColumn("Lot"),"Remarque":st.column_config.TextColumn("Remarque")}
+            filter_ca=[("Type","Type operation",["ENTREE","SORTIE"]),("Categorie","Categorie",sorted(df_ca["Categorie"].dropna().unique().tolist()) if not df_ca.empty else [])]
+            render_finance_inline_editor(df_ca,"Caisse",CA_COLS,col_cfg_ca,["Montant (MAD)"],"edit_ca",filter_ca)
+
+    with ftab4:
+        st.markdown('<div class="section-title">Encaissement</div>', unsafe_allow_html=True)
+        enc_tot=df_enc["Montant (MAD)"].sum() if not df_enc.empty else 0; enc_att=df_enc[df_enc["Statut"]=="En attente"]["Montant (MAD)"].sum() if not df_enc.empty else 0; enc_recu=df_enc[df_enc["Statut"]=="Recu"]["Montant (MAD)"].sum() if not df_enc.empty else 0
+        st.markdown(f"""<div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1.5rem"><div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Total encaisse</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#1565C0">{enc_tot:,.0f} MAD</div></div><div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">Confirme recu</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#2D7A3A">{enc_recu:,.0f} MAD</div></div><div style="background:#FFFFFF;border:1px solid #E8E5DE;border-radius:10px;padding:1rem 1.3rem;flex:1;min-width:140px"><div style="font-size:0.68rem;text-transform:uppercase;color:#AAA;margin-bottom:0.4rem">En attente</div><div style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:#7A4100">{enc_att:,.0f} MAD</div></div></div>""",unsafe_allow_html=True)
+        sub1,sub2=st.tabs(["➕ Ajouter / Consulter","✏️ Modifier / Supprimer"])
+        with sub1:
+            with st.expander("➕ Enregistrer un encaissement",expanded=False):
+                ec1,ec2,ec3=st.columns(3,gap="large")
+                with ec1: en_date=st.date_input("Date",datetime.now(),key="en_date"); en_pay=st.text_input("Payeur / Client",key="en_pay",placeholder="Nom du client"); en_lot=st.selectbox("Lot associe",["—"]+lots_list,key="en_lot")
+                with ec2: en_desc=st.text_input("Description",key="en_desc"); en_mont=st.number_input("Montant (MAD)",min_value=0.0,step=10.0,key="en_mont"); en_mode=st.selectbox("Mode de paiement",["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"],key="en_mode")
+                with ec3: en_type=st.selectbox("Type encaissement",["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"],key="en_type"); en_stat=st.selectbox("Statut",["Recu","En attente","Partiellement recu","Annule"],key="en_stat"); en_rem=st.text_input("Remarque",key="en_rem")
+                if st.button("Enregistrer l'encaissement",key="btn_en_save"):
+                    row={"Date":str(en_date),"Payeur":sanitize_text(en_pay),"Lot":sanitize_text(en_lot),"Description":sanitize_text(en_desc),"Montant (MAD)":en_mont,"Mode de paiement":en_mode,"Type encaissement":en_type,"Statut":en_stat,"Remarque":sanitize_text(en_rem)}
+                    try: append_row(row,"Encaissement"); st.success("Encaissement enregistre."); clear_data_cache(); st.rerun()
+                    except Exception as e: st.error(f"Erreur : {e}")
+            if not df_enc.empty:
+                ce1,ce2,ce3=st.columns(3)
+                with ce1: fes=st.selectbox("Statut",["Tous"]+sorted(df_enc["Statut"].dropna().unique().tolist()),key="fes")
+                with ce2: fel=st.selectbox("Lot",["Tous"]+sorted([x for x in df_enc["Lot"].dropna().astype(str).unique() if x and x!="—"]),key="fel")
+                with ce3: fet=st.selectbox("Type",["Tous"]+sorted(df_enc["Type encaissement"].dropna().unique().tolist()),key="fet")
+                df_enc_d=df_enc.copy()
+                if fes!="Tous": df_enc_d=df_enc_d[df_enc_d["Statut"]==fes]
+                if fel!="Tous": df_enc_d=df_enc_d[df_enc_d["Lot"]==fel]
+                if fet!="Tous": df_enc_d=df_enc_d[df_enc_d["Type encaissement"]==fet]
+                st.dataframe(df_enc_d,hide_index=True,use_container_width=True)
+                enc_lot=df_enc.groupby("Lot")["Montant (MAD)"].sum().reset_index(); enc_lot=enc_lot[enc_lot["Lot"].astype(str)!="—"]
+                if not enc_lot.empty:
+                    fig_enc=go.Figure(go.Bar(x=enc_lot["Lot"],y=enc_lot["Montant (MAD)"],marker_color="#1565C0")); fig_enc.update_layout(**PL); st.plotly_chart(fig_enc,use_container_width=True)
+            else: st.info("Aucun encaissement enregistre.")
+        with sub2:
+            col_cfg_enc={"Date":st.column_config.TextColumn("Date"),"Payeur":st.column_config.TextColumn("Payeur"),"Lot":st.column_config.TextColumn("Lot"),"Description":st.column_config.TextColumn("Description"),"Montant (MAD)":st.column_config.NumberColumn("Montant",min_value=0.0,format="%.2f"),"Mode de paiement":st.column_config.SelectboxColumn("Mode",options=["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"],required=True),"Type encaissement":st.column_config.SelectboxColumn("Type",options=["Vente marchandise","Acompte","Solde de compte","Remboursement","Location","Autre"],required=True),"Statut":st.column_config.SelectboxColumn("Statut",options=["Recu","En attente","Partiellement recu","Annule"],required=True),"Remarque":st.column_config.TextColumn("Remarque")}
+            filter_enc=[("Statut","Statut",sorted(df_enc["Statut"].dropna().unique().tolist()) if not df_enc.empty else [])]
+            render_finance_inline_editor(df_enc,"Encaissement",ENC_COLS,col_cfg_enc,["Montant (MAD)"],"edit_enc",filter_enc)
+
+    with ftab5:
+        st.markdown('<div class="section-title">Créer un ticket / Reçu PDF</div>', unsafe_allow_html=True)
+        rc1,rc2,rc3=st.columns(3,gap="large")
+        with rc1: t_type=st.selectbox("Type de reçu",["ENCAISSEMENT","PAIEMENT","REMBOURSEMENT","DETTE FINANCIERE","DETTE FOURNISSEUR","CAISSE"],key="ticket_type"); t_date=st.date_input("Date",datetime.now(),key="ticket_date"); t_num=st.text_input("Numéro de référence",value=f"REC-{datetime.now().strftime('%Y%m%d-%H%M')}",key="ticket_num")
+        with rc2: t_emetteur=st.text_input("Émetteur / Société",value="MAHAL",key="ticket_emetteur"); t_dest=st.text_input("Destinataire / Client",key="ticket_dest",placeholder="Nom du client ou fournisseur"); t_lot=st.selectbox("Lot associé (optionnel)",["—"]+lots_list,key="ticket_lot")
+        with rc3: t_montant=st.number_input("Montant (MAD)",min_value=0.0,step=0.01,key="ticket_montant"); t_mode=st.selectbox("Mode de paiement",["Especes","Virement","Cheque","Mobile Payment","Carte bancaire","Autre"],key="ticket_mode"); t_ref=st.text_input("Référence interne",key="ticket_ref",placeholder="Ex: FAC-001, CHQ-042...")
+        t_desc=st.text_input("Description / Objet",key="ticket_desc",placeholder="Objet de ce reçu..."); t_rem=st.text_area("Remarque / Notes",key="ticket_rem",placeholder="Informations complémentaires...",height=80)
+        st.markdown("---")
+        if st.button("🎫 Générer le reçu PDF",key="btn_gen_pdf"):
+            if not t_dest: st.error("Le champ Destinataire est obligatoire.")
+            elif t_montant<=0: st.error("Le montant doit être supérieur à 0.")
             else:
-                data_pdf = {
-                    "numero": sanitize_text(t_num),
-                    "type_recu": t_type,
-                    "date": t_date.strftime("%d/%m/%Y"),
-                    "emetteur": sanitize_text(t_emetteur),
-                    "destinataire": sanitize_text(t_dest),
-                    "lot": sanitize_text(t_lot) if t_lot != "—" else "",
-                    "description": sanitize_text(t_desc),
-                    "montant": t_montant,
-                    "mode_paiement": t_mode,
-                    "reference": sanitize_text(t_ref),
-                    "remarque": sanitize_text(t_rem),
-                }
+                data_pdf={"numero":sanitize_text(t_num),"type_recu":t_type,"date":t_date.strftime("%d/%m/%Y"),"emetteur":sanitize_text(t_emetteur),"destinataire":sanitize_text(t_dest),"lot":sanitize_text(t_lot) if t_lot!="—" else "","description":sanitize_text(t_desc),"montant":t_montant,"mode_paiement":t_mode,"reference":sanitize_text(t_ref),"remarque":sanitize_text(t_rem)}
                 try:
-                    pdf_bytes = generate_receipt_pdf(data_pdf)
-                    fname = f"recu_{sanitize_text(t_num).replace(' ','_')}.pdf"
+                    pdf_bytes=generate_receipt_pdf(data_pdf); fname=f"recu_{sanitize_text(t_num).replace(' ','_')}.pdf"
                     st.success("✅ Reçu généré avec succès !")
-                    st.download_button(
-                        label="⬇️ Télécharger le reçu PDF",
-                        data=pdf_bytes,
-                        file_name=fname,
-                        mime="application/pdf",
-                        key="dl_pdf_btn"
-                    )
-                except Exception as e:
-                    st.error(f"Erreur lors de la génération du PDF : {e}")
-
-        # Quick receipt from existing encaissement
+                    st.download_button(label="⬇️ Télécharger le reçu PDF",data=pdf_bytes,file_name=fname,mime="application/pdf",key="dl_pdf_btn")
+                except Exception as e: st.error(f"Erreur lors de la génération du PDF : {e}")
         if not df_enc.empty:
-            st.markdown('<div class="section-title" style="font-size:1rem;margin-top:2rem">Générer un reçu depuis un encaissement existant</div>', unsafe_allow_html=True)
-            st.caption("Sélectionnez un encaissement enregistré pour générer son reçu directement.")
-
-            enc_labels = []
-            for _, row in df_enc.iterrows():
-                try: amt = f"{float(row.get('Montant (MAD)',0)):,.0f}"
-                except: amt = "0"
+            st.markdown('<div class="section-title" style="font-size:1rem;margin-top:2rem">Générer un reçu depuis un encaissement existant</div>',unsafe_allow_html=True)
+            enc_labels=[]
+            for _,row in df_enc.iterrows():
+                try: amt=f"{float(row.get('Montant (MAD)',0)):,.0f}"
+                except: amt="0"
                 enc_labels.append(f"{row.get('Date','')} | {row.get('Payeur','')} | {row.get('Lot','')} | {amt} MAD")
-
-            sel_enc = st.selectbox("Encaissement", ["— sélectionner —"] + enc_labels, key="ticket_from_enc")
-            if sel_enc != "— sélectionner —":
-                enc_idx = enc_labels.index(sel_enc)
-                enc_row = df_enc.iloc[enc_idx]
-                num_auto = f"REC-ENC-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-                if st.button("🎫 Générer le reçu pour cet encaissement", key="btn_gen_enc_pdf"):
-                    data_enc = {
-                        "numero": num_auto,
-                        "type_recu": "ENCAISSEMENT",
-                        "date": str(enc_row.get("Date", "")),
-                        "emetteur": "MAHAL",
-                        "destinataire": str(enc_row.get("Payeur", "")),
-                        "lot": str(enc_row.get("Lot", "")),
-                        "description": str(enc_row.get("Description", "")),
-                        "montant": enc_row.get("Montant (MAD)", 0),
-                        "mode_paiement": str(enc_row.get("Mode de paiement", "")),
-                        "reference": str(enc_row.get("Type encaissement", "")),
-                        "remarque": str(enc_row.get("Remarque", "")),
-                    }
+            sel_enc=st.selectbox("Encaissement",["— sélectionner —"]+enc_labels,key="ticket_from_enc")
+            if sel_enc!="— sélectionner —":
+                enc_idx=enc_labels.index(sel_enc); enc_row=df_enc.iloc[enc_idx]; num_auto=f"REC-ENC-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                if st.button("🎫 Générer le reçu pour cet encaissement",key="btn_gen_enc_pdf"):
+                    data_enc={"numero":num_auto,"type_recu":"ENCAISSEMENT","date":str(enc_row.get("Date","")),"emetteur":"MAHAL","destinataire":str(enc_row.get("Payeur","")),"lot":str(enc_row.get("Lot","")),"description":str(enc_row.get("Description","")),"montant":enc_row.get("Montant (MAD)",0),"mode_paiement":str(enc_row.get("Mode de paiement","")),"reference":str(enc_row.get("Type encaissement","")),"remarque":str(enc_row.get("Remarque",""))}
                     try:
-                        pdf_bytes = generate_receipt_pdf(data_enc)
-                        st.success("✅ Reçu généré !")
-                        st.download_button(
-                            label="⬇️ Télécharger le reçu",
-                            data=pdf_bytes,
-                            file_name=f"recu_{num_auto}.pdf",
-                            mime="application/pdf",
-                            key="dl_enc_pdf_btn"
-                        )
-                    except Exception as e:
-                        st.error(f"Erreur : {e}")
+                        pdf_bytes=generate_receipt_pdf(data_enc); st.success("✅ Reçu généré !")
+                        st.download_button(label="⬇️ Télécharger le reçu",data=pdf_bytes,file_name=f"recu_{num_auto}.pdf",mime="application/pdf",key="dl_enc_pdf_btn")
+                    except Exception as e: st.error(f"Erreur : {e}")
 
 
 # ─── Chargement données ────────────────────────────────────────────────────────
@@ -1364,131 +1619,87 @@ except Exception as e:
 transactions_all = add_quantity_column(transactions_all)
 transactions_all = to_numeric(transactions_all, ['Montant (MAD)','Quantité (pièces)'])
 
-if is_admin:
-    transactions = transactions_all.copy()
+if is_admin: transactions = transactions_all.copy()
 else:
-    if lots_autorises:
-        transactions = transactions_all[transactions_all['Lot'].astype(str).isin(lots_autorises)]
-    else:
-        transactions = transactions_all.iloc[0:0]
+    if lots_autorises: transactions = transactions_all[transactions_all['Lot'].astype(str).isin(lots_autorises)]
+    else: transactions = transactions_all.iloc[0:0]
 
 lots_existants       = sorted([l for l in transactions['Lot'].dropna().astype(str).unique() if l.strip()])
 personnes_existantes = sorted([p for p in transactions['Personne'].dropna().astype(str).unique() if p.strip()])
 pending_count = count_pending() if is_admin else 0
 
-# ─── DRAWER MENU SETUP ────────────────────────────────────────────────────────
+# ─── Navigation (identique à l'original) ──────────────────────────────────────
 if is_admin:
     nav_items = [
-        {"key": "nouvelle_transaction", "label": "Nouvelle transaction", "icon": "✚", "section": "Saisie"},
-        {"key": "recherche",            "label": "Recherche",            "icon": "◎", "section": "Saisie"},
-        {"key": "graphiques",           "label": "Graphiques",           "icon": "◈", "section": "Analyse"},
-        {"key": "catalogue_lots",       "label": "Catalogue des lots",   "icon": "◉", "section": "Analyse"},
-        {"key": "resume_personne",      "label": "Résumé par personne",  "icon": "◐", "section": "Analyse"},
-        {"key": "historique_lots",      "label": "Historique des lots",  "icon": "◑", "section": "Analyse"},
-        {"key": "suivi_avances",        "label": "Suivi des avances",    "icon": "◒", "section": "Analyse"},
-        {"key": "finance",              "label": "Finance",              "icon": "◆", "section": "Finance"},
-        {"key": "utilisateurs",         "label": "Utilisateurs",         "icon": "◇", "section": "Administration", "badge": pending_count},
+        {"key":"nouvelle_transaction","label":"Nouvelle transaction","icon":"✚","section":"Saisie"},
+        {"key":"recherche","label":"Recherche","icon":"◎","section":"Saisie"},
+        {"key":"graphiques","label":"Graphiques","icon":"◈","section":"Analyse"},
+        {"key":"catalogue_lots","label":"Catalogue des lots","icon":"◉","section":"Analyse"},
+        {"key":"resume_personne","label":"Résumé par personne","icon":"◐","section":"Analyse"},
+        {"key":"historique_lots","label":"Historique des lots","icon":"◑","section":"Analyse"},
+        {"key":"suivi_avances","label":"Suivi des avances","icon":"◒","section":"Analyse"},
+        {"key":"finance","label":"Finance","icon":"◆","section":"Finance"},
+        {"key":"utilisateurs","label":"Utilisateurs","icon":"◇","section":"Administration","badge":pending_count},
     ]
 elif is_sous_admin:
     nav_items = [
-        {"key": "nouvelle_transaction", "label": "Nouvelle transaction", "icon": "✚", "section": "Saisie"},
-        {"key": "mes_lots",             "label": "Mes lots",             "icon": "◉", "section": "Données"},
-        {"key": "recherche",            "label": "Recherche",            "icon": "◎", "section": "Données"},
-        {"key": "graphiques",           "label": "Graphiques",           "icon": "◈", "section": "Analyse"},
-        {"key": "modifier_transaction", "label": "Modifier",             "icon": "◐", "section": "Saisie"},
+        {"key":"nouvelle_transaction","label":"Nouvelle transaction","icon":"✚","section":"Saisie"},
+        {"key":"mes_lots","label":"Mes lots","icon":"◉","section":"Données"},
+        {"key":"recherche","label":"Recherche","icon":"◎","section":"Données"},
+        {"key":"graphiques","label":"Graphiques","icon":"◈","section":"Analyse"},
+        {"key":"modifier_transaction","label":"Modifier","icon":"◐","section":"Saisie"},
     ]
 else:
     nav_items = [
-        {"key": "mes_lots",  "label": "Mes lots",   "icon": "◉", "section": "Données"},
-        {"key": "recherche", "label": "Recherche",  "icon": "◎", "section": "Données"},
-        {"key": "graphiques","label": "Graphiques", "icon": "◈", "section": "Analyse"},
+        {"key":"mes_lots","label":"Mes lots","icon":"◉","section":"Données"},
+        {"key":"recherche","label":"Recherche","icon":"◎","section":"Données"},
+        {"key":"graphiques","label":"Graphiques","icon":"◈","section":"Analyse"},
     ]
 
-if "active_page" not in st.session_state:
-    st.session_state.active_page = nav_items[0]["key"]
+if "active_page" not in st.session_state: st.session_state.active_page = nav_items[0]["key"]
 
 _pnav = st.session_state.pop("_pending_nav", None)
-if _pnav is None:
-    _pnav = st.query_params.get("nav", "")
+if _pnav is None: _pnav = st.query_params.get("nav", "")
 if _pnav:
-    valid_keys = [item["key"] for item in nav_items]
-    _changed = (_pnav in valid_keys) and (st.session_state.active_page != _pnav)
-    if _pnav in valid_keys:
-        st.session_state.active_page = _pnav
-    token_keep = st.query_params.get("t", "")
-    st.query_params.clear()
-    if token_keep:
-        st.query_params["t"] = token_keep
-    if _changed:
-        st.rerun()
+    valid_keys = [item["key"] for item in nav_items]; _changed = (_pnav in valid_keys) and (st.session_state.active_page != _pnav)
+    if _pnav in valid_keys: st.session_state.active_page = _pnav
+    token_keep = st.query_params.get("t",""); st.query_params.clear()
+    if token_keep: st.query_params["t"] = token_keep
+    if _changed: st.rerun()
 
-active_page = st.session_state.active_page
+active_page  = st.session_state.active_page
 active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
 active_icon  = next((item["icon"]  for item in nav_items if item["key"] == active_page), "")
 
-# ─── TOP BAR ──────────────────────────────────────────────────────────────────
-if is_admin:    role_class, role_label_top = "role-admin", "Admin"
+if is_admin: role_class, role_label_top = "role-admin", "Admin"
 elif is_sous_admin: role_class, role_label_top = "role-sous-admin", "Sous-Admin"
-else:           role_class, role_label_top = "role-visiteur", "Visiteur"
+else: role_class, role_label_top = "role-visiteur", "Visiteur"
 
 if is_admin and pending_count > 0:
-    st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div>
-    <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
-    — rendez-vous dans <strong>Utilisateurs</strong> via le menu.</span></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div><span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente — rendez-vous dans <strong>Utilisateurs</strong> via le menu.</span></div>""", unsafe_allow_html=True)
 
-st.markdown(f"""
-<div class="topbar">
-  <div>
-    <div class="page-title">Mahal</div>
-    <div class="page-subtitle">Gestion de stock et transactions</div>
-  </div>
-  <div style="display:flex;align-items:center;padding-top:0.8rem;gap:0.5rem">
-    <span class="topbar-user">{h(username)}</span>
-    <span class="topbar-role {role_class}">{role_label_top}</span>
-    <div class="active-tab-pill" id="mahal-tab-pill">
-      <span class="active-tab-pill-icon">{active_icon}</span>
-      <span>{h(active_label)}</span>
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;margin-left:2px">
-        <path d="M2 4l3 3 3-3" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-  </div>
-</div>""", unsafe_allow_html=True)
+st.markdown(f"""<div class="topbar"><div><div class="page-title">Mahal</div><div class="page-subtitle">Gestion de stock et transactions</div></div><div style="display:flex;align-items:center;padding-top:0.8rem;gap:0.5rem"><span class="topbar-user">{h(username)}</span><span class="topbar-role {role_class}">{role_label_top}</span><div class="active-tab-pill" id="mahal-tab-pill"><span class="active-tab-pill-icon">{active_icon}</span><span>{h(active_label)}</span><svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;margin-left:2px"><path d="M2 4l3 3 3-3" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div></div>""", unsafe_allow_html=True)
 
 dcol = st.columns([8, 1])[1]
 with dcol:
     if st.button("Déco.", key="btn_logout"):
-        _clear_session(st.session_state.get("_sess_token", ""))
+        _clear_session(st.session_state.get("_sess_token",""))
         st.query_params.clear()
-        for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
-            st.session_state.pop(k, None)
-        st.session_state.auth_page = "login"
-        st.rerun()
+        for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]: st.session_state.pop(k, None)
+        st.session_state.auth_page = "login"; st.rerun()
 
-# ─── Métriques ─────────────────────────────────────────────────────────────────
 ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
 tv = transactions[transactions['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
 td = transactions[transactions['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
-rn = tv - (ta + td)
-cr = "positive" if rn >= 0 else "negative"
+rn = tv - (ta + td); cr = "positive" if rn >= 0 else "negative"
 
-st.markdown(f"""
-<div class="metric-row">
-  <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
-</div>""", unsafe_allow_html=True)
+st.markdown(f"""<div class="metric-row"><div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div><div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div><div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div><div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div></div>""", unsafe_allow_html=True)
 
-
-# ─── BUILD DRAWER HTML ────────────────────────────────────────────────────────
-sections_order = []
-sections_map = {}
+# ─── Drawer (identique à l'original) ─────────────────────────────────────────
+sections_order = []; sections_map = {}
 for item in nav_items:
     sec = item["section"]
-    if sec not in sections_map:
-        sections_map[sec] = []
-        sections_order.append(sec)
+    if sec not in sections_map: sections_map[sec] = []; sections_order.append(sec)
     sections_map[sec].append(item)
 
 import streamlit.components.v1 as components
@@ -1496,606 +1707,326 @@ import streamlit.components.v1 as components
 _nav_items_for_drawer = []
 for _sec in sections_order:
     for _item in sections_map[_sec]:
-        _nav_items_for_drawer.append({
-            "key": _item["key"],
-            "label": _item["label"],
-            "icon": _item["icon"],
-            "section": _sec,
-            "badge": _item.get("badge", 0),
-            "active": _item["key"] == active_page,
-        })
+        _nav_items_for_drawer.append({"key":_item["key"],"label":_item["label"],"icon":_item["icon"],"section":_sec,"badge":_item.get("badge",0),"active":_item["key"]==active_page})
 
-current_token = st.session_state.get("_sess_token", "")
-
-_dih = ""
-_cs = None
+current_token = st.session_state.get("_sess_token","")
+_dih = ""; _cs = None
 for _it in _nav_items_for_drawer:
     if _it["section"] != _cs:
         _cs = _it["section"]
         _dih += '<div style="font-size:0.6rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#BBBBBB;padding:1.2rem 1.8rem 0.5rem 1.8rem">' + _cs + '</div>'
-    _abg = "#F7F6F2" if _it["active"] else "transparent"
-    _afw = "500" if _it["active"] else "400"
-    _ibg = "#1C1C1C" if _it["active"] else "#F0EDE5"
-    _ico = "#F7F6F2" if _it["active"] else "#555"
-    _bar = '<div style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#1C1C1C;border-radius:0 2px 2px 0"></div>' if _it["active"] else ""
-    _bdg = ('<span style="display:inline-flex;align-items:center;justify-content:center;background:#E53935;color:#FFF;font-size:0.6rem;font-weight:700;width:16px;height:16px;border-radius:50%;margin-left:auto">' + str(_it["badge"]) + '</span>') if _it["badge"] > 0 else ""
-    _dih += (
-        '<button data-navkey="' + _it["key"] + '" style="display:flex;align-items:center;gap:0.9rem;padding:0.75rem 1.8rem;cursor:pointer;border:none;background:' + _abg + ';width:100%;text-align:left;font-family:DM Sans,sans-serif;font-size:0.88rem;letter-spacing:0.01em;position:relative;font-weight:' + _afw + '">'
-        + _bar
-        + '<span style="width:30px;height:30px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;background:' + _ibg + ';color:' + _ico + '">' + _it["icon"] + '</span>'
-        + '<span style="color:#1C1C1C">' + _it["label"] + '</span>'
-        + _bdg + '</button>'
-    )
+    _abg="#F7F6F2" if _it["active"] else "transparent"; _afw="500" if _it["active"] else "400"; _ibg="#1C1C1C" if _it["active"] else "#F0EDE5"; _ico="#F7F6F2" if _it["active"] else "#555"
+    _bar='<div style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#1C1C1C;border-radius:0 2px 2px 0"></div>' if _it["active"] else ""
+    _bdg=('<span style="display:inline-flex;align-items:center;justify-content:center;background:#E53935;color:#FFF;font-size:0.6rem;font-weight:700;width:16px;height:16px;border-radius:50%;margin-left:auto">'+str(_it["badge"])+'</span>') if _it["badge"]>0 else ""
+    _dih+=('<button data-navkey="'+_it["key"]+'" style="display:flex;align-items:center;gap:0.9rem;padding:0.75rem 1.8rem;cursor:pointer;border:none;background:'+_abg+';width:100%;text-align:left;font-family:DM Sans,sans-serif;font-size:0.88rem;letter-spacing:0.01em;position:relative;font-weight:'+_afw+'">'+_bar+'<span style="width:30px;height:30px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;background:'+_ibg+';color:'+_ico+'">'+_it["icon"]+'</span><span style="color:#1C1C1C">'+_it["label"]+'</span>'+_bdg+'</button>')
 
-_dih_js = _dih.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-_tok_js = current_token.replace("\\", "\\\\").replace('"', '\\"')
-
-_html_parts = [
-    '<!DOCTYPE html><html><head>',
-    '<style>*{box-sizing:border-box;margin:0;padding:0}body{background:transparent}</style>',
-    '</head><body><script>(function(){',
-    'var TOKEN="' + _tok_js + '";',
-    'var nav_html=`' + _dih_js + '`;',
-    'var pdoc=window.parent.document;',
-    '["__mahal_btn","__mahal_overlay","__mahal_drawer"].forEach(function(id){var el=pdoc.getElementById(id);if(el)el.remove();});',
-    'var btn=pdoc.createElement("button");',
-    'btn.id="__mahal_btn";',
-    'btn.style.cssText="position:fixed;top:1.4rem;right:1.6rem;z-index:99999;width:38px;height:38px;border-radius:10px;background:#1C1C1C;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(28,28,28,0.18)";',
-    'btn.innerHTML=\'<span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span><span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span><span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span>\';',
-    'pdoc.body.appendChild(btn);',
-    'var ov=pdoc.createElement("div");',
-    'ov.id="__mahal_overlay";',
-    'ov.style.cssText="display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:99997;cursor:pointer";',
-    'pdoc.body.appendChild(ov);',
-    'var dr=pdoc.createElement("div");',
-    'dr.id="__mahal_drawer";',
-    'dr.style.cssText="position:fixed;top:0;right:-320px;width:300px;height:100vh;background:#FFFFFF;border-left:1px solid #E0DDD5;z-index:99998;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-8px 0 32px rgba(28,28,28,0.08)";',
-    'var hdr=\'<div style="padding:2rem 1.8rem 1.4rem;border-bottom:1px solid #F0EDE5;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0"><div style="font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em">Mahal</div><button id=\\"__mahal_close\\" style=\\"width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;background:#F7F6F2;cursor:pointer;display:flex;align-items:center;justify-content:center\\"><svg width=\\"12\\" height=\\"12\\" viewBox=\\"0 0 12 12\\" fill=\\"none\\"><path d=\\"M1 1l10 10M11 1L1 11\\" stroke=\\"#1C1C1C\\" stroke-width=\\"1.5\\" stroke-linecap=\\"round\\"/></svg></button></div>\';',
-    'dr.innerHTML=hdr+\'<div id=\\"__mahal_nav\\" style=\\"flex:1;overflow-y:auto;padding-bottom:1.5rem\\">\'+nav_html+\'</div><div style=\\"padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase\\">2025 Plateforme</div>\';',
-    'pdoc.body.appendChild(dr);',
-    'function openDrawer(){dr.style.right="0";ov.style.display="block";pdoc.body.style.overflow="hidden";}',
-    'function closeDrawer(){dr.style.right="-320px";ov.style.display="none";pdoc.body.style.overflow="";}',
-    'function navTo(key){closeDrawer();var a=pdoc.createElement("a");var url=pdoc.location.pathname+"?nav="+encodeURIComponent(key);if(TOKEN)url+="&t="+encodeURIComponent(TOKEN);a.href=url;a.style.display="none";pdoc.body.appendChild(a);a.click();a.remove();}',
-    'btn.addEventListener("click",function(e){e.stopPropagation();openDrawer();});',
-    'ov.addEventListener("click",closeDrawer);',
-    'setTimeout(function(){',
-    '  var cl=pdoc.getElementById("__mahal_close");',
-    '  var nav=pdoc.getElementById("__mahal_nav");',
-    '  if(cl)cl.addEventListener("click",closeDrawer);',
-    '  if(nav)nav.addEventListener("click",function(e){var t=e.target;while(t&&t.id!=="__mahal_nav"){if(t.dataset&&t.dataset.navkey){navTo(t.dataset.navkey);return;}t=t.parentElement;}});',
-    '},50);',
-    'pdoc.addEventListener("keydown",function(e){if(e.key==="Escape")closeDrawer();});',
-    '})();</script></body></html>',
-]
-
+_dih_js = _dih.replace("\\","\\\\").replace("`","\\`").replace("${","\\${")
+_tok_js = current_token.replace("\\","\\\\").replace('"','\\"')
+_html_parts=['<!DOCTYPE html><html><head>','<style>*{box-sizing:border-box;margin:0;padding:0}body{background:transparent}</style>','</head><body><script>(function(){','var TOKEN="'+_tok_js+'";','var nav_html=`'+_dih_js+'`;','var pdoc=window.parent.document;','["__mahal_btn","__mahal_overlay","__mahal_drawer"].forEach(function(id){var el=pdoc.getElementById(id);if(el)el.remove();});','var btn=pdoc.createElement("button");','btn.id="__mahal_btn";','btn.style.cssText="position:fixed;top:1.4rem;right:1.6rem;z-index:99999;width:38px;height:38px;border-radius:10px;background:#1C1C1C;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;box-shadow:0 2px 12px rgba(28,28,28,0.18)";','btn.innerHTML=\'<span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span><span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span><span style="display:block;width:16px;height:1.5px;background:#F7F6F2;border-radius:2px"></span>\';','pdoc.body.appendChild(btn);','var ov=pdoc.createElement("div");','ov.id="__mahal_overlay";','ov.style.cssText="display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:99997;cursor:pointer";','pdoc.body.appendChild(ov);','var dr=pdoc.createElement("div");','dr.id="__mahal_drawer";','dr.style.cssText="position:fixed;top:0;right:-320px;width:300px;height:100vh;background:#FFFFFF;border-left:1px solid #E0DDD5;z-index:99998;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-8px 0 32px rgba(28,28,28,0.08)";','var hdr=\'<div style="padding:2rem 1.8rem 1.4rem;border-bottom:1px solid #F0EDE5;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0"><div style="font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em">Mahal</div><button id=\\"__mahal_close\\" style=\\"width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;background:#F7F6F2;cursor:pointer;display:flex;align-items:center;justify-content:center\\"><svg width=\\"12\\" height=\\"12\\" viewBox=\\"0 0 12 12\\" fill=\\"none\\"><path d=\\"M1 1l10 10M11 1L1 11\\" stroke=\\"#1C1C1C\\" stroke-width=\\"1.5\\" stroke-linecap=\\"round\\"/></svg></button></div>\';','dr.innerHTML=hdr+\'<div id=\\"__mahal_nav\\" style=\\"flex:1;overflow-y:auto;padding-bottom:1.5rem\\">\'+nav_html+\'</div><div style=\\"padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase\\">2025 Plateforme</div>\';','pdoc.body.appendChild(dr);','function openDrawer(){dr.style.right="0";ov.style.display="block";pdoc.body.style.overflow="hidden";}','function closeDrawer(){dr.style.right="-320px";ov.style.display="none";pdoc.body.style.overflow="";}','function navTo(key){closeDrawer();var a=pdoc.createElement("a");var url=pdoc.location.pathname+"?nav="+encodeURIComponent(key);if(TOKEN)url+="&t="+encodeURIComponent(TOKEN);a.href=url;a.style.display="none";pdoc.body.appendChild(a);a.click();a.remove();}','btn.addEventListener("click",function(e){e.stopPropagation();openDrawer();});','ov.addEventListener("click",closeDrawer);','setTimeout(function(){','  var cl=pdoc.getElementById("__mahal_close");','  var nav=pdoc.getElementById("__mahal_nav");','  if(cl)cl.addEventListener("click",closeDrawer);','  if(nav)nav.addEventListener("click",function(e){var t=e.target;while(t&&t.id!=="__mahal_nav"){if(t.dataset&&t.dataset.navkey){navTo(t.dataset.navkey);return;}t=t.parentElement;}});','},50);','pdoc.addEventListener("keydown",function(e){if(e.key==="Escape")closeDrawer();});','})();</script></body></html>']
 _drawer_html = "\n".join(_html_parts)
 components.html(_drawer_html, height=0, scrolling=False)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN — Formulaire édition transaction
+# PAGE RENDERER (identique à l'original, finance pointe sur render_finance_tab)
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_edit_transaction_form(transactions_df, lots_filter=None, personne_filter=None, key_prefix="edit"):
-    lots_all_edit = sorted(transactions_df['Lot'].dropna().astype(str).unique().tolist())
-    personnes_all_edit = sorted(transactions_df['Personne'].dropna().astype(str).unique().tolist())
-    sf1, sf2, sf3 = st.columns(3, gap="large")
-    with sf1:
-        lots_opts = ["Tous"] + (lots_filter if lots_filter else lots_all_edit)
-        f_lot = st.selectbox("Filtrer par lot", lots_opts, key=f"{key_prefix}_flot")
+    lots_all_edit=sorted(transactions_df['Lot'].dropna().astype(str).unique().tolist()); personnes_all_edit=sorted(transactions_df['Personne'].dropna().astype(str).unique().tolist())
+    sf1,sf2,sf3=st.columns(3,gap="large")
+    with sf1: lots_opts=["Tous"]+(lots_filter if lots_filter else lots_all_edit); f_lot=st.selectbox("Filtrer par lot",lots_opts,key=f"{key_prefix}_flot")
     with sf2:
-        if personne_filter:
-            f_pers = personne_filter
-            st.text_input("Filtrer par personne", value=f_pers, disabled=True, key=f"{key_prefix}_fpers_disp")
-        else:
-            f_pers = st.selectbox("Filtrer par personne", ["Tous"]+personnes_all_edit, key=f"{key_prefix}_fpers")
-    with sf3:
-        f_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key=f"{key_prefix}_ftype")
-    df_edit = transactions_df.copy().reset_index(drop=False)
-    if f_lot != "Tous": df_edit = df_edit[df_edit['Lot']==f_lot]
-    if personne_filter:
-        df_edit = df_edit[df_edit['Personne'].astype(str).str.upper()==personne_filter.upper()]
-    elif f_pers != "Tous":
-        df_edit = df_edit[df_edit['Personne']==f_pers]
-    if f_type != "Tous": df_edit = df_edit[df_edit['Type (Achat/Vente/Dépense)']==f_type]
-    if df_edit.empty:
-        st.warning("Aucune transaction ne correspond aux filtres."); return transactions_df
-    def make_label(r):
-        return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-    labels = [make_label(row) for _, row in df_edit.iterrows()]
-    orig_indices = df_edit['index'].tolist()
-    st.caption(f"{len(df_edit)} transaction(s) filtrée(s)")
-    choix_label = st.selectbox("Sélectionner la transaction à modifier", ["— sélectionner —"]+labels, key=f"{key_prefix}_sel")
-    if choix_label == "— sélectionner —": return transactions_df
-    ligne_idx = labels.index(choix_label)
-    orig_idx = orig_indices[ligne_idx]
-    row_sel = transactions_df.loc[orig_idx]
-    st.markdown('<div class="edit-card">', unsafe_allow_html=True)
-    st.markdown(f"**Modifier la transaction — {h(str(row_sel.get('Lot','')))}**")
-    ec1, ec2, ec3 = st.columns(3, gap="large")
+        if personne_filter: f_pers=personne_filter; st.text_input("Filtrer par personne",value=f_pers,disabled=True,key=f"{key_prefix}_fpers_disp")
+        else: f_pers=st.selectbox("Filtrer par personne",["Tous"]+personnes_all_edit,key=f"{key_prefix}_fpers")
+    with sf3: f_type=st.selectbox("Filtrer par type",["Tous","ACHAT","VENTE","DÉPENSE"],key=f"{key_prefix}_ftype")
+    df_edit=transactions_df.copy().reset_index(drop=False)
+    if f_lot!="Tous": df_edit=df_edit[df_edit['Lot']==f_lot]
+    if personne_filter: df_edit=df_edit[df_edit['Personne'].astype(str).str.upper()==personne_filter.upper()]
+    elif f_pers!="Tous": df_edit=df_edit[df_edit['Personne']==f_pers]
+    if f_type!="Tous": df_edit=df_edit[df_edit['Type (Achat/Vente/Dépense)']==f_type]
+    if df_edit.empty: st.warning("Aucune transaction ne correspond aux filtres."); return transactions_df
+    def make_label(r): return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
+    labels=[make_label(row) for _,row in df_edit.iterrows()]; orig_indices=df_edit['index'].tolist()
+    st.caption(f"{len(df_edit)} transaction(s) filtrée(s)"); choix_label=st.selectbox("Sélectionner la transaction à modifier",["— sélectionner —"]+labels,key=f"{key_prefix}_sel")
+    if choix_label=="— sélectionner —": return transactions_df
+    ligne_idx=labels.index(choix_label); orig_idx=orig_indices[ligne_idx]; row_sel=transactions_df.loc[orig_idx]
+    st.markdown('<div class="edit-card">',unsafe_allow_html=True)
+    ec1,ec2,ec3=st.columns(3,gap="large")
     with ec1:
-        try: date_val = datetime.strptime(str(row_sel.get('Date','')), "%Y-%m-%d").date()
-        except: date_val = datetime.now().date()
-        new_date = st.date_input("Date", value=date_val, key=f"{key_prefix}_date")
-        if personne_filter:
-            new_personne = personne_filter.upper()
-            st.text_input("Personne (fixé)", value=new_personne, disabled=True, key=f"{key_prefix}_pers_disp")
-        else:
-            new_personne = st.text_input("Personne", value=str(row_sel.get('Personne','')), key=f"{key_prefix}_pers")
-        types_list = ["ACHAT","VENTE","DÉPENSE"]
-        cur_type = str(row_sel.get('Type (Achat/Vente/Dépense)','ACHAT'))
-        tidx = types_list.index(cur_type) if cur_type in types_list else 0
-        new_type = st.selectbox("Type de transaction", types_list, index=tidx, key=f"{key_prefix}_type")
+        try: date_val=datetime.strptime(str(row_sel.get('Date','')),"%Y-%m-%d").date()
+        except: date_val=datetime.now().date()
+        new_date=st.date_input("Date",value=date_val,key=f"{key_prefix}_date")
+        if personne_filter: new_personne=personne_filter.upper(); st.text_input("Personne (fixé)",value=new_personne,disabled=True,key=f"{key_prefix}_pers_disp")
+        else: new_personne=st.text_input("Personne",value=str(row_sel.get('Personne','')),key=f"{key_prefix}_pers")
+        types_list=["ACHAT","VENTE","DÉPENSE"]; cur_type=str(row_sel.get('Type (Achat/Vente/Dépense)','ACHAT')); tidx=types_list.index(cur_type) if cur_type in types_list else 0
+        new_type=st.selectbox("Type de transaction",types_list,index=tidx,key=f"{key_prefix}_type")
     with ec2:
-        lot_opts = lots_filter if lots_filter else lots_all_edit
-        cur_lot = str(row_sel.get('Lot',''))
-        lidx = lot_opts.index(cur_lot) if cur_lot in lot_opts else 0
-        new_lot = st.selectbox("Lot", lot_opts, index=lidx, key=f"{key_prefix}_lot")
-        new_desc = st.text_input("Description", value=str(row_sel.get('Description','')), key=f"{key_prefix}_desc")
-        new_montant = st.number_input("Montant (MAD)", min_value=0.0, step=0.01,
-                                      value=float(row_sel.get('Montant (MAD)',0)), key=f"{key_prefix}_montant")
+        lot_opts=lots_filter if lots_filter else lots_all_edit; cur_lot=str(row_sel.get('Lot','')); lidx=lot_opts.index(cur_lot) if cur_lot in lot_opts else 0
+        new_lot=st.selectbox("Lot",lot_opts,index=lidx,key=f"{key_prefix}_lot"); new_desc=st.text_input("Description",value=str(row_sel.get('Description','')),key=f"{key_prefix}_desc"); new_montant=st.number_input("Montant (MAD)",min_value=0.0,step=0.01,value=float(row_sel.get('Montant (MAD)',0)),key=f"{key_prefix}_montant")
     with ec3:
-        new_qty = st.number_input("Quantité (pièces)", min_value=1, step=1,
-                                   value=max(1, int(float(row_sel.get('Quantité (pièces)',1)))), key=f"{key_prefix}_qty")
-        new_mode = st.text_input("Mode de paiement", value=str(row_sel.get('Mode de paiement','')), key=f"{key_prefix}_mode")
-        statuts = ["Actif","Fermé"]
-        cur_s = str(row_sel.get('Statut du lot','Actif'))
-        sidx = statuts.index(cur_s) if cur_s in statuts else 0
-        new_statut = st.selectbox("Statut du lot", statuts, index=sidx, key=f"{key_prefix}_statut")
-    new_rem = st.text_input("Remarque", value=str(row_sel.get('Remarque','')), key=f"{key_prefix}_remarque")
-    st.markdown('</div>', unsafe_allow_html=True)
-    if st.button("💾 Enregistrer les modifications", key=f"{key_prefix}_save"):
-        transactions_df.at[orig_idx,'Date'] = str(new_date)
-        transactions_df.at[orig_idx,'Personne'] = sanitize_text(new_personne.upper())
-        transactions_df.at[orig_idx,'Type (Achat/Vente/Dépense)'] = new_type
-        transactions_df.at[orig_idx,'Lot'] = sanitize_text(new_lot.upper())
-        transactions_df.at[orig_idx,'Description'] = sanitize_text(new_desc)
-        transactions_df.at[orig_idx,'Montant (MAD)'] = new_montant
-        transactions_df.at[orig_idx,'Quantité (pièces)'] = new_qty
-        transactions_df.at[orig_idx,'Mode de paiement'] = sanitize_text(new_mode)
-        transactions_df.at[orig_idx,'Remarque'] = sanitize_text(new_rem)
-        transactions_df.at[orig_idx,'Statut du lot'] = new_statut
-        try:
-            save_sheet(transactions_df, "Gestion globale")
-            st.success("✅ Transaction modifiée avec succès.")
-            clear_data_cache(); st.rerun()
+        new_qty=st.number_input("Quantité (pièces)",min_value=1,step=1,value=max(1,int(float(row_sel.get('Quantité (pièces)',1)))),key=f"{key_prefix}_qty"); new_mode=st.text_input("Mode de paiement",value=str(row_sel.get('Mode de paiement','')),key=f"{key_prefix}_mode")
+        statuts=["Actif","Fermé"]; cur_s=str(row_sel.get('Statut du lot','Actif')); sidx=statuts.index(cur_s) if cur_s in statuts else 0; new_statut=st.selectbox("Statut du lot",statuts,index=sidx,key=f"{key_prefix}_statut")
+    new_rem=st.text_input("Remarque",value=str(row_sel.get('Remarque','')),key=f"{key_prefix}_remarque"); st.markdown('</div>',unsafe_allow_html=True)
+    if st.button("💾 Enregistrer les modifications",key=f"{key_prefix}_save"):
+        transactions_df.at[orig_idx,'Date']=str(new_date); transactions_df.at[orig_idx,'Personne']=sanitize_text(new_personne.upper()); transactions_df.at[orig_idx,'Type (Achat/Vente/Dépense)']=new_type; transactions_df.at[orig_idx,'Lot']=sanitize_text(new_lot.upper()); transactions_df.at[orig_idx,'Description']=sanitize_text(new_desc); transactions_df.at[orig_idx,'Montant (MAD)']=new_montant; transactions_df.at[orig_idx,'Quantité (pièces)']=new_qty; transactions_df.at[orig_idx,'Mode de paiement']=sanitize_text(new_mode); transactions_df.at[orig_idx,'Remarque']=sanitize_text(new_rem); transactions_df.at[orig_idx,'Statut du lot']=new_statut
+        try: save_sheet(transactions_df,"Gestion globale"); st.success("✅ Transaction modifiée avec succès."); clear_data_cache(); st.rerun()
         except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
     return transactions_df
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# PAGE RENDERER
-# ═══════════════════════════════════════════════════════════════════════════════
 def render_page():
     page = st.session_state.active_page
-
-    # ── NOUVELLE TRANSACTION ──────────────────────────────────────────────────
     if page == "nouvelle_transaction":
         st.markdown('<div class="section-title">Nouvelle transaction</div>', unsafe_allow_html=True)
-        if is_sous_admin:
-            st.markdown(f'<div class="info-count">Transaction enregistrée sous le nom : <strong>{h(username.upper())}</strong></div>', unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3, gap="large")
+        if is_sous_admin: st.markdown(f'<div class="info-count">Transaction enregistrée sous le nom : <strong>{h(username.upper())}</strong></div>', unsafe_allow_html=True)
+        c1,c2,c3=st.columns(3,gap="large")
         with c1:
-            date = st.date_input("Date", datetime.now())
+            date=st.date_input("Date",datetime.now())
             if is_admin:
-                personne_val = st.selectbox("Personne", options=personnes_existantes, index=None,
-                    placeholder="Sélectionner ou taper un nom...", key="sel_personne")
-                if personne_val is None:
-                    personne_val = st.text_input("Nouveau nom", key="new_personne_input", placeholder="Ex: DUPONT")
-            else:
-                personne_val = username.upper()
-                st.text_input("Personne", value=personne_val, disabled=True, key="sa_pers_display")
-            type_trans = st.selectbox("Type de transaction", ["ACHAT","VENTE","DÉPENSE"])
+                personne_val=st.selectbox("Personne",options=personnes_existantes,index=None,placeholder="Sélectionner ou taper un nom...",key="sel_personne")
+                if personne_val is None: personne_val=st.text_input("Nouveau nom",key="new_personne_input",placeholder="Ex: DUPONT")
+            else: personne_val=username.upper(); st.text_input("Personne",value=personne_val,disabled=True,key="sa_pers_display")
+            type_trans=st.selectbox("Type de transaction",["ACHAT","VENTE","DÉPENSE"])
         with c2:
             if is_admin:
-                lot_val = st.selectbox("Lot", options=lots_existants, index=None,
-                    placeholder="Sélectionner ou taper un lot...", key="sel_lot")
-                if lot_val is None:
-                    lot_val = st.text_input("Nouveau lot", key="new_lot_input", placeholder="Ex: LOT-001")
+                lot_val=st.selectbox("Lot",options=lots_existants,index=None,placeholder="Sélectionner ou taper un lot...",key="sel_lot")
+                if lot_val is None: lot_val=st.text_input("Nouveau lot",key="new_lot_input",placeholder="Ex: LOT-001")
             else:
-                lots_sa_options = lots_autorises if lots_autorises else []
-                lot_sel_sa = st.selectbox("Lot (autorisés)", options=lots_sa_options, index=None,
-                    placeholder="Choisir un lot existant..." if lots_sa_options else "Aucun lot autorisé", key="sa_lot_sel")
-                nouveau_lot_sa = st.text_input("Ou créer un nouveau lot", key="sa_new_lot", placeholder="Ex: LOT-007")
-                lot_val = sanitize_text(nouveau_lot_sa).upper() if nouveau_lot_sa.strip() else (lot_sel_sa or None)
-            description = st.text_input("Description")
-            montant = st.number_input("Montant (MAD)", min_value=0.0, step=0.01)
-        with c3:
-            quantite = st.number_input("Quantité (pièces)", min_value=1, step=1)
-            mode_paiement = st.text_input("Mode de paiement")
-            statut_lot = st.selectbox("Statut du lot", ["Actif","Fermé"])
-        remarque = st.text_input("Remarque")
+                lots_sa_options=lots_autorises if lots_autorises else []
+                lot_sel_sa=st.selectbox("Lot (autorisés)",options=lots_sa_options,index=None,placeholder="Choisir un lot existant..." if lots_sa_options else "Aucun lot autorisé",key="sa_lot_sel")
+                nouveau_lot_sa=st.text_input("Ou créer un nouveau lot",key="sa_new_lot",placeholder="Ex: LOT-007")
+                lot_val=sanitize_text(nouveau_lot_sa).upper() if nouveau_lot_sa.strip() else (lot_sel_sa or None)
+            description=st.text_input("Description"); montant=st.number_input("Montant (MAD)",min_value=0.0,step=0.01)
+        with c3: quantite=st.number_input("Quantité (pièces)",min_value=1,step=1); mode_paiement=st.text_input("Mode de paiement"); statut_lot=st.selectbox("Statut du lot",["Actif","Fermé"])
+        remarque=st.text_input("Remarque")
         if st.button("Enregistrer"):
-            if not lot_val:
-                st.error("Sélectionne ou crée un lot.")
+            if not lot_val: st.error("Sélectionne ou crée un lot.")
             else:
-                row = {'Date': str(date), 'Personne': sanitize_text(personne_val.upper()),
-                       'Type (Achat/Vente/Dépense)': type_trans, 'Description': sanitize_text(description),
-                       'Lot': sanitize_text(lot_val.upper()), 'Montant (MAD)': montant,
-                       'Quantité (pièces)': quantite, 'Mode de paiement': sanitize_text(mode_paiement),
-                       'Remarque': sanitize_text(remarque), 'Statut du lot': statut_lot}
-                try:
-                    append_row(row, "Gestion globale")
-                    st.success("Transaction enregistrée.")
-                    clear_data_cache()
+                row={'Date':str(date),'Personne':sanitize_text(personne_val.upper()),'Type (Achat/Vente/Dépense)':type_trans,'Description':sanitize_text(description),'Lot':sanitize_text(lot_val.upper()),'Montant (MAD)':montant,'Quantité (pièces)':quantite,'Mode de paiement':sanitize_text(mode_paiement),'Remarque':sanitize_text(remarque),'Statut du lot':statut_lot}
+                try: append_row(row,"Gestion globale"); st.success("Transaction enregistrée."); clear_data_cache()
                 except Exception as e: st.error(f"Erreur : {e}")
 
-    # ── RECHERCHE ─────────────────────────────────────────────────────────────
     elif page == "recherche":
         st.markdown('<div class="section-title">Recherche</div>', unsafe_allow_html=True)
-        cs1, cs2, cs3 = st.columns([2,1,1], gap="large")
-        with cs1: query = st.text_input("Rechercher", placeholder="Nom, lot, description...")
-        with cs2: filtre_type = st.selectbox("Type", ["Tous","ACHAT","VENTE","DÉPENSE"])
-        with cs3:
-            lots_dispo = ["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-            filtre_lot = st.selectbox("Lot", lots_dispo)
-        df_f = transactions.copy()
+        cs1,cs2,cs3=st.columns([2,1,1],gap="large")
+        with cs1: query=st.text_input("Rechercher",placeholder="Nom, lot, description...")
+        with cs2: filtre_type=st.selectbox("Type",["Tous","ACHAT","VENTE","DÉPENSE"])
+        with cs3: filtre_lot=st.selectbox("Lot",["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist()))
+        df_f=transactions.copy()
         if query:
-            if is_admin:
-                mask = (df_f['Personne'].astype(str).str.contains(query,case=False,na=False)|
-                        df_f['Lot'].astype(str).str.contains(query,case=False,na=False)|
-                        df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
-                        df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
-            else:
-                mask = (df_f['Description'].astype(str).str.contains(query,case=False,na=False)|
-                        df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
-            df_f = df_f[mask]
-        if filtre_type != "Tous": df_f = df_f[df_f['Type (Achat/Vente/Dépense)']==filtre_type]
-        if filtre_lot  != "Tous": df_f = df_f[df_f['Lot']==filtre_lot]
-        st.markdown(f'<div class="info-count">{len(df_f)} transaction(s)</div>', unsafe_allow_html=True)
-        st.dataframe(df_f, width='stretch', hide_index=True)
+            if is_admin: mask=(df_f['Personne'].astype(str).str.contains(query,case=False,na=False)|df_f['Lot'].astype(str).str.contains(query,case=False,na=False)|df_f['Description'].astype(str).str.contains(query,case=False,na=False)|df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
+            else: mask=(df_f['Description'].astype(str).str.contains(query,case=False,na=False)|df_f['Remarque'].astype(str).str.contains(query,case=False,na=False))
+            df_f=df_f[mask]
+        if filtre_type!="Tous": df_f=df_f[df_f['Type (Achat/Vente/Dépense)']==filtre_type]
+        if filtre_lot!="Tous": df_f=df_f[df_f['Lot']==filtre_lot]
+        st.markdown(f'<div class="info-count">{len(df_f)} transaction(s)</div>',unsafe_allow_html=True); st.dataframe(df_f,width='stretch',hide_index=True)
 
-    # ── GRAPHIQUES ────────────────────────────────────────────────────────────
     elif page == "graphiques":
         st.markdown('<div class="section-title">Graphiques</div>', unsafe_allow_html=True)
-        COLORS = {'ACHAT':'#5C85D6','VENTE':'#2D7A3A','DÉPENSE':'#C0864A'}
-        PL = dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',
-                  font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
-        gc1,gc2 = st.columns(2,gap="large")
+        COLORS={'ACHAT':'#5C85D6','VENTE':'#2D7A3A','DÉPENSE':'#C0864A'}
+        PL=dict(paper_bgcolor='rgba(0,0,0,0)',plot_bgcolor='rgba(0,0,0,0)',font=dict(family='DM Sans',color='#555',size=12),margin=dict(l=10,r=10,t=40,b=10))
+        gc1,gc2=st.columns(2,gap="large")
         with gc1:
-            st.markdown('<div class="section-title" style="font-size:1rem;">Répartition globale</div>', unsafe_allow_html=True)
-            fig = go.Figure(go.Pie(labels=['Achats','Ventes','Dépenses'], values=[ta,tv,td], hole=0.55,
-                marker=dict(colors=['#5C85D6','#2D7A3A','#C0864A'],line=dict(color='#F7F6F2',width=3)),
-                hovertemplate='%{label}<br>%{value:,.0f} MAD<extra></extra>'))
-            fig.update_layout(**PL,showlegend=True,legend=dict(orientation='h',y=-0.15,x=0.5,xanchor='center'))
-            st.plotly_chart(fig,use_container_width=True)
+            fig=go.Figure(go.Pie(labels=['Achats','Ventes','Dépenses'],values=[ta,tv,td],hole=0.55,marker=dict(colors=['#5C85D6','#2D7A3A','#C0864A'],line=dict(color='#F7F6F2',width=3)),hovertemplate='%{label}<br>%{value:,.0f} MAD<extra></extra>'))
+            fig.update_layout(**PL,showlegend=True,legend=dict(orientation='h',y=-0.15,x=0.5,xanchor='center')); st.plotly_chart(fig,use_container_width=True)
         with gc2:
-            st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par lot</div>', unsafe_allow_html=True)
-            sl = compute_suivi_lot(transactions)
+            sl=compute_suivi_lot(transactions)
             if not sl.empty:
-                fig2 = go.Figure(go.Bar(x=sl['Lot'],y=sl['Résultat'],
-                    marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl['Résultat']],
-                    hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-                fig2.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-                st.plotly_chart(fig2,use_container_width=True)
-        st.markdown('<div class="section-title" style="font-size:1rem;">Évolution dans le temps</div>', unsafe_allow_html=True)
-        df_t = transactions.copy()
-        df_t['Date'] = pd.to_datetime(df_t['Date'],errors='coerce')
-        df_t = df_t.dropna(subset=['Date'])
-        df_t['Mois'] = df_t['Date'].dt.to_period('M').astype(str)
-        dp = df_t.groupby(['Mois','Type (Achat/Vente/Dépense)'])['Montant (MAD)'].sum().reset_index()
-        fig3 = go.Figure()
-        for tv2, col in COLORS.items():
-            d = dp[dp['Type (Achat/Vente/Dépense)']==tv2]
-            if not d.empty:
-                fig3.add_trace(go.Scatter(x=d['Mois'],y=d['Montant (MAD)'],mode='lines+markers',name=tv2,
-                    line=dict(color=col,width=2),marker=dict(size=6)))
-        fig3.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'),
-            legend=dict(orientation='h',y=-0.2,x=0.5,xanchor='center'))
-        st.plotly_chart(fig3,use_container_width=True)
-        if is_admin:
-            st.markdown('<div class="section-title" style="font-size:1rem;">Résultat par personne</div>', unsafe_allow_html=True)
-            rp = compute_resume_personne(transactions)
-            if not rp.empty:
-                fig4 = go.Figure(go.Bar(x=rp['Personne'],y=rp['Résultat'],
-                    marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in rp['Résultat']],
-                    hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
-                fig4.update_layout(**PL,xaxis=dict(showgrid=False),yaxis=dict(showgrid=True,gridcolor='#EEE',tickformat=',.0f'))
-                st.plotly_chart(fig4,use_container_width=True)
+                fig2=go.Figure(go.Bar(x=sl['Lot'],y=sl['Résultat'],marker_color=['#2D7A3A' if v>=0 else '#B03A2E' for v in sl['Résultat']],hovertemplate='%{x}<br>%{y:,.0f} MAD<extra></extra>'))
+                fig2.update_layout(**PL); st.plotly_chart(fig2,use_container_width=True)
+        df_t=transactions.copy(); df_t['Date']=pd.to_datetime(df_t['Date'],errors='coerce'); df_t=df_t.dropna(subset=['Date']); df_t['Mois']=df_t['Date'].dt.to_period('M').astype(str)
+        dp=df_t.groupby(['Mois','Type (Achat/Vente/Dépense)'])['Montant (MAD)'].sum().reset_index()
+        fig3=go.Figure()
+        for tv2,col in COLORS.items():
+            d=dp[dp['Type (Achat/Vente/Dépense)']==tv2]
+            if not d.empty: fig3.add_trace(go.Scatter(x=d['Mois'],y=d['Montant (MAD)'],mode='lines+markers',name=tv2,line=dict(color=col,width=2),marker=dict(size=6)))
+        fig3.update_layout(**PL,legend=dict(orientation='h',y=-0.2,x=0.5,xanchor='center')); st.plotly_chart(fig3,use_container_width=True)
 
-    # ── MES LOTS / CATALOGUE LOTS ─────────────────────────────────────────────
-    elif page in ("mes_lots", "catalogue_lots"):
-        title = "Catalogue des lots" if page == "catalogue_lots" else "Mes lots autorisés"
+    elif page in ("mes_lots","catalogue_lots"):
+        title="Catalogue des lots" if page=="catalogue_lots" else "Mes lots autorisés"
         st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
-        if page == "mes_lots" and lots_autorises:
-            st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>', unsafe_allow_html=True)
-        elif page == "mes_lots" and not lots_autorises:
-            warn("Aucun lot ne t'a été attribué. Contacte l'administrateur.")
-        st.dataframe(compute_suivi_lot(transactions), width='stretch', hide_index=True)
+        if page=="mes_lots" and lots_autorises: st.markdown(f'<div class="info-count">Lots visibles : {", ".join(lots_autorises)}</div>',unsafe_allow_html=True)
+        elif page=="mes_lots" and not lots_autorises: warn("Aucun lot ne t'a été attribué.")
+        st.dataframe(compute_suivi_lot(transactions),width='stretch',hide_index=True)
 
-    # ── RÉSUMÉ PAR PERSONNE ───────────────────────────────────────────────────
     elif page == "resume_personne":
         st.markdown('<div class="section-title">Résumé par personne</div>', unsafe_allow_html=True)
-        st.dataframe(compute_resume_personne(transactions), width='stretch', hide_index=True)
+        st.dataframe(compute_resume_personne(transactions),width='stretch',hide_index=True)
 
-    # ── HISTORIQUE DES LOTS ───────────────────────────────────────────────────
     elif page == "historique_lots":
         st.markdown('<div class="section-title">Historique des lots</div>', unsafe_allow_html=True)
-        filtre_lot_hist = st.selectbox("Filtrer par lot", ["Tous"]+lots_existants, key="hist_filtre")
-        hist_df = compute_historique_lot(transactions)
-        if filtre_lot_hist != "Tous":
-            hist_df = hist_df[hist_df['Lot']==filtre_lot_hist]
-            t_lot = transactions[transactions['Lot']==filtre_lot_hist]
-            a_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
-            v_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum()
-            d_l = t_lot[t_lot['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum()
-            r_l = v_l - (a_l + d_l)
-            cr_l = "#2D7A3A" if r_l >= 0 else "#B03A2E"
-            st.markdown(f"""<div class="metric-row" style="margin-bottom:1rem">
-              <div class="metric-card"><div class="metric-label">Achats</div><div class="metric-value">{a_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
-              <div class="metric-card"><div class="metric-label">Ventes</div><div class="metric-value">{v_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
-              <div class="metric-card"><div class="metric-label">Dépenses</div><div class="metric-value">{d_l:,.0f} <small style="opacity:.5">MAD</small></div></div>
-              <div class="metric-card"><div class="metric-label">Résultat</div><div class="metric-value" style="color:{cr_l}">{r_l:+,.0f} <small style="opacity:.5">MAD</small></div></div>
-            </div>""", unsafe_allow_html=True)
-        if not hist_df.empty:
-            st.markdown(f'<div class="info-count">{len(hist_df)} transaction(s)</div>', unsafe_allow_html=True)
-            st.dataframe(hist_df, width='stretch', hide_index=True)
-        else:
-            st.warning("Aucune transaction pour ce lot.")
+        filtre_lot_hist=st.selectbox("Filtrer par lot",["Tous"]+lots_existants,key="hist_filtre")
+        hist_df=compute_historique_lot(transactions)
+        if filtre_lot_hist!="Tous":
+            hist_df=hist_df[hist_df['Lot']==filtre_lot_hist]; t_lot=transactions[transactions['Lot']==filtre_lot_hist]
+            a_l=t_lot[t_lot['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum(); v_l=t_lot[t_lot['Type (Achat/Vente/Dépense)']=='VENTE']['Montant (MAD)'].sum(); d_l=t_lot[t_lot['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Montant (MAD)'].sum(); r_l=v_l-(a_l+d_l); cr_l="#2D7A3A" if r_l>=0 else "#B03A2E"
+            st.markdown(f"""<div class="metric-row" style="margin-bottom:1rem"><div class="metric-card"><div class="metric-label">Achats</div><div class="metric-value">{a_l:,.0f} <small style="opacity:.5">MAD</small></div></div><div class="metric-card"><div class="metric-label">Ventes</div><div class="metric-value">{v_l:,.0f} <small style="opacity:.5">MAD</small></div></div><div class="metric-card"><div class="metric-label">Dépenses</div><div class="metric-value">{d_l:,.0f} <small style="opacity:.5">MAD</small></div></div><div class="metric-card"><div class="metric-label">Résultat</div><div class="metric-value" style="color:{cr_l}">{r_l:+,.0f} <small style="opacity:.5">MAD</small></div></div></div>""",unsafe_allow_html=True)
+        if not hist_df.empty: st.dataframe(hist_df,width='stretch',hide_index=True)
+        else: st.warning("Aucune transaction pour ce lot.")
 
-    # ── SUIVI DES AVANCES ─────────────────────────────────────────────────────
     elif page == "suivi_avances":
         st.markdown('<div class="section-title">Modifier les transactions</div>', unsafe_allow_html=True)
-        st.caption("Cliquez sur une cellule pour la modifier directement.")
-        ef1, ef2, ef3 = st.columns(3, gap="large")
-        with ef1:
-            lots_edit_opts = ["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist())
-            e_lot = st.selectbox("Filtrer par lot", lots_edit_opts, key="edit_inline_lot")
-        with ef2:
-            pers_edit_opts = ["Tous"]+sorted(transactions_all['Personne'].dropna().astype(str).unique().tolist())
-            e_pers = st.selectbox("Filtrer par personne", pers_edit_opts, key="edit_inline_pers")
-        with ef3:
-            e_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="edit_inline_type")
-        df_editable = transactions_all.copy()
-        df_editable.index = range(len(df_editable))
-        df_editable["_orig_idx"] = df_editable.index
-        mask_edit = pd.Series([True]*len(df_editable))
-        if e_lot  != "Tous": mask_edit &= df_editable['Lot'].astype(str) == e_lot
-        if e_pers != "Tous": mask_edit &= df_editable['Personne'].astype(str) == e_pers
-        if e_type != "Tous": mask_edit &= df_editable['Type (Achat/Vente/Dépense)'].astype(str) == e_type
-        df_view = df_editable[mask_edit].copy()
-        cols_show = [c for c in ['Date','Personne','Type (Achat/Vente/Dépense)','Lot','Description',
-                                  'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_view.columns]
-        column_config = {
-            "Date": st.column_config.TextColumn("Date"),
-            "Personne": st.column_config.TextColumn("Personne"),
-            "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
-            "Lot": st.column_config.TextColumn("Lot"),
-            "Description": st.column_config.TextColumn("Description"),
-            "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
-            "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
-            "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
-            "Remarque": st.column_config.TextColumn("Remarque"),
-            "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
-        }
-        st.markdown(f'<div class="info-count">{len(df_view)} transaction(s) affichée(s)</div>', unsafe_allow_html=True)
-        edited_df = st.data_editor(df_view[cols_show+["_orig_idx"]], column_config=column_config,
-            hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_show, key="inline_editor")
-        if st.button("💾 Sauvegarder toutes les modifications", key="btn_save_inline"):
+        ef1,ef2,ef3=st.columns(3,gap="large")
+        with ef1: e_lot=st.selectbox("Filtrer par lot",["Tous"]+sorted(transactions_all['Lot'].dropna().astype(str).unique().tolist()),key="edit_inline_lot")
+        with ef2: e_pers=st.selectbox("Filtrer par personne",["Tous"]+sorted(transactions_all['Personne'].dropna().astype(str).unique().tolist()),key="edit_inline_pers")
+        with ef3: e_type=st.selectbox("Filtrer par type",["Tous","ACHAT","VENTE","DÉPENSE"],key="edit_inline_type")
+        df_editable=transactions_all.copy(); df_editable.index=range(len(df_editable)); df_editable["_orig_idx"]=df_editable.index
+        mask_edit=pd.Series([True]*len(df_editable))
+        if e_lot!="Tous": mask_edit&=df_editable['Lot'].astype(str)==e_lot
+        if e_pers!="Tous": mask_edit&=df_editable['Personne'].astype(str)==e_pers
+        if e_type!="Tous": mask_edit&=df_editable['Type (Achat/Vente/Dépense)'].astype(str)==e_type
+        df_view=df_editable[mask_edit].copy()
+        cols_show=[c for c in ['Date','Personne','Type (Achat/Vente/Dépense)','Lot','Description','Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_view.columns]
+        column_config={"Date":st.column_config.TextColumn("Date"),"Personne":st.column_config.TextColumn("Personne"),"Type (Achat/Vente/Dépense)":st.column_config.SelectboxColumn("Type",options=["ACHAT","VENTE","DÉPENSE"],required=True),"Lot":st.column_config.TextColumn("Lot"),"Description":st.column_config.TextColumn("Description"),"Montant (MAD)":st.column_config.NumberColumn("Montant (MAD)",min_value=0.0,format="%.2f"),"Quantité (pièces)":st.column_config.NumberColumn("Quantité",min_value=1,step=1,format="%d"),"Mode de paiement":st.column_config.TextColumn("Mode paiement"),"Remarque":st.column_config.TextColumn("Remarque"),"Statut du lot":st.column_config.SelectboxColumn("Statut",options=["Actif","Fermé"],required=True)}
+        st.markdown(f'<div class="info-count">{len(df_view)} transaction(s)</div>',unsafe_allow_html=True)
+        edited_df=st.data_editor(df_view[cols_show+["_orig_idx"]],column_config=column_config,hide_index=True,use_container_width=True,num_rows="fixed",column_order=cols_show,key="inline_editor")
+        if st.button("💾 Sauvegarder toutes les modifications",key="btn_save_inline"):
             try:
-                for _, row_edit in edited_df.iterrows():
-                    oi = int(row_edit["_orig_idx"])
+                for _,row_edit in edited_df.iterrows():
+                    oi=int(row_edit["_orig_idx"])
                     for col in cols_show:
                         if col in transactions_all.columns:
-                            val = row_edit[col]
-                            if col in ['Personne','Lot','Description','Remarque','Mode de paiement']:
-                                val = sanitize_text(str(val))
-                                if col in ['Personne','Lot']: val = val.upper()
-                            transactions_all.at[oi, col] = val
-                save_sheet(transactions_all, "Gestion globale")
-                st.success("✅ Modifications enregistrées.")
-                clear_data_cache(); st.rerun()
-            except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
-
-        st.markdown('<div class="section-title">Supprimer une transaction précise</div>', unsafe_allow_html=True)
-        sf1, sf2, sf3 = st.columns(3, gap="large")
-        with sf1:
-            lots_f = ["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-            f_lot = st.selectbox("Filtrer par lot", lots_f, key="sf_lot")
-        with sf2:
-            pers_f = ["Tous"]+sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
-            f_pers = st.selectbox("Filtrer par personne", pers_f, key="sf_pers")
-        with sf3:
-            f_type = st.selectbox("Filtrer par type", ["Tous","ACHAT","VENTE","DÉPENSE"], key="sf_type")
-        df_del = transactions.copy().reset_index(drop=True)
-        if f_lot  != "Tous": df_del = df_del[df_del['Lot']==f_lot]
-        if f_pers != "Tous": df_del = df_del[df_del['Personne']==f_pers]
-        if f_type != "Tous": df_del = df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
+                            val=row_edit[col]
+                            if col in ['Personne','Lot','Description','Remarque','Mode de paiement']: val=sanitize_text(str(val))
+                            if col in ['Personne','Lot']: val=val.upper()
+                            transactions_all.at[oi,col]=val
+                save_sheet(transactions_all,"Gestion globale"); st.success("✅ Modifications enregistrées."); clear_data_cache(); st.rerun()
+            except Exception as e: st.error(f"Erreur : {e}")
+        st.markdown('<div class="section-title">Supprimer une transaction précise</div>',unsafe_allow_html=True)
+        sf1,sf2,sf3=st.columns(3,gap="large")
+        with sf1: f_lot=st.selectbox("Filtrer par lot",["Tous"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist()),key="sf_lot")
+        with sf2: f_pers=st.selectbox("Filtrer par personne",["Tous"]+sorted(transactions['Personne'].dropna().astype(str).unique().tolist()),key="sf_pers")
+        with sf3: f_type=st.selectbox("Filtrer par type",["Tous","ACHAT","VENTE","DÉPENSE"],key="sf_type")
+        df_del=transactions.copy().reset_index(drop=True)
+        if f_lot!="Tous": df_del=df_del[df_del['Lot']==f_lot]
+        if f_pers!="Tous": df_del=df_del[df_del['Personne']==f_pers]
+        if f_type!="Tous": df_del=df_del[df_del['Type (Achat/Vente/Dépense)']==f_type]
         if not df_del.empty:
-            def make_label_del(r):
-                return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
-            labels_del = [make_label_del(row) for _, row in df_del.iterrows()]
-            idx_to_orig = df_del.index.tolist()
-            st.caption(f"{len(df_del)} transaction(s) filtrée(s)")
-            choix_del = st.selectbox("Choisir la transaction à supprimer", ["— sélectionner —"]+labels_del, key="del_single_sel")
-            if choix_del != "— sélectionner —":
-                li = labels_del.index(choix_del)
-                oi = idx_to_orig[li]
-                rs = transactions.loc[oi]
+            def make_label_del(r): return f"{r.get('Date','')} | {r.get('Lot','')} | {r.get('Personne','')} | {r.get('Type (Achat/Vente/Dépense)','')} | {float(r.get('Montant (MAD)',0)):,.0f} MAD"
+            labels_del=[make_label_del(row) for _,row in df_del.iterrows()]; idx_to_orig=df_del.index.tolist()
+            choix_del=st.selectbox("Choisir la transaction à supprimer",["— sélectionner —"]+labels_del,key="del_single_sel")
+            if choix_del!="— sélectionner —":
+                li=labels_del.index(choix_del); oi=idx_to_orig[li]; rs=transactions.loc[oi]
                 with st.container(border=True):
-                    st.markdown(f"**{h(str(rs.get('Lot','')))} — {h(str(rs.get('Type (Achat/Vente/Dépense)','')))}**", unsafe_allow_html=True)
+                    st.markdown(f"**{h(str(rs.get('Lot','')))} — {h(str(rs.get('Type (Achat/Vente/Dépense)','')))}**",unsafe_allow_html=True)
                     st.caption(f"{rs.get('Date','')} · {rs.get('Personne','')} · {float(rs.get('Montant (MAD)',0)):,.0f} MAD")
-                c_single = st.checkbox("Je confirme la suppression de cette transaction", key="confirm_single")
-                if st.button("Supprimer cette transaction", key="btn_del_single"):
+                c_single=st.checkbox("Je confirme la suppression de cette transaction",key="confirm_single")
+                if st.button("Supprimer cette transaction",key="btn_del_single"):
                     if not c_single: st.warning("Coche la case de confirmation.")
                     else:
-                        transactions_upd = transactions.drop(index=oi).reset_index(drop=True)
-                        save_sheet(transactions_upd, "Gestion globale")
-                        st.success("Transaction supprimée.")
-                        clear_data_cache(); st.rerun()
-        else:
-            st.warning("Aucune transaction ne correspond aux filtres.")
-
-        st.markdown('<div class="section-title">Supprimer en masse</div>', unsafe_allow_html=True)
-        dc1, dc2 = st.columns(2, gap="large")
+                        transactions_upd=transactions.drop(index=oi).reset_index(drop=True); save_sheet(transactions_upd,"Gestion globale"); st.success("Transaction supprimée."); clear_data_cache(); st.rerun()
+        else: st.warning("Aucune transaction ne correspond aux filtres.")
+        st.markdown('<div class="section-title">Supprimer en masse</div>',unsafe_allow_html=True)
+        dc1,dc2=st.columns(2,gap="large")
         with dc1:
-            st.markdown("**Toutes les transactions d'un lot**")
-            lots_ex = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-            lot_sup = st.selectbox("Choisir un lot", ["— sélectionner —"]+lots_ex, key="del_lot")
-            if lot_sup != "— sélectionner —":
-                st.caption(f"{len(transactions[transactions['Lot']==lot_sup])} transaction(s)")
-            c_lot = st.checkbox("Je confirme la suppression du lot", key="confirm_lot")
-            if st.button("Supprimer le lot", key="btn_del_lot"):
-                if lot_sup == "— sélectionner —": st.warning("Sélectionne un lot.")
+            lot_sup=st.selectbox("Choisir un lot",["— sélectionner —"]+sorted(transactions['Lot'].dropna().astype(str).unique().tolist()),key="del_lot")
+            if lot_sup!="— sélectionner —": st.caption(f"{len(transactions[transactions['Lot']==lot_sup])} transaction(s)")
+            c_lot=st.checkbox("Je confirme la suppression du lot",key="confirm_lot")
+            if st.button("Supprimer le lot",key="btn_del_lot"):
+                if lot_sup=="— sélectionner —": st.warning("Sélectionne un lot.")
                 elif not c_lot: st.warning("Coche la case de confirmation.")
                 else:
-                    transactions_upd = transactions[transactions['Lot']!=lot_sup]
-                    save_sheet(transactions_upd,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
+                    transactions_upd=transactions[transactions['Lot']!=lot_sup]; save_sheet(transactions_upd,"Gestion globale"); st.success(f"Lot « {lot_sup} » supprimé."); clear_data_cache()
         with dc2:
-            st.markdown("**Toutes les transactions d'une personne**")
-            pers_ex = sorted(transactions['Personne'].dropna().astype(str).unique().tolist())
-            pers_sup = st.selectbox("Choisir une personne", ["— sélectionner —"]+pers_ex, key="del_pers")
-            if pers_sup != "— sélectionner —":
-                st.caption(f"{len(transactions[transactions['Personne']==pers_sup])} transaction(s)")
-            c_pers = st.checkbox("Je confirme la suppression", key="confirm_pers")
-            if st.button("Supprimer la personne", key="btn_del_pers"):
-                if pers_sup == "— sélectionner —": st.warning("Sélectionne une personne.")
+            pers_sup=st.selectbox("Choisir une personne",["— sélectionner —"]+sorted(transactions['Personne'].dropna().astype(str).unique().tolist()),key="del_pers")
+            if pers_sup!="— sélectionner —": st.caption(f"{len(transactions[transactions['Personne']==pers_sup])} transaction(s)")
+            c_pers=st.checkbox("Je confirme la suppression",key="confirm_pers")
+            if st.button("Supprimer la personne",key="btn_del_pers"):
+                if pers_sup=="— sélectionner —": st.warning("Sélectionne une personne.")
                 elif not c_pers: st.warning("Coche la case de confirmation.")
                 else:
-                    transactions_upd = transactions[transactions['Personne']!=pers_sup]
-                    save_sheet(transactions_upd,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
+                    transactions_upd=transactions[transactions['Personne']!=pers_sup]; save_sheet(transactions_upd,"Gestion globale"); st.success(f"Personne « {pers_sup} » supprimée."); clear_data_cache()
 
-    # ── FINANCE ───────────────────────────────────────────────────────────────
     elif page == "finance":
         st.markdown('<div class="page-title" style="font-size:2rem">Finance</div>', unsafe_allow_html=True)
-        st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement · Tickets PDF</div>', unsafe_allow_html=True)
+        st.markdown('<div class="page-subtitle">Dette financière · Dette fournisseur · Caisse · Encaissement · Tickets PDF · Notifications email</div>', unsafe_allow_html=True)
         render_finance_tab(lots_existants)
 
-    # ── MODIFIER TRANSACTION (sous-admin) ─────────────────────────────────────
     elif page == "modifier_transaction":
         st.markdown('<div class="section-title">Modifier mes transactions</div>', unsafe_allow_html=True)
-        df_sa_edit = transactions_all.copy()
-        df_sa_edit.index = range(len(df_sa_edit))
-        df_sa_edit["_orig_idx"] = df_sa_edit.index
-        mask_sa = df_sa_edit['Personne'].astype(str).str.upper() == username.upper()
-        if lots_autorises:
-            mask_sa &= df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
-        df_sa_view = df_sa_edit[mask_sa].copy()
-        if df_sa_view.empty:
-            st.info("Aucune transaction à afficher pour votre compte.")
+        df_sa_edit=transactions_all.copy(); df_sa_edit.index=range(len(df_sa_edit)); df_sa_edit["_orig_idx"]=df_sa_edit.index
+        mask_sa=df_sa_edit['Personne'].astype(str).str.upper()==username.upper()
+        if lots_autorises: mask_sa&=df_sa_edit['Lot'].astype(str).isin([l.upper() for l in lots_autorises])
+        df_sa_view=df_sa_edit[mask_sa].copy()
+        if df_sa_view.empty: st.info("Aucune transaction à afficher pour votre compte.")
         else:
-            lots_sa_disp = ["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist())
-            fsa_lot = st.selectbox("Filtrer par lot", lots_sa_disp, key="sa_edit_flot")
-            if fsa_lot != "Tous": df_sa_view = df_sa_view[df_sa_view['Lot']==fsa_lot]
-            cols_sa_show = [c for c in ['Date','Type (Achat/Vente/Dépense)','Lot','Description',
-                                         'Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
-            all_lots_sa = sorted(set(lots_autorises or [])|set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
-            col_cfg_sa = {
-                "Date": st.column_config.TextColumn("Date"),
-                "Type (Achat/Vente/Dépense)": st.column_config.SelectboxColumn("Type", options=["ACHAT","VENTE","DÉPENSE"], required=True),
-                "Lot": st.column_config.SelectboxColumn("Lot", options=all_lots_sa, required=True),
-                "Description": st.column_config.TextColumn("Description"),
-                "Montant (MAD)": st.column_config.NumberColumn("Montant (MAD)", min_value=0.0, format="%.2f"),
-                "Quantité (pièces)": st.column_config.NumberColumn("Quantité", min_value=1, step=1, format="%d"),
-                "Mode de paiement": st.column_config.TextColumn("Mode paiement"),
-                "Remarque": st.column_config.TextColumn("Remarque"),
-                "Statut du lot": st.column_config.SelectboxColumn("Statut", options=["Actif","Fermé"], required=True),
-            }
-            st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>', unsafe_allow_html=True)
-            edited_sa = st.data_editor(df_sa_view[cols_sa_show+["_orig_idx"]], column_config=col_cfg_sa,
-                hide_index=True, use_container_width=True, num_rows="fixed", column_order=cols_sa_show, key="sa_inline_editor")
-            if st.button("💾 Sauvegarder les modifications", key="sa_btn_save_inline"):
+            fsa_lot=st.selectbox("Filtrer par lot",["Tous"]+sorted(df_sa_view['Lot'].dropna().astype(str).unique().tolist()),key="sa_edit_flot")
+            if fsa_lot!="Tous": df_sa_view=df_sa_view[df_sa_view['Lot']==fsa_lot]
+            cols_sa_show=[c for c in ['Date','Type (Achat/Vente/Dépense)','Lot','Description','Montant (MAD)','Quantité (pièces)','Mode de paiement','Remarque','Statut du lot'] if c in df_sa_view.columns]
+            all_lots_sa=sorted(set(lots_autorises or [])|set(df_sa_view['Lot'].dropna().astype(str).unique().tolist()))
+            col_cfg_sa={"Date":st.column_config.TextColumn("Date"),"Type (Achat/Vente/Dépense)":st.column_config.SelectboxColumn("Type",options=["ACHAT","VENTE","DÉPENSE"],required=True),"Lot":st.column_config.SelectboxColumn("Lot",options=all_lots_sa,required=True),"Description":st.column_config.TextColumn("Description"),"Montant (MAD)":st.column_config.NumberColumn("Montant (MAD)",min_value=0.0,format="%.2f"),"Quantité (pièces)":st.column_config.NumberColumn("Quantité",min_value=1,step=1,format="%d"),"Mode de paiement":st.column_config.TextColumn("Mode paiement"),"Remarque":st.column_config.TextColumn("Remarque"),"Statut du lot":st.column_config.SelectboxColumn("Statut",options=["Actif","Fermé"],required=True)}
+            st.markdown(f'<div class="info-count">{len(df_sa_view)} transaction(s)</div>',unsafe_allow_html=True)
+            edited_sa=st.data_editor(df_sa_view[cols_sa_show+["_orig_idx"]],column_config=col_cfg_sa,hide_index=True,use_container_width=True,num_rows="fixed",column_order=cols_sa_show,key="sa_inline_editor")
+            if st.button("💾 Sauvegarder les modifications",key="sa_btn_save_inline"):
                 try:
-                    for _, row_edit in edited_sa.iterrows():
-                        oi = int(row_edit["_orig_idx"])
+                    for _,row_edit in edited_sa.iterrows():
+                        oi=int(row_edit["_orig_idx"])
                         for col in cols_sa_show:
                             if col in transactions_all.columns:
-                                val = row_edit[col]
-                                if col in ['Lot','Description','Remarque','Mode de paiement']:
-                                    val = sanitize_text(str(val))
-                                if col == 'Lot': val = val.upper()
-                                transactions_all.at[oi, col] = val
-                    save_sheet(transactions_all, "Gestion globale")
-                    st.success("✅ Modifications enregistrées.")
-                    clear_data_cache(); st.rerun()
-                except Exception as e: st.error(f"Erreur lors de la sauvegarde : {e}")
+                                val=row_edit[col]
+                                if col in ['Lot','Description','Remarque','Mode de paiement']: val=sanitize_text(str(val))
+                                if col=='Lot': val=val.upper()
+                                transactions_all.at[oi,col]=val
+                    save_sheet(transactions_all,"Gestion globale"); st.success("✅ Modifications enregistrées."); clear_data_cache(); st.rerun()
+                except Exception as e: st.error(f"Erreur : {e}")
 
-    # ── UTILISATEURS ──────────────────────────────────────────────────────────
     elif page == "utilisateurs":
         st.markdown('<div class="section-title">Gestion des utilisateurs</div>', unsafe_allow_html=True)
-        users_df = get_users()
-        lots_all = sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
-        pending = users_df[users_df["statut"]=="en_attente"]
+        users_df=get_users(); lots_all=sorted(transactions['Lot'].dropna().astype(str).unique().tolist())
+        pending=users_df[users_df["statut"]=="en_attente"]
         if not pending.empty:
             st.markdown(f"**🔔 Demandes en attente ({len(pending)})**")
-            for _, row in pending.iterrows():
-                uname = row["username"]
-                _p = str(row.get("prenom", "") or ""); _p = "" if _p in ("nan","None") else _p
-                _n = str(row.get("nom",    "") or ""); _n = "" if _n in ("nan","None") else _n
-                fn = (_p.strip() + " " + _n.strip()).strip() or "—"
+            for _,row in pending.iterrows():
+                uname=row["username"]; _p=str(row.get("prenom","") or ""); _p="" if _p in ("nan","None") else _p; _n=str(row.get("nom","") or ""); _n="" if _n in ("nan","None") else _n; fn=(_p.strip()+" "+_n.strip()).strip() or "—"
                 with st.container():
-                    st.markdown(f"""<div class="user-card"><div class="user-card-name">{h(fn)}</div>
-                    <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))}</div></div>""", unsafe_allow_html=True)
-                    pc1, pc2, pc3 = st.columns([3,1,1], gap="small")
-                    with pc1: lots_sel = st.multiselect("Lots autorisés", options=lots_all, key=f"lots_{uname}")
+                    st.markdown(f"""<div class="user-card"><div class="user-card-name">{h(fn)}</div><div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))}</div></div>""",unsafe_allow_html=True)
+                    pc1,pc2,pc3=st.columns([3,1,1],gap="small")
+                    with pc1: lots_sel=st.multiselect("Lots autorisés",options=lots_all,key=f"lots_{uname}")
                     with pc2:
-                        if st.button("✓ Approuver", key=f"approve_{uname}",
-                                     disabled=st.session_state.get(f"approving_{uname}", False)):
-                            if not st.session_state.get(f"approving_{uname}", False):
-                                st.session_state[f"approving_{uname}"] = True
+                        if st.button("✓ Approuver",key=f"approve_{uname}",disabled=st.session_state.get(f"approving_{uname}",False)):
+                            if not st.session_state.get(f"approving_{uname}",False):
+                                st.session_state[f"approving_{uname}"]=True
                                 with st.spinner(""):
-                                    users_df.loc[users_df["username"]==uname,"statut"] = "approuvé"
-                                    users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(lots_sel)
+                                    users_df.loc[users_df["username"]==uname,"statut"]="approuvé"; users_df.loc[users_df["username"]==uname,"lots_autorises"]=",".join(lots_sel)
                                     save_users(users_df); _load_sheet_cached.clear()
                                 st.rerun()
                     with pc3:
-                        if st.button("✗ Refuser", key=f"reject_{uname}",
-                                     disabled=st.session_state.get(f"rejecting_{uname}", False)):
-                            if not st.session_state.get(f"rejecting_{uname}", False):
-                                st.session_state[f"rejecting_{uname}"] = True
+                        if st.button("✗ Refuser",key=f"reject_{uname}",disabled=st.session_state.get(f"rejecting_{uname}",False)):
+                            if not st.session_state.get(f"rejecting_{uname}",False):
+                                st.session_state[f"rejecting_{uname}"]=True
                                 with st.spinner(""):
-                                    users_df.loc[users_df["username"]==uname,"statut"] = "rejeté"
-                                    save_users(users_df); _load_sheet_cached.clear()
+                                    users_df.loc[users_df["username"]==uname,"statut"]="rejeté"; save_users(users_df); _load_sheet_cached.clear()
                                 st.rerun()
             st.markdown("---")
         st.markdown("**Tous les utilisateurs**")
-        search_user = st.text_input("Rechercher un utilisateur", placeholder="Nom, prénom ou identifiant...", key="search_users")
-        approved = users_df[users_df["statut"]!="en_attente"].copy()
+        search_user=st.text_input("Rechercher un utilisateur",placeholder="Nom, prénom ou identifiant...",key="search_users")
+        approved=users_df[users_df["statut"]!="en_attente"].copy()
         if search_user:
-            m = (approved["username"].astype(str).str.contains(search_user,case=False,na=False)|
-                 approved["nom"].astype(str).str.contains(search_user,case=False,na=False)|
-                 approved["prenom"].astype(str).str.contains(search_user,case=False,na=False))
-            approved = approved[m]
-        st.markdown(f'<div class="info-count">{len(approved)} utilisateur(s)</div>', unsafe_allow_html=True)
-        for _, row in approved.iterrows():
-            uname = row["username"]
-            if uname == username: continue
-            _p = str(row.get("prenom", "") or ""); _p = "" if _p in ("nan","None") else _p
-            _n = str(row.get("nom",    "") or ""); _n = "" if _n in ("nan","None") else _n
-            fn = (_p.strip() + " " + _n.strip()).strip() or "—"
-            sb = "badge-approved" if row["statut"]=="approuvé" else "badge-rejected"
-            cur_role = str(row["role"])
-            rlu = "Admin" if cur_role=="admin" else ("Sous-Admin" if cur_role=="sous-admin" else "Visiteur")
+            m=(approved["username"].astype(str).str.contains(search_user,case=False,na=False)|approved["nom"].astype(str).str.contains(search_user,case=False,na=False)|approved["prenom"].astype(str).str.contains(search_user,case=False,na=False)); approved=approved[m]
+        for _,row in approved.iterrows():
+            uname=row["username"]
+            if uname==username: continue
+            _p=str(row.get("prenom","") or ""); _p="" if _p in ("nan","None") else _p; _n=str(row.get("nom","") or ""); _n="" if _n in ("nan","None") else _n; fn=(_p.strip()+" "+_n.strip()).strip() or "—"
+            sb="badge-approved" if row["statut"]=="approuvé" else "badge-rejected"; cur_role=str(row["role"]); rlu="Admin" if cur_role=="admin" else ("Sous-Admin" if cur_role=="sous-admin" else "Visiteur")
             with st.container():
-                st.markdown(f"""<div class="user-card">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                    <div><div class="user-card-name">{h(fn)}</div>
-                    <div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {rlu}</div></div>
-                    <span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span>
-                  </div></div>""", unsafe_allow_html=True)
-                ac2, ac3, ac4 = st.columns([3,1,1], gap="small")
+                st.markdown(f"""<div class="user-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="user-card-name">{h(fn)}</div><div class="user-card-meta">@{h(uname)} · {h(str(row.get('created_at','')))} · {rlu}</div></div><span class="badge-pending {sb}" style="flex-shrink:0;margin-top:0.1rem">{h(str(row['statut']))}</span></div></div>""",unsafe_allow_html=True)
+                ac2,ac3,ac4=st.columns([3,1,1],gap="small")
                 with ac2:
-                    la = [x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]
-                    la_valid = [x for x in la if x in lots_all]
-                    new_lots = st.multiselect("Lots", options=lots_all, default=la_valid, key=f"edit_lots_{uname}")
+                    la=[x.strip() for x in str(row.get("lots_autorises","")).split(",") if x.strip()]; la_valid=[x for x in la if x in lots_all]
+                    new_lots=st.multiselect("Lots",options=lots_all,default=la_valid,key=f"edit_lots_{uname}")
                 with ac3:
-                    role_options = ["sous-admin","admin"]
-                    role_idx = 0 if cur_role!="admin" else 1
-                    new_role = st.selectbox("Rôle", role_options, index=role_idx, key=f"role_{uname}")
+                    role_options=["sous-admin","admin"]; role_idx=0 if cur_role!="admin" else 1
+                    new_role=st.selectbox("Rôle",role_options,index=role_idx,key=f"role_{uname}")
                 with ac4:
-                    if st.button("Sauvegarder", key=f"save_{uname}", disabled=st.session_state.get(f"saving_{uname}", False)):
-                        st.session_state[f"saving_{uname}"] = True
+                    if st.button("Sauvegarder",key=f"save_{uname}",disabled=st.session_state.get(f"saving_{uname}",False)):
+                        st.session_state[f"saving_{uname}"]=True
                         with st.spinner("Enregistrement…"):
-                            users_df.loc[users_df["username"]==uname,"lots_autorises"] = ",".join(new_lots)
-                            users_df.loc[users_df["username"]==uname,"role"] = new_role
-                            save_users(users_df)
-                            update_session_for_user(uname, new_role, new_lots)
+                            users_df.loc[users_df["username"]==uname,"lots_autorises"]=",".join(new_lots); users_df.loc[users_df["username"]==uname,"role"]=new_role
+                            save_users(users_df); update_session_for_user(uname,new_role,new_lots)
                         st.rerun()
-                    if st.button("Supprimer", key=f"del_{uname}", disabled=st.session_state.get(f"deleting_{uname}", False)):
-                        st.session_state[f"deleting_{uname}"] = True
+                    if st.button("Supprimer",key=f"del_{uname}",disabled=st.session_state.get(f"deleting_{uname}",False)):
+                        st.session_state[f"deleting_{uname}"]=True
                         with st.spinner("Suppression…"):
-                            users_df = users_df[users_df["username"]!=uname]
-                            save_users(users_df)
+                            users_df=users_df[users_df["username"]!=uname]; save_users(users_df)
                         st.rerun()
 
-# ─── Render active page ────────────────────────────────────────────────────────
 render_page()
