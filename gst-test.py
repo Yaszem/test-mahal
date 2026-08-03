@@ -57,6 +57,8 @@ input,textarea,[contenteditable]{caret-color:#1C1C1C !important}
 .auth-divider{display:flex;align-items:center;gap:0.8rem;margin:0.4rem 0;color:#CCCCCC;font-size:0.68rem;letter-spacing:0.1em}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#E8E5DE}
 .auth-switch-text{font-size:0.7rem;color:#C0BAB0;text-align:center;margin-top:1.8rem;letter-spacing:0.04em}
+.auth-mobile-logo{display:none}
+.remember-row{display:flex;align-items:center;gap:0.5rem;margin-top:0.4rem}
 [data-testid="stButton"]>button[kind="secondary"]{background:#F0EDE5 !important;color:#555 !important}
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.3rem}
 .topbar-user{font-size:0.8rem;color:#999;letter-spacing:0.04em;padding-top:0.8rem}
@@ -167,6 +169,44 @@ body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [ro
   .metric-value{font-size:1rem !important}
   .metric-label{font-size:0.62rem !important}
   .active-tab-pill span:nth-child(2){max-width:22vw}
+}
+@media screen and (max-width:768px){
+  .block-container:has(#mahal-auth-marker){
+    background:#1C1C1C !important;border-radius:22px !important;
+    padding:2.4rem 1.4rem 2.6rem 1.4rem !important;margin:6vh auto 2rem auto !important;
+    max-width:420px !important;box-shadow:0 24px 70px rgba(0,0,0,0.4) !important;
+  }
+  .block-container:has(#mahal-auth-marker) .auth-mobile-logo{
+    display:block;text-align:center;font-family:'DM Serif Display',serif;color:#F7F6F2;
+    font-size:2.4rem;letter-spacing:-0.03em;margin-bottom:0.3rem;
+  }
+  .block-container:has(#mahal-auth-marker) .auth-right-inner{max-width:100% !important;padding-top:0 !important}
+  .block-container:has(#mahal-auth-marker) .auth-badge{background:rgba(247,246,242,0.08) !important;border-color:rgba(247,246,242,0.14) !important;color:rgba(247,246,242,0.55) !important;display:flex !important;justify-content:center !important;margin:0 auto 1.4rem auto !important;width:fit-content}
+  .block-container:has(#mahal-auth-marker) .auth-badge-dot{background:#D9B573 !important}
+  .block-container:has(#mahal-auth-marker) .auth-eyebrow{color:#D9B573 !important;text-align:center}
+  .block-container:has(#mahal-auth-marker) .auth-form-title{color:#F7F6F2 !important;text-align:center;font-size:2rem !important}
+  .block-container:has(#mahal-auth-marker) .auth-form-desc{color:rgba(247,246,242,0.5) !important;text-align:center}
+  .block-container:has(#mahal-auth-marker) .auth-divider{color:rgba(247,246,242,0.25) !important}
+  .block-container:has(#mahal-auth-marker) .auth-divider::before,
+  .block-container:has(#mahal-auth-marker) .auth-divider::after{background:rgba(247,246,242,0.12) !important}
+  .block-container:has(#mahal-auth-marker) .auth-switch-text{color:rgba(247,246,242,0.35) !important}
+  .block-container:has(#mahal-auth-marker) .stTextInput label{color:rgba(247,246,242,0.5) !important}
+  .block-container:has(#mahal-auth-marker) .stTextInput>div>div>input{
+    background:rgba(247,246,242,0.06) !important;border-color:rgba(247,246,242,0.14) !important;
+    color:#F7F6F2 !important;-webkit-text-fill-color:#F7F6F2 !important;
+  }
+  .block-container:has(#mahal-auth-marker) .stTextInput>div>div>input::placeholder{color:rgba(247,246,242,0.3) !important;-webkit-text-fill-color:rgba(247,246,242,0.3) !important}
+  .block-container:has(#mahal-auth-marker) .stCheckbox label,
+  .block-container:has(#mahal-auth-marker) .stCheckbox label p,
+  .block-container:has(#mahal-auth-marker) .stCheckbox span{color:rgba(247,246,242,0.6) !important}
+  .block-container:has(#mahal-auth-marker) [data-testid="stButton"]>button:first-child{
+    background:#D9B573 !important;color:#1C1C1C !important;font-weight:600 !important;
+  }
+  .block-container:has(#mahal-auth-marker) [data-testid="stButton"]>button[kind="secondary"]{
+    background:rgba(247,246,242,0.08) !important;color:#F7F6F2 !important;border:1px solid rgba(247,246,242,0.14) !important;
+  }
+  .block-container:has(#mahal-auth-marker) div[data-testid="stAlert"]{background:rgba(247,246,242,0.06) !important;border-color:rgba(247,246,242,0.14) !important}
+  .block-container:has(#mahal-auth-marker) div[data-testid="stAlert"] *{color:#F7F6F2 !important}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -720,6 +760,24 @@ if not st.session_state.authenticated:
             st.session_state["_sess_token"] = token_url
         else:
             st.query_params.clear()
+            components.html("""<script>
+              try{ window.parent.localStorage.removeItem('mahal_remember_token'); }catch(e){}
+            </script>""", height=0)
+    else:
+        # Aucun token dans l'URL : tente une reconnexion automatique via le token
+        # "se souvenir de moi" stocké dans le navigateur (appareil mémorisé).
+        if not st.session_state.get("_remember_tried", False):
+            st.session_state["_remember_tried"] = True
+            components.html("""<script>
+              try{
+                var tok = window.parent.localStorage.getItem('mahal_remember_token');
+                if (tok){
+                  var url = new URL(window.parent.location.href);
+                  url.searchParams.set('t', tok);
+                  window.parent.location.replace(url.toString());
+                }
+              }catch(e){}
+            </script>""", height=0)
 
 def warn(m): st.warning(m)
 def err(m):  st.error(m)
@@ -730,6 +788,7 @@ def ok(m):   st.success(m)
 # LOGIN
 # ═══════════════════════════════════════════════════════════════════════════════
 def page_login():
+    st.markdown('<div id="mahal-auth-marker"></div>', unsafe_allow_html=True)
     l, r = st.columns([1.15, 1])
     with l:
         st.markdown("""
@@ -746,14 +805,17 @@ def page_login():
         </div>""", unsafe_allow_html=True)
     with r:
         st.markdown("""
+        <div class="auth-mobile-logo">Mahal</div>
         <div class="auth-right-inner">
           <div class="auth-badge"><span class="auth-badge-dot"></span>Accès sécurisé</div>
           <div class="auth-eyebrow">Bienvenue</div>
           <div class="auth-form-title">Connexion</div>
           <div class="auth-form-desc">Entrez vos identifiants pour accéder à votre tableau de bord.</div>
         </div>""", unsafe_allow_html=True)
-        uname = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
+        remembered_user = st.session_state.pop("_prefill_user", "")
+        uname = st.text_input("Nom d'utilisateur", key="login_user", value=remembered_user, placeholder="Votre identifiant")
         pwd   = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
+        remember_me = st.checkbox("Se souvenir de moi sur cet appareil", key="login_remember", value=True)
         if st.button("Se connecter →", key="btn_login", use_container_width=True):
             if not uname or not pwd: err("Remplis tous les champs."); return
             if is_locked_out(uname):
@@ -775,9 +837,26 @@ def page_login():
             st.session_state.username = str(user["username"])
             st.session_state.role = str(user["role"])
             st.session_state.lots_autorises = lots_list
-            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
+            ttl = REMEMBER_TTL if remember_me else SESSION_TTL
+            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list}, ttl=ttl)
             st.session_state["_sess_token"] = token
             st.query_params["t"] = token
+            if remember_me:
+                _tok_esc = token.replace("\\", "\\\\").replace("'", "\\'")
+                _usr_esc = str(user["username"]).replace("\\", "\\\\").replace("'", "\\'")
+                components.html(f"""<script>
+                  try{{
+                    window.parent.localStorage.setItem('mahal_remember_token', '{_tok_esc}');
+                    window.parent.localStorage.setItem('mahal_remember_user', '{_usr_esc}');
+                  }}catch(e){{}}
+                </script>""", height=0)
+            else:
+                components.html("""<script>
+                  try{
+                    window.parent.localStorage.removeItem('mahal_remember_token');
+                    window.parent.localStorage.removeItem('mahal_remember_user');
+                  }catch(e){}
+                </script>""", height=0)
             st.rerun()
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
@@ -788,6 +867,7 @@ def page_login():
 # INSCRIPTION
 # ═══════════════════════════════════════════════════════════════════════════════
 def page_register():
+    st.markdown('<div id="mahal-auth-marker"></div>', unsafe_allow_html=True)
     l, r = st.columns([1.15, 1])
     with l:
         st.markdown("""
@@ -804,6 +884,7 @@ def page_register():
         </div>""", unsafe_allow_html=True)
     with r:
         st.markdown("""
+        <div class="auth-mobile-logo">Mahal</div>
         <div class="auth-right-inner">
           <div class="auth-badge"><span class="auth-badge-dot"></span>Inscription</div>
           <div class="auth-eyebrow">Nouveau membre</div>
@@ -1625,7 +1706,20 @@ if "active_page" not in st.session_state:
 _pnav = st.session_state.pop("_pending_nav", None)
 if _pnav is None:
     _pnav = st.query_params.get("nav", "")
-if _pnav:
+if _pnav == "logout":
+    _clear_session(st.session_state.get("_sess_token", ""))
+    st.query_params.clear()
+    for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
+        st.session_state.pop(k, None)
+    st.session_state.auth_page = "login"
+    components.html("""<script>
+      try{
+        window.parent.localStorage.removeItem('mahal_remember_token');
+        window.parent.localStorage.removeItem('mahal_remember_user');
+      }catch(e){}
+    </script>""", height=0)
+    st.rerun()
+elif _pnav:
     valid_keys = [item["key"] for item in nav_items]
     _changed = (_pnav in valid_keys) and (st.session_state.active_page != _pnav)
     if _pnav in valid_keys:
@@ -1641,29 +1735,10 @@ active_page = st.session_state.active_page
 active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
 active_icon  = next((item["icon"]  for item in nav_items if item["key"] == active_page), "")
 
-# ─── TOP BAR ──────────────────────────────────────────────────────────────────
-if is_admin:    role_class, role_label_top = "role-admin", "Admin"
-elif is_sous_admin: role_class, role_label_top = "role-sous-admin", "Sous-Admin"
-else:           role_class, role_label_top = "role-visiteur", "Visiteur"
-
 if is_admin and pending_count > 0:
     st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div>
     <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
     — rendez-vous dans <strong>Utilisateurs</strong> via le menu.</span></div>""", unsafe_allow_html=True)
-
-if st.session_state.pop("_do_logout", False):
-    _clear_session(st.session_state.get("_sess_token", ""))
-    st.query_params.clear()
-    for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
-        st.session_state.pop(k, None)
-    st.session_state.auth_page = "login"
-    components.html("""<script>
-      try{
-        window.parent.localStorage.removeItem('mahal_remember_token');
-        window.parent.localStorage.removeItem('mahal_remember_user');
-      }catch(e){}
-    </script>""", height=0)
-    st.rerun()
 
 # ─── Métriques ─────────────────────────────────────────────────────────────────
 ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
@@ -1702,6 +1777,11 @@ for _sec in sections_order:
             "badge": _item.get("badge", 0),
             "active": _item["key"] == active_page,
         })
+
+_nav_items_for_drawer.append({
+    "key": "logout", "label": f"Déconnexion ({username})", "icon": "⏻",
+    "section": "Compte", "badge": 0, "active": False,
+})
 
 current_token = st.session_state.get("_sess_token", "")
 
