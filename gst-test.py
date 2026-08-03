@@ -1755,7 +1755,6 @@ _html_parts = [
     '</head><body><script>(function(){',
     'var TOKEN="' + _tok_js + '";',
     'var nav_html=`' + _dih_js + '`;',
-    'var bottom_html=`' + _bnh_js + '`;',
     'var pdoc=window.parent.document;',
     '["__mahal_btn","__mahal_overlay","__mahal_drawer","__mahal_bottombar","__mahal_bottombar_style"].forEach(function(id){var el=pdoc.getElementById(id);if(el)el.remove();});',
     'var btn=pdoc.createElement("button");',
