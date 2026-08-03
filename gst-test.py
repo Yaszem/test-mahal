@@ -125,6 +125,10 @@ div[class*="gdg-"] [role="option"]:hover{background:#F0EDE5 !important}
 body > div[role="listbox"],body > div [role="listbox"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 16px rgba(28,28,28,0.14) !important;z-index:99999 !important}
 body > div[role="listbox"] [role="option"],body > div [role="listbox"] [role="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important;padding:0.5rem 0.9rem !important}
 body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [role="option"]:hover,body > div[role="listbox"] [role="option"][aria-selected="true"],body > div [role="listbox"] [role="option"][aria-selected="true"]{background:#F0EDE5 !important;color:#1C1C1C !important}
+div[role="radiogroup"] label p {
+    color: #ffcc00 !important;   /* Jaune */
+    font-weight: 600;
+}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
 #mahal-overlay{display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:9998;backdrop-filter:blur(2px);transition:opacity 0.3s ease}
@@ -1944,7 +1948,7 @@ def render_rapports_pdf_page():
         date_debut = st.date_input("Depuis le", value=None, key="rap_date_debut")
     with dc2:
         date_fin = st.date_input("Jusqu'au", value=None, key="rap_date_fin")
-
+a
     base_df = transactions_all if is_admin else transactions
     df_export = base_df.copy()
     df_export['Date'] = df_export['Date'].astype(str)
