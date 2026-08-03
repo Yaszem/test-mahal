@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 from datetime import datetime
 import plotly.graph_objects as go
@@ -25,6 +26,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
 MAX_ATTEMPTS    = 5
 LOCKOUT_SECONDS = 300
 SESSION_TTL     = 8 * 3600
+REMEMBER_TTL    = 30 * 24 * 3600  # "Se souvenir de moi" — 30 jours
 
 st.markdown("""
 <style>
@@ -125,10 +127,6 @@ div[class*="gdg-"] [role="option"]:hover{background:#F0EDE5 !important}
 body > div[role="listbox"],body > div [role="listbox"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 16px rgba(28,28,28,0.14) !important;z-index:99999 !important}
 body > div[role="listbox"] [role="option"],body > div [role="listbox"] [role="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important;padding:0.5rem 0.9rem !important}
 body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [role="option"]:hover,body > div[role="listbox"] [role="option"][aria-selected="true"],body > div [role="listbox"] [role="option"][aria-selected="true"]{background:#F0EDE5 !important;color:#1C1C1C !important}
-div[role="radiogroup"] label p {
-    color: #ffcc00 !important;   /* Jaune */
-    font-weight: 600;
-}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
 #mahal-overlay{display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:9998;backdrop-filter:blur(2px);transition:opacity 0.3s ease}
@@ -687,9 +685,9 @@ SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
 @st.cache_resource
 def _session_store(): return {}
 
-def _store_session(user_dict):
+def _store_session(user_dict, ttl=None):
     token = secrets.token_urlsafe(40)
-    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + SESSION_TTL}
+    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + (ttl if ttl else SESSION_TTL)}
     return token
 
 def _load_session(token):
@@ -1653,34 +1651,19 @@ if is_admin and pending_count > 0:
     <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
     — rendez-vous dans <strong>Utilisateurs</strong> via le menu.</span></div>""", unsafe_allow_html=True)
 
-st.markdown(f"""
-<div class="topbar">
-  <div>
-    <div class="page-title">Mahal</div>
-    <div class="page-subtitle">Gestion de stock et transactions</div>
-  </div>
-  <div style="display:flex;align-items:center;padding-top:0.8rem;gap:0.5rem">
-    <span class="topbar-user">{h(username)}</span>
-    <span class="topbar-role {role_class}">{role_label_top}</span>
-    <div class="active-tab-pill" id="mahal-tab-pill">
-      <span class="active-tab-pill-icon">{active_icon}</span>
-      <span>{h(active_label)}</span>
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;margin-left:2px">
-        <path d="M2 4l3 3 3-3" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-  </div>
-</div>""", unsafe_allow_html=True)
-
-dcol = st.columns([8, 1])[1]
-with dcol:
-    if st.button("Déco.", key="btn_logout"):
-        _clear_session(st.session_state.get("_sess_token", ""))
-        st.query_params.clear()
-        for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
-            st.session_state.pop(k, None)
-        st.session_state.auth_page = "login"
-        st.rerun()
+if st.session_state.pop("_do_logout", False):
+    _clear_session(st.session_state.get("_sess_token", ""))
+    st.query_params.clear()
+    for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
+        st.session_state.pop(k, None)
+    st.session_state.auth_page = "login"
+    components.html("""<script>
+      try{
+        window.parent.localStorage.removeItem('mahal_remember_token');
+        window.parent.localStorage.removeItem('mahal_remember_user');
+      }catch(e){}
+    </script>""", height=0)
+    st.rerun()
 
 # ─── Métriques ─────────────────────────────────────────────────────────────────
 ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
@@ -1707,8 +1690,6 @@ for item in nav_items:
         sections_map[sec] = []
         sections_order.append(sec)
     sections_map[sec].append(item)
-
-import streamlit.components.v1 as components
 
 _nav_items_for_drawer = []
 for _sec in sections_order:
