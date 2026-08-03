@@ -1948,7 +1948,7 @@ def render_rapports_pdf_page():
         date_debut = st.date_input("Depuis le", value=None, key="rap_date_debut")
     with dc2:
         date_fin = st.date_input("Jusqu'au", value=None, key="rap_date_fin")
-a
+
     base_df = transactions_all if is_admin else transactions
     df_export = base_df.copy()
     df_export['Date'] = df_export['Date'].astype(str)
