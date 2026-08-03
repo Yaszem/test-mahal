@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 from datetime import datetime
 import plotly.graph_objects as go
@@ -26,7 +25,6 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
 MAX_ATTEMPTS    = 5
 LOCKOUT_SECONDS = 300
 SESSION_TTL     = 8 * 3600
-REMEMBER_TTL    = 30 * 24 * 3600  # "Se souvenir de moi" — 30 jours
 
 st.markdown("""
 <style>
@@ -57,8 +55,6 @@ input,textarea,[contenteditable]{caret-color:#1C1C1C !important}
 .auth-divider{display:flex;align-items:center;gap:0.8rem;margin:0.4rem 0;color:#CCCCCC;font-size:0.68rem;letter-spacing:0.1em}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#E8E5DE}
 .auth-switch-text{font-size:0.7rem;color:#C0BAB0;text-align:center;margin-top:1.8rem;letter-spacing:0.04em}
-.auth-mobile-logo{display:none}
-.remember-row{display:flex;align-items:center;gap:0.5rem;margin-top:0.4rem}
 [data-testid="stButton"]>button[kind="secondary"]{background:#F0EDE5 !important;color:#555 !important}
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.3rem}
 .topbar-user{font-size:0.8rem;color:#999;letter-spacing:0.04em;padding-top:0.8rem}
@@ -129,6 +125,10 @@ div[class*="gdg-"] [role="option"]:hover{background:#F0EDE5 !important}
 body > div[role="listbox"],body > div [role="listbox"]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 16px rgba(28,28,28,0.14) !important;z-index:99999 !important}
 body > div[role="listbox"] [role="option"],body > div [role="listbox"] [role="option"]{color:#1C1C1C !important;background:#FFFFFF !important;font-family:'DM Sans',sans-serif !important;font-size:0.88rem !important;padding:0.5rem 0.9rem !important}
 body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [role="option"]:hover,body > div[role="listbox"] [role="option"][aria-selected="true"],body > div [role="listbox"] [role="option"][aria-selected="true"]{background:#F0EDE5 !important;color:#1C1C1C !important}
+div[role="radiogroup"] label p {
+    color: #ffcc00 !important;   /* Jaune */
+    font-weight: 600;
+}
 [data-baseweb="popover"]>div,div[data-popper-placement]{background:#FFFFFF !important;border:1px solid #E0DDD5 !important;border-radius:8px !important;box-shadow:0 4px 12px rgba(0,0,0,0.08) !important}
 [data-baseweb="popover"] *,div[data-popper-placement]*{color:#1C1C1C !important}
 #mahal-overlay{display:none;position:fixed;inset:0;background:rgba(28,28,28,0.35);z-index:9998;backdrop-filter:blur(2px);transition:opacity 0.3s ease}
@@ -169,44 +169,6 @@ body > div[role="listbox"] [role="option"]:hover,body > div [role="listbox"] [ro
   .metric-value{font-size:1rem !important}
   .metric-label{font-size:0.62rem !important}
   .active-tab-pill span:nth-child(2){max-width:22vw}
-}
-@media screen and (max-width:768px){
-  .block-container:has(#mahal-auth-marker){
-    background:#1C1C1C !important;border-radius:22px !important;
-    padding:2.4rem 1.4rem 2.6rem 1.4rem !important;margin:6vh auto 2rem auto !important;
-    max-width:420px !important;box-shadow:0 24px 70px rgba(0,0,0,0.4) !important;
-  }
-  .block-container:has(#mahal-auth-marker) .auth-mobile-logo{
-    display:block;text-align:center;font-family:'DM Serif Display',serif;color:#F7F6F2;
-    font-size:2.4rem;letter-spacing:-0.03em;margin-bottom:0.3rem;
-  }
-  .block-container:has(#mahal-auth-marker) .auth-right-inner{max-width:100% !important;padding-top:0 !important}
-  .block-container:has(#mahal-auth-marker) .auth-badge{background:rgba(247,246,242,0.08) !important;border-color:rgba(247,246,242,0.14) !important;color:rgba(247,246,242,0.55) !important;display:flex !important;justify-content:center !important;margin:0 auto 1.4rem auto !important;width:fit-content}
-  .block-container:has(#mahal-auth-marker) .auth-badge-dot{background:#D9B573 !important}
-  .block-container:has(#mahal-auth-marker) .auth-eyebrow{color:#D9B573 !important;text-align:center}
-  .block-container:has(#mahal-auth-marker) .auth-form-title{color:#F7F6F2 !important;text-align:center;font-size:2rem !important}
-  .block-container:has(#mahal-auth-marker) .auth-form-desc{color:rgba(247,246,242,0.5) !important;text-align:center}
-  .block-container:has(#mahal-auth-marker) .auth-divider{color:rgba(247,246,242,0.25) !important}
-  .block-container:has(#mahal-auth-marker) .auth-divider::before,
-  .block-container:has(#mahal-auth-marker) .auth-divider::after{background:rgba(247,246,242,0.12) !important}
-  .block-container:has(#mahal-auth-marker) .auth-switch-text{color:rgba(247,246,242,0.35) !important}
-  .block-container:has(#mahal-auth-marker) .stTextInput label{color:rgba(247,246,242,0.5) !important}
-  .block-container:has(#mahal-auth-marker) .stTextInput>div>div>input{
-    background:rgba(247,246,242,0.06) !important;border-color:rgba(247,246,242,0.14) !important;
-    color:#F7F6F2 !important;-webkit-text-fill-color:#F7F6F2 !important;
-  }
-  .block-container:has(#mahal-auth-marker) .stTextInput>div>div>input::placeholder{color:rgba(247,246,242,0.3) !important;-webkit-text-fill-color:rgba(247,246,242,0.3) !important}
-  .block-container:has(#mahal-auth-marker) .stCheckbox label,
-  .block-container:has(#mahal-auth-marker) .stCheckbox label p,
-  .block-container:has(#mahal-auth-marker) .stCheckbox span{color:rgba(247,246,242,0.6) !important}
-  .block-container:has(#mahal-auth-marker) [data-testid="stButton"]>button:first-child{
-    background:#D9B573 !important;color:#1C1C1C !important;font-weight:600 !important;
-  }
-  .block-container:has(#mahal-auth-marker) [data-testid="stButton"]>button[kind="secondary"]{
-    background:rgba(247,246,242,0.08) !important;color:#F7F6F2 !important;border:1px solid rgba(247,246,242,0.14) !important;
-  }
-  .block-container:has(#mahal-auth-marker) div[data-testid="stAlert"]{background:rgba(247,246,242,0.06) !important;border-color:rgba(247,246,242,0.14) !important}
-  .block-container:has(#mahal-auth-marker) div[data-testid="stAlert"] *{color:#F7F6F2 !important}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -725,9 +687,9 @@ SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
 @st.cache_resource
 def _session_store(): return {}
 
-def _store_session(user_dict, ttl=None):
+def _store_session(user_dict):
     token = secrets.token_urlsafe(40)
-    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + (ttl if ttl else SESSION_TTL)}
+    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + SESSION_TTL}
     return token
 
 def _load_session(token):
@@ -760,24 +722,6 @@ if not st.session_state.authenticated:
             st.session_state["_sess_token"] = token_url
         else:
             st.query_params.clear()
-            components.html("""<script>
-              try{ window.parent.localStorage.removeItem('mahal_remember_token'); }catch(e){}
-            </script>""", height=0)
-    else:
-        # Aucun token dans l'URL : tente une reconnexion automatique via le token
-        # "se souvenir de moi" stocké dans le navigateur (appareil mémorisé).
-        if not st.session_state.get("_remember_tried", False):
-            st.session_state["_remember_tried"] = True
-            components.html("""<script>
-              try{
-                var tok = window.parent.localStorage.getItem('mahal_remember_token');
-                if (tok){
-                  var url = new URL(window.parent.location.href);
-                  url.searchParams.set('t', tok);
-                  window.parent.location.replace(url.toString());
-                }
-              }catch(e){}
-            </script>""", height=0)
 
 def warn(m): st.warning(m)
 def err(m):  st.error(m)
@@ -788,7 +732,6 @@ def ok(m):   st.success(m)
 # LOGIN
 # ═══════════════════════════════════════════════════════════════════════════════
 def page_login():
-    st.markdown('<div id="mahal-auth-marker"></div>', unsafe_allow_html=True)
     l, r = st.columns([1.15, 1])
     with l:
         st.markdown("""
@@ -805,17 +748,14 @@ def page_login():
         </div>""", unsafe_allow_html=True)
     with r:
         st.markdown("""
-        <div class="auth-mobile-logo">Mahal</div>
         <div class="auth-right-inner">
           <div class="auth-badge"><span class="auth-badge-dot"></span>Accès sécurisé</div>
           <div class="auth-eyebrow">Bienvenue</div>
           <div class="auth-form-title">Connexion</div>
           <div class="auth-form-desc">Entrez vos identifiants pour accéder à votre tableau de bord.</div>
         </div>""", unsafe_allow_html=True)
-        remembered_user = st.session_state.pop("_prefill_user", "")
-        uname = st.text_input("Nom d'utilisateur", key="login_user", value=remembered_user, placeholder="Votre identifiant")
+        uname = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
         pwd   = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
-        remember_me = st.checkbox("Se souvenir de moi sur cet appareil", key="login_remember", value=True)
         if st.button("Se connecter →", key="btn_login", use_container_width=True):
             if not uname or not pwd: err("Remplis tous les champs."); return
             if is_locked_out(uname):
@@ -837,26 +777,9 @@ def page_login():
             st.session_state.username = str(user["username"])
             st.session_state.role = str(user["role"])
             st.session_state.lots_autorises = lots_list
-            ttl = REMEMBER_TTL if remember_me else SESSION_TTL
-            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list}, ttl=ttl)
+            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
             st.session_state["_sess_token"] = token
             st.query_params["t"] = token
-            if remember_me:
-                _tok_esc = token.replace("\\", "\\\\").replace("'", "\\'")
-                _usr_esc = str(user["username"]).replace("\\", "\\\\").replace("'", "\\'")
-                components.html(f"""<script>
-                  try{{
-                    window.parent.localStorage.setItem('mahal_remember_token', '{_tok_esc}');
-                    window.parent.localStorage.setItem('mahal_remember_user', '{_usr_esc}');
-                  }}catch(e){{}}
-                </script>""", height=0)
-            else:
-                components.html("""<script>
-                  try{
-                    window.parent.localStorage.removeItem('mahal_remember_token');
-                    window.parent.localStorage.removeItem('mahal_remember_user');
-                  }catch(e){}
-                </script>""", height=0)
             st.rerun()
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
@@ -867,7 +790,6 @@ def page_login():
 # INSCRIPTION
 # ═══════════════════════════════════════════════════════════════════════════════
 def page_register():
-    st.markdown('<div id="mahal-auth-marker"></div>', unsafe_allow_html=True)
     l, r = st.columns([1.15, 1])
     with l:
         st.markdown("""
@@ -884,7 +806,6 @@ def page_register():
         </div>""", unsafe_allow_html=True)
     with r:
         st.markdown("""
-        <div class="auth-mobile-logo">Mahal</div>
         <div class="auth-right-inner">
           <div class="auth-badge"><span class="auth-badge-dot"></span>Inscription</div>
           <div class="auth-eyebrow">Nouveau membre</div>
@@ -1706,20 +1627,7 @@ if "active_page" not in st.session_state:
 _pnav = st.session_state.pop("_pending_nav", None)
 if _pnav is None:
     _pnav = st.query_params.get("nav", "")
-if _pnav == "logout":
-    _clear_session(st.session_state.get("_sess_token", ""))
-    st.query_params.clear()
-    for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
-        st.session_state.pop(k, None)
-    st.session_state.auth_page = "login"
-    components.html("""<script>
-      try{
-        window.parent.localStorage.removeItem('mahal_remember_token');
-        window.parent.localStorage.removeItem('mahal_remember_user');
-      }catch(e){}
-    </script>""", height=0)
-    st.rerun()
-elif _pnav:
+if _pnav:
     valid_keys = [item["key"] for item in nav_items]
     _changed = (_pnav in valid_keys) and (st.session_state.active_page != _pnav)
     if _pnav in valid_keys:
@@ -1735,10 +1643,44 @@ active_page = st.session_state.active_page
 active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
 active_icon  = next((item["icon"]  for item in nav_items if item["key"] == active_page), "")
 
+# ─── TOP BAR ──────────────────────────────────────────────────────────────────
+if is_admin:    role_class, role_label_top = "role-admin", "Admin"
+elif is_sous_admin: role_class, role_label_top = "role-sous-admin", "Sous-Admin"
+else:           role_class, role_label_top = "role-visiteur", "Visiteur"
+
 if is_admin and pending_count > 0:
     st.markdown(f"""<div class="notif-banner"><div class="notif-banner-dot"></div>
     <span><strong>{pending_count} nouvelle(s) demande(s) d'inscription</strong> en attente
     — rendez-vous dans <strong>Utilisateurs</strong> via le menu.</span></div>""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="topbar">
+  <div>
+    <div class="page-title">Mahal</div>
+    <div class="page-subtitle">Gestion de stock et transactions</div>
+  </div>
+  <div style="display:flex;align-items:center;padding-top:0.8rem;gap:0.5rem">
+    <span class="topbar-user">{h(username)}</span>
+    <span class="topbar-role {role_class}">{role_label_top}</span>
+    <div class="active-tab-pill" id="mahal-tab-pill">
+      <span class="active-tab-pill-icon">{active_icon}</span>
+      <span>{h(active_label)}</span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;margin-left:2px">
+        <path d="M2 4l3 3 3-3" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+</div>""", unsafe_allow_html=True)
+
+dcol = st.columns([8, 1])[1]
+with dcol:
+    if st.button("Déco.", key="btn_logout"):
+        _clear_session(st.session_state.get("_sess_token", ""))
+        st.query_params.clear()
+        for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
+            st.session_state.pop(k, None)
+        st.session_state.auth_page = "login"
+        st.rerun()
 
 # ─── Métriques ─────────────────────────────────────────────────────────────────
 ta = transactions[transactions['Type (Achat/Vente/Dépense)']=='ACHAT']['Montant (MAD)'].sum()
@@ -1766,6 +1708,8 @@ for item in nav_items:
         sections_order.append(sec)
     sections_map[sec].append(item)
 
+import streamlit.components.v1 as components
+
 _nav_items_for_drawer = []
 for _sec in sections_order:
     for _item in sections_map[_sec]:
@@ -1777,11 +1721,6 @@ for _sec in sections_order:
             "badge": _item.get("badge", 0),
             "active": _item["key"] == active_page,
         })
-
-_nav_items_for_drawer.append({
-    "key": "logout", "label": f"Déconnexion ({username})", "icon": "⏻",
-    "section": "Compte", "badge": 0, "active": False,
-})
 
 current_token = st.session_state.get("_sess_token", "")
 
@@ -1808,32 +1747,7 @@ for _it in _nav_items_for_drawer:
 _dih_js = _dih.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 _tok_js = current_token.replace("\\", "\\\\").replace('"', '\\"')
 
-# Bottom mobile tab-bar: 4 clés les plus utilisées + bouton "Menu" pour ouvrir le tiroir complet
-_bottom_keys_pref = ["nouvelle_transaction", "recherche", "graphiques", "rapports_pdf"]
-_bottom_items = [it for k in _bottom_keys_pref for it in _nav_items_for_drawer if it["key"] == k][:4]
-if len(_bottom_items) < 4:
-    for it in _nav_items_for_drawer:
-        if it not in _bottom_items:
-            _bottom_items.append(it)
-        if len(_bottom_items) >= 4:
-            break
 
-_bnh = ""
-for _bi in _bottom_items:
-    _bcol = "#1C1C1C" if _bi["active"] else "#AAAAAA"
-    _bnh += (
-        '<button data-navkey="' + _bi["key"] + '" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:transparent;border:none;padding:0.4rem 0.2rem;color:' + _bcol + ';font-family:DM Sans,sans-serif">'
-        + '<span style="font-size:1.05rem;line-height:1">' + _bi["icon"] + '</span>'
-        + '<span style="font-size:0.58rem;letter-spacing:0.02em;text-align:center;line-height:1.1">' + _bi["label"] + '</span>'
-        + '</button>'
-    )
-_bnh += (
-    '<button id="__mahal_bottom_menu" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:transparent;border:none;padding:0.4rem 0.2rem;color:#AAAAAA;font-family:DM Sans,sans-serif">'
-    + '<span style="font-size:1.05rem;line-height:1">☰</span>'
-    + '<span style="font-size:0.58rem;letter-spacing:0.02em">Menu</span>'
-    + '</button>'
-)
-_bnh_js = _bnh.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 
 _html_parts = [
     '<!DOCTYPE html><html><head>',
@@ -1859,16 +1773,6 @@ _html_parts = [
     'var hdr=\'<div style="padding:2rem 1.8rem 1.4rem;border-bottom:1px solid #F0EDE5;display:flex;justify-content:space-between;align-items:flex-end;flex-shrink:0"><div style="font-size:1.6rem;color:#1C1C1C;letter-spacing:-0.02em">Mahal</div><button id=\\"__mahal_close\\" style=\\"width:30px;height:30px;border-radius:50%;border:1px solid #E0DDD5;background:#F7F6F2;cursor:pointer;display:flex;align-items:center;justify-content:center\\"><svg width=\\"12\\" height=\\"12\\" viewBox=\\"0 0 12 12\\" fill=\\"none\\"><path d=\\"M1 1l10 10M11 1L1 11\\" stroke=\\"#1C1C1C\\" stroke-width=\\"1.5\\" stroke-linecap=\\"round\\"/></svg></button></div>\';',
     'dr.innerHTML=hdr+\'<div id=\\"__mahal_nav\\" style=\\"flex:1;overflow-y:auto;padding-bottom:1.5rem\\">\'+nav_html+\'</div><div style=\\"padding:1.2rem 1.8rem;border-top:1px solid #F0EDE5;font-size:0.68rem;color:#CCC;letter-spacing:0.1em;text-transform:uppercase\\">2025 Plateforme</div>\';',
     'pdoc.body.appendChild(dr);',
-    '// Barre de navigation basse (mobile uniquement)',
-    'var bb=pdoc.createElement("div");',
-    'bb.id="__mahal_bottombar";',
-    'bb.style.cssText="display:none;position:fixed;left:0;right:0;bottom:0;height:64px;background:#FFFFFF;border-top:1px solid #E8E5DE;z-index:99996;box-shadow:0 -4px 16px rgba(28,28,28,0.06);";',
-    'bb.innerHTML=\'<div style="display:flex;height:100%;padding-bottom:4px">\'+bottom_html+\'</div>\';',
-    'pdoc.body.appendChild(bb);',
-    'var stEl=pdoc.createElement("style");',
-    'stEl.id="__mahal_bottombar_style";',
-    'stEl.innerHTML="@media screen and (max-width:768px){ #__mahal_bottombar{display:block !important;} .stApp{padding-bottom:70px;} #__mahal_btn{top:1rem;right:1rem;} }";',
-    'pdoc.head.appendChild(stEl);',
     'function openDrawer(){dr.style.right="0";ov.style.display="block";pdoc.body.style.overflow="hidden";}',
     'function closeDrawer(){dr.style.right="-320px";ov.style.display="none";pdoc.body.style.overflow="";}',
     'function navTo(key){closeDrawer();var a=pdoc.createElement("a");var url=pdoc.location.pathname+"?nav="+encodeURIComponent(key);if(TOKEN)url+="&t="+encodeURIComponent(TOKEN);a.href=url;a.style.display="none";pdoc.body.appendChild(a);a.click();a.remove();}',
