@@ -687,9 +687,10 @@ SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
 @st.cache_resource
 def _session_store(): return {}
 
-def _store_session(user_dict):
+def _store_session(user_dict, remember=False):
     token = secrets.token_urlsafe(40)
-    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + SESSION_TTL}
+    ttl = REMEMBER_TTL if remember else SESSION_TTL
+    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + ttl}
     return token
 
 def _load_session(token):
@@ -701,6 +702,50 @@ def _load_session(token):
     return entry["user"]
 
 def _clear_session(token): _session_store().pop(token, None)
+
+def _sync_token_to_local_storage(token):
+    """Copie le token de session dans le localStorage du navigateur pour 'se souvenir' de l'utilisateur."""
+    import streamlit.components.v1 as components
+    _tok_js = str(token).replace("\\", "\\\\").replace('"', '\\"')
+    components.html(f"""
+    <script>
+    try {{
+      if ("{_tok_js}") {{
+        window.parent.localStorage.setItem("mahal_remember_token", "{_tok_js}");
+      }}
+    }} catch(e) {{}}
+    </script>
+    """, height=0, width=0)
+
+def _clear_local_storage_token():
+    """Supprime le token 'se souvenir de moi' stocké dans le navigateur."""
+    import streamlit.components.v1 as components
+    components.html("""
+    <script>
+    try { window.parent.localStorage.removeItem("mahal_remember_token"); } catch(e) {}
+    </script>
+    """, height=0, width=0)
+
+def _try_restore_from_local_storage():
+    """Si aucun token n'est present dans l'URL, tente de le recuperer depuis le localStorage
+    et recharge la page avec ce token pour reconnecter automatiquement l'utilisateur."""
+    import streamlit.components.v1 as components
+    components.html("""
+    <script>
+    (function(){
+      try {
+        var tok = window.parent.localStorage.getItem("mahal_remember_token");
+        if (tok) {
+          var url = new URL(window.parent.location.href);
+          if (!url.searchParams.get("t")) {
+            url.searchParams.set("t", tok);
+            window.parent.location.replace(url.toString());
+          }
+        }
+      } catch(e) {}
+    })();
+    </script>
+    """, height=0, width=0)
 
 for k, v in [("authenticated", False), ("username", ""), ("role", ""),
               ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
@@ -722,6 +767,9 @@ if not st.session_state.authenticated:
             st.session_state["_sess_token"] = token_url
         else:
             st.query_params.clear()
+            _clear_local_storage_token()
+    if not st.session_state.authenticated:
+        _try_restore_from_local_storage()
 
 def warn(m): st.warning(m)
 def err(m):  st.error(m)
@@ -756,6 +804,7 @@ def page_login():
         </div>""", unsafe_allow_html=True)
         uname = st.text_input("Nom d'utilisateur", key="login_user", placeholder="Votre identifiant")
         pwd   = st.text_input("Mot de passe", type="password", key="login_pass", placeholder="••••••••")
+        remember_me = st.checkbox("Se souvenir de moi (30 jours)", key="login_remember", value=True)
         if st.button("Se connecter →", key="btn_login", use_container_width=True):
             if not uname or not pwd: err("Remplis tous les champs."); return
             if is_locked_out(uname):
@@ -777,9 +826,13 @@ def page_login():
             st.session_state.username = str(user["username"])
             st.session_state.role = str(user["role"])
             st.session_state.lots_autorises = lots_list
-            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list})
+            token = _store_session({"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list}, remember=remember_me)
             st.session_state["_sess_token"] = token
             st.query_params["t"] = token
+            if remember_me:
+                _sync_token_to_local_storage(token)
+            else:
+                _clear_local_storage_token()
             st.rerun()
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
@@ -1676,6 +1729,7 @@ dcol = st.columns([8, 1])[1]
 with dcol:
     if st.button("Déco.", key="btn_logout"):
         _clear_session(st.session_state.get("_sess_token", ""))
+        _clear_local_storage_token()
         st.query_params.clear()
         for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
             st.session_state.pop(k, None)
@@ -1689,13 +1743,14 @@ td = transactions[transactions['Type (Achat/Vente/Dépense)']=='DÉPENSE']['Mont
 rn = tv - (ta + td)
 cr = "positive" if rn >= 0 else "negative"
 
-st.markdown(f"""
-<div class="metric-row">
-  <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div>
-  <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
-</div>""", unsafe_allow_html=True)
+if active_page in ("graphiques", "catalogue_lots"):
+    st.markdown(f"""
+    <div class="metric-row">
+      <div class="metric-card"><div class="metric-label">Total Achats</div><div class="metric-value">{ta:,.0f} <small style="opacity:.5">MAD</small></div></div>
+      <div class="metric-card"><div class="metric-label">Total Ventes</div><div class="metric-value">{tv:,.0f} <small style="opacity:.5">MAD</small></div></div>
+      <div class="metric-card"><div class="metric-label">Total Dépenses</div><div class="metric-value">{td:,.0f} <small style="opacity:.5">MAD</small></div></div>
+      <div class="metric-card"><div class="metric-label">Résultat net</div><div class="metric-value {cr}">{rn:+,.0f} <small style="opacity:.5">MAD</small></div></div>
+    </div>""", unsafe_allow_html=True)
 
 
 # ─── BUILD DRAWER HTML ────────────────────────────────────────────────────────
