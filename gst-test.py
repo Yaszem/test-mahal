@@ -759,8 +759,11 @@ def _sync_token_to_local_storage(token):
     try {{
       if ("{_tok_js}") {{
         window.parent.localStorage.setItem("mahal_remember_token", "{_tok_js}");
+        window.parent.console.log("[MAHAL] token sauvegardé dans le localStorage");
       }}
-    }} catch(e) {{}}
+    }} catch(e) {{
+      window.parent.console.error("[MAHAL] erreur en écrivant le localStorage:", e);
+    }}
     </script>
     """, height=0, width=0)
 
@@ -769,7 +772,12 @@ def _clear_local_storage_token():
     import streamlit.components.v1 as components
     components.html("""
     <script>
-    try { window.parent.localStorage.removeItem("mahal_remember_token"); } catch(e) {}
+    try {
+      window.parent.localStorage.removeItem("mahal_remember_token");
+      window.parent.console.log("[MAHAL] token supprimé du localStorage");
+    } catch(e) {
+      window.parent.console.error("[MAHAL] erreur en supprimant le localStorage:", e);
+    }
     </script>
     """, height=0, width=0)
 
@@ -782,14 +790,18 @@ def _try_restore_from_local_storage():
     (function(){
       try {
         var tok = window.parent.localStorage.getItem("mahal_remember_token");
+        window.parent.console.log("[MAHAL] tentative de restauration, token trouvé:", tok ? "oui" : "non");
         if (tok) {
           var url = new URL(window.parent.location.href);
           if (!url.searchParams.get("t")) {
             url.searchParams.set("t", tok);
+            window.parent.console.log("[MAHAL] redirection avec le token...");
             window.parent.location.replace(url.toString());
           }
         }
-      } catch(e) {}
+      } catch(e) {
+        window.parent.console.error("[MAHAL] erreur de restauration:", e);
+      }
     })();
     </script>
     """, height=0, width=0)
@@ -899,6 +911,7 @@ def page_login():
                 _sync_token_to_local_storage(token)
             else:
                 _clear_local_storage_token()
+            time.sleep(0.4)  # laisse le temps au script JS d'écrire dans le localStorage avant le rerun
             st.rerun()
         st.markdown('<div class="auth-divider">ou</div>', unsafe_allow_html=True)
         if st.button("Créer un compte", key="btn_go_register", use_container_width=True):
@@ -1798,6 +1811,7 @@ with dcol:
     if st.button("Déco.", key="btn_logout"):
         _clear_session(st.session_state.get("_sess_token", ""))
         _clear_local_storage_token()
+        time.sleep(0.4)  # laisse le temps au script JS de vider le localStorage avant le rerun
         st.query_params.clear()
         for k in ["authenticated","username","role","lots_autorises","_sess_token","active_page"]:
             st.session_state.pop(k, None)
