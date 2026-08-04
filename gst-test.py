@@ -25,6 +25,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
 MAX_ATTEMPTS    = 5
 LOCKOUT_SECONDS = 300
 SESSION_TTL     = 8 * 3600
+REMEMBER_TTL    = 30 * 24 * 3600
 
 st.markdown("""
 <style>
