@@ -625,14 +625,10 @@ def get_users() -> pd.DataFrame:
 def save_users(df): save_sheet(df, "Utilisateurs")
 
 def update_session_for_user(uname, new_role, new_lots_list):
-    store = _session_store()
-    for token, entry in store.items():
-        u = entry.get("user", {})
-        if u.get("username", "").lower() == uname.lower():
-            u["role"] = new_role
-            u["lots_autorises"] = new_lots_list
-            entry["user"] = u
-            break
+    # Plus nécessaire : le rôle et les lots sont toujours relus depuis la
+    # feuille "Utilisateurs" à chaque vérification de session (voir _load_session),
+    # donc un changement d'un admin est pris en compte au prochain chargement de page.
+    pass
 
 def h(val: str) -> str:
     return _html.escape(str(val))
@@ -683,26 +679,76 @@ def count_pending():
     except: return 0
 
 import hashlib as _hl
-SECRET_KEY = st.secrets.get("session_secret", secrets.token_hex(32))
+import hmac as _hmac
+import base64 as _b64
+import json as _json
 
-@st.cache_resource
-def _session_store(): return {}
+# Clé de signature stable : si "session_secret" n'est pas défini dans les
+# secrets Streamlit, on en dérive une de façon déterministe (basée sur
+# l'identifiant du classeur) plutôt qu'une clé aléatoire — sinon la clé
+# changerait à chaque redémarrage de l'app et invaliderait tous les tokens
+# "se souvenir de moi" existants. Pour plus de sécurité, ajoute un
+# "session_secret" dans les secrets de l'app.
+SECRET_KEY = st.secrets.get("session_secret") or _hl.sha256(
+    (str(SPREADSHEET_ID) + "::mahal_static_salt_v1").encode()
+).hexdigest()
+
+def _b64e(data: bytes) -> str:
+    return _b64.urlsafe_b64encode(data).decode().rstrip("=")
+
+def _b64d(s: str) -> bytes:
+    pad = "=" * (-len(s) % 4)
+    return _b64.urlsafe_b64decode(s + pad)
+
+def _sign_token(payload: dict) -> str:
+    raw = _json.dumps(payload, separators=(",", ":")).encode()
+    sig = _hmac.new(SECRET_KEY.encode(), raw, _hl.sha256).digest()
+    return _b64e(raw) + "." + _b64e(sig)
+
+def _verify_token(token: str):
+    """Vérifie la signature et l'expiration d'un token, et renvoie son contenu (dict) ou None."""
+    try:
+        raw_b64, sig_b64 = token.split(".", 1)
+        raw = _b64d(raw_b64)
+        sig = _b64d(sig_b64)
+        expected = _hmac.new(SECRET_KEY.encode(), raw, _hl.sha256).digest()
+        if not _hmac.compare_digest(sig, expected):
+            return None
+        payload = _json.loads(raw)
+        if time.time() > payload.get("exp", 0):
+            return None
+        return payload
+    except Exception:
+        return None
 
 def _store_session(user_dict, remember=False):
-    token = secrets.token_urlsafe(40)
+    """Crée un token signé auto-suffisant (username + expiration).
+    Contrairement à un dict en mémoire, ce token survit aux redémarrages
+    de l'application (fréquents sur Streamlit Cloud après une période
+    d'inactivité), ce qui est nécessaire pour que 'se souvenir de moi' marche."""
     ttl = REMEMBER_TTL if remember else SESSION_TTL
-    _session_store()[token] = {"user": user_dict, "expires_at": time.time() + ttl}
-    return token
+    payload = {"username": str(user_dict["username"]), "exp": time.time() + ttl}
+    return _sign_token(payload)
 
 def _load_session(token):
+    """Vérifie le token puis relit le rôle/statut/lots ACTUELS depuis la feuille
+    'Utilisateurs' (plutôt que de faire confiance à un cache en mémoire)."""
     if not token: return None
-    entry = _session_store().get(token)
-    if not entry: return None
-    if time.time() > entry["expires_at"]:
-        _session_store().pop(token, None); return None
-    return entry["user"]
+    payload = _verify_token(token)
+    if not payload: return None
+    uname = payload.get("username", "")
+    if not uname: return None
+    user = find_user(uname)
+    if not user: return None
+    if str(user.get("statut", "")) != "approuvé": return None
+    lots_raw = str(user.get("lots_autorises", ""))
+    lots_list = [l.strip() for l in lots_raw.split(",") if l.strip()]
+    return {"username": str(user["username"]), "role": str(user["role"]), "lots_autorises": lots_list}
 
-def _clear_session(token): _session_store().pop(token, None)
+def _clear_session(token):
+    # Rien à faire côté serveur : le token est auto-suffisant, il expirera
+    # naturellement. On se contente de nettoyer le navigateur (URL + localStorage).
+    pass
 
 def _sync_token_to_local_storage(token):
     """Copie le token de session dans le localStorage du navigateur pour 'se souvenir' de l'utilisateur."""
@@ -748,6 +794,23 @@ def _try_restore_from_local_storage():
     </script>
     """, height=0, width=0)
 
+def _strip_token_from_url_bar():
+    """Nettoyage cosmétique : une fois la session restaurée grâce au paramètre
+    '?t=...', on le retire de la barre d'adresse visible (sans recharger la page)
+    pour ne pas laisser le token affiché à l'écran."""
+    import streamlit.components.v1 as components
+    components.html("""
+    <script>
+    try {
+      var url = new URL(window.parent.location.href);
+      if (url.searchParams.get("t")) {
+        url.searchParams.delete("t");
+        window.parent.history.replaceState({}, "", url.toString());
+      }
+    } catch(e) {}
+    </script>
+    """, height=0, width=0)
+
 for k, v in [("authenticated", False), ("username", ""), ("role", ""),
               ("lots_autorises", []), ("auth_page", "login"), ("_sess_token", "")]:
     if k not in st.session_state: st.session_state[k] = v
@@ -771,6 +834,8 @@ if not st.session_state.authenticated:
             _clear_local_storage_token()
     if not st.session_state.authenticated:
         _try_restore_from_local_storage()
+    elif st.query_params.get("t", ""):
+        _strip_token_from_url_bar()
 
 def warn(m): st.warning(m)
 def err(m):  st.error(m)
@@ -1692,6 +1757,8 @@ if _pnav:
         st.query_params["t"] = token_keep
     if _changed:
         st.rerun()
+    elif token_keep:
+        _strip_token_from_url_bar()
 
 active_page = st.session_state.active_page
 active_label = next((item["label"] for item in nav_items if item["key"] == active_page), "")
